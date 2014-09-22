@@ -1,0 +1,2 @@
+vf_controller:
+  type: "vf_controller/VFController"

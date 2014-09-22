@@ -1,0 +1,9 @@
+<library path="lib/libvf_controller">
+
+  <class name="vf_controller/VFController" type="vf_controller::VFController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      Hurraaaay Gennaro.
+    </description>
+  </class>
+
+</library>
