@@ -42,9 +42,9 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   //Pf_.setOnes(); // FIXME
   //Pi_.setZero(); // FIXME
   
-  Pi_ << 0.5, -0.5, -0.2;
+  Pi_ << 0.3, -0.22, -0.179;
   
-  Pf_ << 0.5, -0.5, -0.2;
+  Pf_ << 0.5, -0.22, -0.179;
   
   J_ = (Pf_ - Pi_); //NOTE For now they are here because J is constant
   J_transp_ = J_.transpose();
@@ -61,7 +61,7 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   
   Bf_ << 0.0;
   
-  K_ = 70.0;
+  K_ = 300.0;
   B_ = 2*std::sqrt(K_);
   
 //   B_ << 1.0;
@@ -71,7 +71,7 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   det_ << 1.0;
   
   num_.resize(1,1);
-  num_ << 1.0;
+  num_ << -1.0;
   
 }
 
@@ -104,6 +104,9 @@ void VirtualMechanism::Update(const Ref<const VectorXd>& force, double dt)
   
   state_ = Pi_ + phase_ * J_; //NOTE In this case the Jacobian is the same as the direct kinematic, and it is constant
   state_dot_ = J_ * phase_dot_;
+  
+  std::cout<<"***"<<std::endl;
+  std::cout<<phase_<<std::endl;
 
 }
 
