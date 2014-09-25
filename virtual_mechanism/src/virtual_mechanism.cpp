@@ -39,10 +39,14 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   Pf_.resize(state_dim,1);
   Pi_.resize(state_dim,1);
   
-  Pf_.setOnes(); // FIXME
-  Pi_.setZero(); // FIXME
-    
-  J_ = (Pf_ - Pi_)/(Pf_ - Pi_).norm(); //NOTE For now they are here because J is constant
+  //Pf_.setOnes(); // FIXME
+  //Pi_.setZero(); // FIXME
+  
+  Pi_ << 0.5, -0.5, -0.2;
+  
+  Pf_ << 0.5, -0.5, -0.2;
+  
+  J_ = (Pf_ - Pi_); //NOTE For now they are here because J is constant
   J_transp_ = J_.transpose();
   
 //   Bf_ = MatrixXd::Identity(state_dim_,state_dim_);
@@ -55,9 +59,10 @@ VirtualMechanism::VirtualMechanism(int state_dim)
 //   B_.resize(1,1);
 //   K_.resize(1,1);
   
-  Bf_ << 1.0;
-  B_ = 1.0;
-  K_ = 1.0;
+  Bf_ << 0.0;
+  
+  K_ = 70.0;
+  B_ = 2*std::sqrt(K_);
   
 //   B_ << 1.0;
 //   K_ << 1.0;
@@ -66,7 +71,7 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   det_ << 1.0;
   
   num_.resize(1,1);
-  num_ << -1.0;
+  num_ << 1.0;
   
 }
 
