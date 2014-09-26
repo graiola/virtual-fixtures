@@ -98,15 +98,20 @@ void VirtualMechanism::Update(const Ref<const VectorXd>& force, double dt)
   
   // Saturation
   if(phase_ < 0)
+  {
+    phase_dot_ = 0;
     phase_ = 0;
+  }
   else if (phase_ > 1)
+  {
     phase_ = 1;
-  
+    phase_dot_ = 0;
+  }
   state_ = Pi_ + phase_ * J_; //NOTE In this case the Jacobian is the same as the direct kinematic, and it is constant
   state_dot_ = J_ * phase_dot_;
   
-  std::cout<<"***"<<std::endl;
-  std::cout<<phase_<<std::endl;
+//   std::cout<<"***"<<std::endl;
+//   std::cout<<phase_<<std::endl;
 
 }
 
