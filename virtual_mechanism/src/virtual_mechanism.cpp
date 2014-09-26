@@ -8,12 +8,16 @@ using namespace tool_box;
 
 namespace virtual_mechanism {
 
-VirtualMechanism::VirtualMechanism(int state_dim)
+VirtualMechanism::VirtualMechanism(int state_dim, VectorXd Pf, VectorXd Pi)
 {
   
   ros_node_ptr_ = NULL;
   
-  assert(state_dim == 2 || state_dim == 3); 
+  assert(state_dim == 2 || state_dim == 3);
+  assert(Pf.size() == state_dim);
+  assert(Pi.size() == state_dim);
+  Pf_ = Pf;
+  Pi_ = Pi;
   state_dim_ = state_dim;
   
   // Initialize the ros node
@@ -36,13 +40,18 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   state_dot_.resize(state_dim);
   J_.resize(state_dim,1);
   
-  Pf_.resize(state_dim,1);
-  Pi_.resize(state_dim,1);
+//   Pf_.resize(state_dim,1);
+//   Pi_.resize(state_dim,1);
   
-  Pf_.setOnes(); // FIXME
-  Pi_.setZero(); // FIXME
+  
+  
+//   Pf_.setOnes(); // FIXME
+//   Pi_.setZero(); // FIXME
     
-  J_ = (Pf_ - Pi_)/(Pf_ - Pi_).norm(); //NOTE For now they are here because J is constant
+//   J_ = (Pf_ - Pi_)/(Pf_ - Pi_).norm(); //NOTE For now they are here because J is constant
+  
+  
+  J_ = (Pf_ - Pi_);
   J_transp_ = J_.transpose();
   
 //   Bf_ = MatrixXd::Identity(state_dim_,state_dim_);
@@ -55,7 +64,7 @@ VirtualMechanism::VirtualMechanism(int state_dim)
 //   B_.resize(1,1);
 //   K_.resize(1,1);
   
-  Bf_ << 1.0;
+  Bf_ << 0.0;
   B_ = 1.0;
   K_ = 1.0;
   
@@ -66,7 +75,7 @@ VirtualMechanism::VirtualMechanism(int state_dim)
   det_ << 1.0;
   
   num_.resize(1,1);
-  num_ << -1.0;
+  num_ << 1.0;
   
 }
 
@@ -89,7 +98,17 @@ void VirtualMechanism::Update(const Ref<const VectorXd>& force, double dt)
   
   phase_dot_ = num_(0,0)/det_(0,0) * torque_(0);
   
+// std::cout<<"torque_"<<std::endl;
+// std::cout<<torque_<<std::endl; 
+//   std::cout<<"num_"<<std::endl;
+//   std::cout<<num_<<std::endl; 
+//   std::cout<<"phase_"<<std::endl;
+//   std::cout<<phase_<<std::endl; 
+  
   phase_ = phase_dot_ * dt + phase_prev_; //FIXME Switch to RungeKutta
+  
+//         std::cout<<"phase_"<<std::endl;
+//   std::cout<<phase_<<std::endl; 
   
   // Saturation
   if(phase_ < 0)

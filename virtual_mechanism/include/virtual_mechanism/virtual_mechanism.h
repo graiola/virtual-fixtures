@@ -21,7 +21,7 @@ namespace virtual_mechanism {
 class VirtualMechanism
 {
 	public:
-	  VirtualMechanism(int state_dim);
+	  VirtualMechanism(int state_dim, Eigen::VectorXd Pf, Eigen::VectorXd Pi);
 	  
 		
 	  ~VirtualMechanism();
@@ -34,6 +34,8 @@ class VirtualMechanism
 	  
 	  inline double getK(){return K_;}
 	  inline double getB(){return B_;}
+	  inline double getPhase(){return phase_;}
+	  inline double getPhaseDot(){return phase_dot_;}
 	  
 	protected:
 	  
