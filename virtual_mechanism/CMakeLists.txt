@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(virtual_mechanism)
 
+#set(CMAKE_CXX_FLAGS "-Wall -std=c++0x")
+set(CMAKE_CXX_FLAGS "-std=c++0x")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -10,6 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   toolbox
 )
+
+find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
+
+set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -27,7 +36,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS roscpp rospy std_msgs toolbox
- DEPENDS system_lib
+ DEPENDS system_lib boost dmpbbo
 )
 
 ###########
@@ -37,11 +46,18 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} include/${PROJECT_NAME}/virtual_mechanism.h src/virtual_mechanism.cpp
+add_library(${PROJECT_NAME} 
+    include/${PROJECT_NAME}/virtual_mechanism_interface.h
+    include/${PROJECT_NAME}/virtual_mechanism_line.h
+    include/${PROJECT_NAME}/virtual_mechanism_dmp.h
+    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+    src/virtual_mechanism_line.cpp
+    src/virtual_mechanism_dmp.cpp
+    src/virtual_mechanism_gmr.cpp
 )
 
 ## Declare a cpp executable
@@ -52,7 +68,7 @@ add_library(${PROJECT_NAME} include/${PROJECT_NAME}/virtual_mechanism.h src/virt
 # add_dependencies(virtual_mechanism_node virtual_mechanism_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
 
 #############
 ## Install ##
@@ -94,10 +110,28 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(${PROJECT_NAME}_test test/test_virtual_mechanism.cpp)
-if(TARGET ${PROJECT_NAME}_test)
-  target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
+#catkin_add_gtest(test_virtual_mechanism_line 
+#  test/test_virtual_mechanism_line.cpp
+#)
+#if(TARGET test_virtual_mechanism_line )
+#  target_link_libraries(test_virtual_mechanism_line  ${PROJECT_NAME})
+#endif()
+
+## Add gtest based cpp test target and link libraries
+catkin_add_gtest(test_virtual_mechanism_gmr 
+  test/test_virtual_mechanism_gmr.cpp
+)
+if(TARGET test_virtual_mechanism_gmr)
+  target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
 endif()
+
+## Add gtest based cpp test target and link libraries
+#catkin_add_gtest(test_virtual_mechanism_dmp 
+#  test/test_virtual_mechanism_dmp.cpp
+#)
+#if(TARGET test_virtual_mechanism_dmp)
+#  target_link_libraries(test_virtual_mechanism_dmp ${PROJECT_NAME})
+#endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
