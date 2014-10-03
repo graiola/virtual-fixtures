@@ -33,7 +33,6 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 
 	  boost::shared_ptr<fa_t> fa_ptr_;
 
-	  
 	  Eigen::MatrixXd fa_input_;
 	  Eigen::MatrixXd fa_output_;
 	  Eigen::MatrixXd fa_output_dot_;

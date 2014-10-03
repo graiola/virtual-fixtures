@@ -12,19 +12,20 @@ namespace virtual_mechanism_gmr
 
 VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VirtualMechanismInterface(state_dim) // FIXME
 {
+  
+  // Load from txt file
+  //ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
+  //FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
+  
   assert(fa_ptr);
   assert(fa_ptr->isTrained());
   assert(fa_ptr->getExpectedInputDim() == 1);
+  assert(fa_ptr->getExpectedOutputDim() == state_dim);
   
   fa_input_.resize(1,1);
   fa_output_.resize(state_dim_,1);
   fa_output_dot_.resize(state_dim_,1);
   
- 
-  fa_ptr->predict(fa_input_,fa_output_);
-  assert(fa_output_.size() == state_dim_); //FIXME
-  
-
   fa_ptr_ = fa_ptr;
 }
 
