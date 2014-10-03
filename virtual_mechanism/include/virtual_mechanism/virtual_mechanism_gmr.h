@@ -26,6 +26,8 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt);
 	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt);
 	  
+	  double getDistance(const Eigen::Ref<const Eigen::VectorXd>& pos);
+	  
 	protected:
 	  
 	  virtual void UpdateJacobian();

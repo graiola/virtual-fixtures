@@ -33,14 +33,28 @@ void VirtualMechanismGmr::UpdateJacobian()
 {
   fa_input_(0,0) = phase_; // Convert to Eigen Matrix
   fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_);
-  J_transp_ = fa_output_dot_; // NOTE The output is transposed!
-  J_ = J_transp_.transpose();
+  
+  //J_transp_ = fa_output_dot_; // NOTE The output is transposed!
+  //J_ = J_transp_.transpose();
+   
+   J_ = fa_output_dot_;
 }
 
 void VirtualMechanismGmr::UpdateState()
 {
+  
   //fa_ptr_->predict(fa_input_,state_);
-  state_ = fa_output_.transpose();
+  //state_ = fa_output_.transpose();
+  
+  state_ = fa_output_;
+  
+}
+
+double VirtualMechanismGmr::getDistance(const Ref<const VectorXd>& pos)
+{
+ 
+  return (pos-state_).norm();
+  
 }
 
 

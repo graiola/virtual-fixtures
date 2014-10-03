@@ -113,12 +113,11 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   
   EXPECT_NO_THROW(vm.Update(force,dt));
   
-  Eigen::VectorXd state;
-  state.resize(test_dim);
-  
-  //   vm.getState(state);
-  //   std::cout<<state<<std::endl;
-  //   getchar();
+//   Eigen::VectorXd state;
+//   state.resize(test_dim);
+//   vm.getState(state);
+//   std::cout<<state<<std::endl;
+//   getchar();
   
   // Cart input interface
   Eigen::VectorXd pos;
