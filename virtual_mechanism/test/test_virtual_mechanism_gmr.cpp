@@ -127,7 +127,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   EXPECT_NO_THROW(vm.Update(pos,vel,dt));
 }
 
-/*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
+TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
@@ -157,7 +157,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   
   EXPECT_NO_THROW(vm.getStateDot(state_dot));
   
-}*/
+}
 
 TEST(VirtualMechanismGmrTest, GetMethods)
 {

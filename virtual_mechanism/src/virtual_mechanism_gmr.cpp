@@ -38,6 +38,7 @@ void VirtualMechanismGmr::UpdateJacobian()
   //J_ = J_transp_.transpose();
    
    J_ = fa_output_dot_;
+   J_transp_ = fa_output_dot_.transpose();
 }
 
 void VirtualMechanismGmr::UpdateState()
