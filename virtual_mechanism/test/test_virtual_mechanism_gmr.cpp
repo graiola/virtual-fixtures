@@ -116,8 +116,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   Eigen::VectorXd state;
   state.resize(test_dim);
   
-  vm.getState(state);
-  
+  //   vm.getState(state);
   //   std::cout<<state<<std::endl;
   //   getchar();
   
@@ -128,6 +127,38 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   vel.resize(test_dim);
   EXPECT_NO_THROW(vm.Update(pos,vel,dt));
 }
+
+/*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
+{
+  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
+  
+  VirtualMechanismGmr vm(test_dim,fa_ptr);
+  
+  // Force input interface
+  Eigen::VectorXd force;
+  force.resize(test_dim);
+  force << 100.0, 0.0 , 0.0;
+  
+  // State
+  Eigen::VectorXd state;
+  state.resize(test_dim);
+  Eigen::VectorXd state_dot;
+  state_dot.resize(test_dim);
+  for (int i = 0; i < 500; i++)
+  {
+    vm.Update(force,dt);
+    vm.getState(state);
+    vm.getStateDot(state_dot);
+    
+    std::cout<<"*******"<<std::endl;
+    std::cout<<state<<std::endl;
+    getchar();
+    
+  }
+  
+  EXPECT_NO_THROW(vm.getStateDot(state_dot));
+  
+}*/
 
 TEST(VirtualMechanismGmrTest, GetMethods)
 {
