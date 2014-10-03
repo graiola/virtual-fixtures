@@ -23,8 +23,8 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
   assert(fa_ptr->getExpectedOutputDim() == state_dim);
   
   fa_input_.resize(1,1);
-  fa_output_.resize(state_dim_,1);
-  fa_output_dot_.resize(state_dim_,1);
+  fa_output_.resize(1,state_dim_);
+  fa_output_dot_.resize(1,state_dim_);
   
   fa_ptr_ = fa_ptr;
 }
@@ -34,20 +34,20 @@ void VirtualMechanismGmr::UpdateJacobian()
   fa_input_(0,0) = phase_; // Convert to Eigen Matrix
   fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_);
   
-  //J_transp_ = fa_output_dot_; // NOTE The output is transposed!
-  //J_ = J_transp_.transpose();
+  J_transp_ = fa_output_dot_; // NOTE The output is transposed!
+  J_ = J_transp_.transpose();
    
-   J_ = fa_output_dot_;
-   J_transp_ = fa_output_dot_.transpose();
+   //J_ = fa_output_dot_;
+   //J_transp_ = fa_output_dot_.transpose();
 }
 
 void VirtualMechanismGmr::UpdateState()
 {
   
   //fa_ptr_->predict(fa_input_,state_);
-  //state_ = fa_output_.transpose();
+  state_ = fa_output_.transpose();
   
-  state_ = fa_output_;
+  //state_ = fa_output_;
   
 }
 
