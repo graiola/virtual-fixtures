@@ -81,26 +81,53 @@ class VirtualMechanismInterface
 	    // Update the phase
 	    UpdatePhase(force,dt);
 	    
-	    // Saturation
+	    clamp_ = 1.0;
+	    
+	    // Saturations
+	    
+	    if(phase_ > 1.0)
+	    {
+	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
+	      phase_ = 1;
+	      //phase_dot_ = 0;
+	    }
+	    else if (phase_ < 0.0)
+	    {
+	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
+	      phase_ = 0;
+	      //phase_dot_ = 0;
+	    }
+	    
 	    if(phase_ >= 0.9 && phase_ <= 1.0)
 	    {
-	      
 	      LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
 	      //phase_ = 0;
 	      //phase_dot_ = 0;
 	    }
 	    else if (phase_ >= 0.0 && phase_ <= 0.1)
 	    {
-	      
 	      LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 	      //phase_ = 1;
 	      //phase_dot_ = 0;
 	    }
-	    else
-	      clamp_ = 1.0;
-	    
 	    
 	    phase_dot_ = phase_dot_ * clamp_;
+	    
+	    
+	    // Saturation
+	    /*if(phase_ > 1.0)
+	    {
+	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
+	      phase_ = 1;
+	      phase_dot_ = 0;
+	    }
+	    else if (phase_ < 0.0)
+	    {
+	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
+	      phase_ = 0;
+	      phase_dot_ = 0;
+	    }*/
+	   
 	    
 	    // Compute the new state
 	    UpdateState();
