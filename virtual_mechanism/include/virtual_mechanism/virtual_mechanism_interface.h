@@ -16,15 +16,17 @@
 //#include <boost/shared_ptr.hpp>
 //#include <boost/make_shared.hpp>
 
+#define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
+	
 namespace virtual_mechanism_interface 
 {
 	
 class VirtualMechanismInterface
 {
 	public:
-	  
-	  VirtualMechanismInterface(int state_dim, double K = 300, double B = 34.641016, double Bf = 0.0):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(Bf),det_(1.0),num_(-1.0)
+	  //double K = 300, double B = 34.641016,
+	  VirtualMechanismInterface(int state_dim, double K = 700, double B = 52.91502622129181, double Bf = 0.0001):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(Bf),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -80,16 +82,25 @@ class VirtualMechanismInterface
 	    UpdatePhase(force,dt);
 	    
 	    // Saturation
-	    if(phase_ < 0)
+	    if(phase_ >= 0.9 && phase_ <= 1.0)
 	    {
-	      phase_ = 0;
-	      phase_dot_ = 0;
+	      
+	      LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
+	      //phase_ = 0;
+	      //phase_dot_ = 0;
 	    }
-	    else if (phase_ > 1)
+	    else if (phase_ >= 0.0 && phase_ <= 0.1)
 	    {
-	      phase_ = 1;
-	      phase_dot_ = 0;
+	      
+	      LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
+	      //phase_ = 1;
+	      //phase_dot_ = 0;
 	    }
+	    else
+	      clamp_ = 1.0;
+	    
+	    
+	    phase_dot_ = phase_dot_ * clamp_;
 	    
 	    // Compute the new state
 	    UpdateState();
@@ -163,6 +174,8 @@ class VirtualMechanismInterface
 	  // Tmp variables
 	  double det_;
 	  double num_; 
+	  
+	  double clamp_;
 };
 
 }

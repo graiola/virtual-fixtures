@@ -151,7 +151,6 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
     
     std::cout<<"*******"<<std::endl;
     std::cout<<state<<std::endl;
-    getchar();
     
   }
   
