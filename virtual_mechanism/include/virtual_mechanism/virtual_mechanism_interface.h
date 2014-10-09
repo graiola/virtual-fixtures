@@ -119,6 +119,8 @@ class VirtualMechanismInterface
 	      Update(force_,dt);
 	  }
 	  
+	  inline double getPhaseDot() const {return phase_dot_;}
+	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::Ref<Eigen::VectorXd> state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::Ref<Eigen::VectorXd> state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
 	  inline double getK() const {return K_;}
