@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream> 
 #include <iterator>
+#include <boost/concept_check.hpp>
 
 ////////// Function Approximator
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
@@ -131,6 +132,8 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
+  double phase, phase_dot;
+  
   VirtualMechanismGmr vm(test_dim,fa_ptr);
   
   // Force input interface
@@ -148,9 +151,13 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
     vm.Update(force,dt);
     vm.getState(state);
     vm.getStateDot(state_dot);
+    phase = vm.getPhase();
+    phase_dot = vm.getPhaseDot();
     
     std::cout<<"*******"<<std::endl;
-    std::cout<<state<<std::endl;
+    std::cout<<"STATE\n "<<state<<std::endl;
+    std::cout<<"PHASE "<<phase<<std::endl;
+    std::cout<<"PHASE_DOT "<<phase_dot<<std::endl;
     
   }
   
