@@ -59,7 +59,7 @@ fa_t* generateDemoFa(){
 	
 	// Read from file the inputs / targets
 	std::vector<std::vector<double> > data;
-	std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/01_txyz.txt";
+	std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/trj_5.txt";
 	ReadTxtFile(file_name.c_str(),data);
 	
 	MatrixXd inputs = VectorXd::LinSpaced(data.size(),0.0,1.0);;

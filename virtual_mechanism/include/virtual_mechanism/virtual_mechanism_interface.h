@@ -81,23 +81,23 @@ class VirtualMechanismInterface
 	    // Update the phase
 	    UpdatePhase(force,dt);
 	    
-	    clamp_ = 1.0;
+	    
 	    
 	    // Saturations
-	    
 	    if(phase_ > 1.0)
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
 	      phase_ = 1;
-	      //phase_dot_ = 0;
+	      phase_dot_ = 0;
 	    }
 	    else if (phase_ < 0.0)
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 	      phase_ = 0;
-	      //phase_dot_ = 0;
+	      phase_dot_ = 0;
 	    }
 	    
+	    /*clamp_ = 1.0;
 	    if(phase_ >= 0.9 && phase_ <= 1.0)
 	    {
 	      LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
@@ -110,24 +110,8 @@ class VirtualMechanismInterface
 	      //phase_ = 1;
 	      //phase_dot_ = 0;
 	    }
+	    phase_dot_ = phase_dot_ * clamp_;*/
 	    
-	    phase_dot_ = phase_dot_ * clamp_;
-	    
-	    
-	    // Saturation
-	    /*if(phase_ > 1.0)
-	    {
-	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
-	      phase_ = 1;
-	      phase_dot_ = 0;
-	    }
-	    else if (phase_ < 0.0)
-	    {
-	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
-	      phase_ = 0;
-	      phase_dot_ = 0;
-	    }*/
-	   
 	    
 	    // Compute the new state
 	    UpdateState();
@@ -145,6 +129,10 @@ class VirtualMechanismInterface
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
 	      Update(force_,dt);
 	  }
+	  
+	  // For test purpose
+	  inline double getDet() const {return det_;}
+	  inline double getTorque() const {return torque_(0,0);}
 	  
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
