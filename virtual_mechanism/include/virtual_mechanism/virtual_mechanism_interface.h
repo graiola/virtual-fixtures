@@ -25,8 +25,8 @@ class VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterface(int state_dim, double K = 700, double B = 52.91502622129181, double Bf = 0.0001):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(Bf),det_(1.0),num_(-1.0),clamp_(1.0)
+	  VirtualMechanismInterface(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 10, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),Bf_max_(Bf_max),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -151,7 +151,12 @@ class VirtualMechanismInterface
 	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
 	  {
 	      JxJt_ = J_transp_ * J_;
-	      det_ = B_ * JxJt_(0,0) + Bf_;
+	      
+	      // Adapt Bf
+	      //Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
+	      Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
+	      
+	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
 	      
 	      torque_ = J_transp_ * force;
 	      
@@ -185,8 +190,10 @@ class VirtualMechanismInterface
 
 	  // Gains
 	  double Bf_;
+	  double Bf_max_;
 	  double B_;
 	  double K_;
+	  double epsilon_;
 	   
 	  // Tmp variables
 	  double det_;
