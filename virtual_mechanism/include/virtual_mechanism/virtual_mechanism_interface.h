@@ -25,7 +25,7 @@ class VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterface(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 10, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
+	  VirtualMechanismInterface(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):state_dim_(state_dim),ros_node_ptr_(NULL),active_(true),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),Bf_max_(Bf_max),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
@@ -88,13 +88,13 @@ class VirtualMechanismInterface
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
 	      phase_ = 1;
-	      phase_dot_ = 0;
+	      //phase_dot_ = 0;
 	    }
 	    else if (phase_ < 0.0)
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 	      phase_ = 0;
-	      phase_dot_ = 0;
+	      //phase_dot_ = 0;
 	    }
 	    
 	    /*clamp_ = 1.0;
@@ -153,8 +153,8 @@ class VirtualMechanismInterface
 	      JxJt_ = J_transp_ * J_;
 	      
 	      // Adapt Bf
-	      //Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
-	      Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
+	      Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
+	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
 	      
 	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
 	      
