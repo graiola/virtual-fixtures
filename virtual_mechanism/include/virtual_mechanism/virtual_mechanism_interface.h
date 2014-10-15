@@ -143,6 +143,14 @@ class VirtualMechanismInterfaceFirstOrder
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  
+          inline void Init()
+          {
+              // Initialize the attributes
+              UpdateJacobian();
+              UpdateState();
+              UpdateStateDot();
+          }
+	  
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
@@ -204,9 +212,9 @@ class VirtualMechanismInterfaceFirstOrder
 class VirtualMechanismInterfaceSecondOrder
 {
 	public:
-	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 10, double Bf = 6.324555320336759, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),active_(false),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
+	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
+	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),
+	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -224,7 +232,7 @@ class VirtualMechanismInterfaceSecondOrder
 		std::cout<<err.what()<<std::endl;
 	      }
 	      
-	      // Initialize/resize the attributes
+	      // Resize the attributes
 	      // NOTE We assume that the phase has dim 1
 	      state_.resize(state_dim);
 	      state_dot_.resize(state_dim);
@@ -233,7 +241,10 @@ class VirtualMechanismInterfaceSecondOrder
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+              
+              
 
+              
 	  }
 	
 	  ~VirtualMechanismInterfaceSecondOrder()
@@ -309,6 +320,7 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline double getDet() const {return det_;}
 	  inline double getTorque() const {return torque_(0,0);}
 	  
+	  inline double getPhaseDDot() const {return phase_ddot_;}
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::Ref<Eigen::VectorXd> state) const {assert(state.size() == state_dim_); state = state_;}
@@ -317,12 +329,21 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline double getB() const {return B_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
-	  inline void setActive(const bool& active) {active_ = active;}
+	  inline void setActive(const bool active) {active_ = active;}
+	  
+	  inline void Init()
+          {
+              // Initialize the attributes
+              UpdateJacobian();
+              UpdateState();
+              UpdateStateDot();
+          }
 	  
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
+          
 	  
 	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
 	  {
@@ -333,7 +354,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      if(active_)
 		phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	      else
-		phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (0 - phase_);
+		phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	      
 	      // Compute the new phase
 	      // FIXME Switch to RungeKutta  
