@@ -52,11 +52,11 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} 
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
-    include/${PROJECT_NAME}/virtual_mechanism_line.h
-    include/${PROJECT_NAME}/virtual_mechanism_dmp.h
+    #include/${PROJECT_NAME}/virtual_mechanism_line.h
+    #include/${PROJECT_NAME}/virtual_mechanism_dmp.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-    src/virtual_mechanism_line.cpp
-    src/virtual_mechanism_dmp.cpp
+    #src/virtual_mechanism_line.cpp
+    #src/virtual_mechanism_dmp.cpp
     src/virtual_mechanism_gmr.cpp
 )
 
