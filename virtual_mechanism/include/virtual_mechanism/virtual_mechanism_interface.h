@@ -226,6 +226,8 @@ class VirtualMechanismInterfaceSecondOrder
 	      
 	      // Initialize/resize the attributes
 	      // NOTE We assume that the phase has dim 1
+	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
+	      phase_state_.resize(2); //phase_ and phase_dot
 	      state_.resize(state_dim);
 	      state_dot_.resize(state_dim);
 	      torque_.resize(1);
@@ -251,12 +253,15 @@ class VirtualMechanismInterfaceSecondOrder
 	    phase_prev_ = phase_;
 	    phase_dot_prev_ = phase_dot_;
   
+	    phase_state_(0) = phase_;
+	    phase_state_(1) = phase_dot_;
+	    
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
 	    //J_transp_ = J_.transpose();
 	    
 	    // Update the phase
-	    UpdatePhase(force,dt);
+	    UpdatePhase(force,phase_state_,dt);
 	    
 	    // Saturations
 	    if(phase_ > 1.0)
@@ -324,16 +329,40 @@ class VirtualMechanismInterfaceSecondOrder
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  
-	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
+
+	  
+	  /*void DynamicalSystem::integrateStepRungeKutta(double dt, const Ref<const VectorXd> x, Ref<VectorXd> x_dot, Ref<VectorXd> xd_updated) const
+	  {
+	  // 4th order Runge-Kutta for a 1st order system
+	  // http://en.wikipedia.org/wiki/Runge-Kutta_method#The_Runge.E2.80.93Kutta_method
+	  
+	  int l = x.size();
+	  VectorXd k1(l), k2(l), k3(l), k4(l);
+	  differentialEquation(x,k1);
+	  VectorXd input_k2 = x + dt*0.5*k1;
+	  differentialEquation(input_k2,k2);
+	  VectorXd input_k3 = x + dt*0.5*k2;
+	  differentialEquation(input_k3,k3);
+	  VectorXd input_k4 = x + dt*k3;
+	  differentialEquation(input_k4,k4);
+	      
+	  x_updated = x + dt*(k1 + 2.0*(k2+k3) + k4)/6.0;
+	  differentialEquation(x_updated,xd_updated); 
+	  }*/
+	  
+	  
+	  
+	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const Eigen::Ref<const Eigen::VectorXd>& phase_state, const double dt)
 	  {
 	      JxJt_ = J_transp_ * J_;
 	     
 	      torque_ = J_transp_ * force;
 
 	      if(active_)
-		phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
+	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0) - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
+		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	      else
-		phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (0 - phase_);
+		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (0 - phase_);
 	      
 	      // Compute the new phase
 	      // FIXME Switch to RungeKutta  
@@ -356,6 +385,9 @@ class VirtualMechanismInterfaceSecondOrder
 	  double phase_dot_;
 	  double phase_ddot_;
 	  int state_dim_;
+	  
+	  Eigen::VectorXd phase_state_;
+	  Eigen::VectorXd phase_state_dot_;
 	  Eigen::VectorXd state_;
 	  Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
