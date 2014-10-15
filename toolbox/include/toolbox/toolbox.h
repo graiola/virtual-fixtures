@@ -4,6 +4,12 @@
 ////////// ROS
 #include <ros/ros.h>
 
+////////// Eigen
+#include <eigen3/Eigen/Core>
+
+////////// BOOST
+#include <boost/bind.hpp>
+
 namespace tool_box {
 
 
@@ -38,6 +44,12 @@ class RosNode
 
 };
 
+//auto fn_half = std::bind (my_divide,_1,2);               // returns x/2
+//std::cout << fn_half(10) << '\n'; 
+/*RungeKutta(const Eigen::Ref<const Eigen::VectorXd>& state_init , Eigen::Ref<Eigen::VectorXd> state_out, double dt, boost::bind dyn_system)
+{
+  dyn_system()
+}*/
   
 	
 }

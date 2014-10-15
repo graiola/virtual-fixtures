@@ -9,6 +9,7 @@
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
+#include <boost/concept_check.hpp>
 //#include <eigen3/Eigen/SVD>
 //#include <eigen3/Eigen/Geometry>
 
@@ -143,6 +144,14 @@ class VirtualMechanismInterfaceFirstOrder
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  
+          inline void Init()
+          {
+              // Initialize the attributes
+              UpdateJacobian();
+              UpdateState();
+              UpdateStateDot();
+          }
+	  
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
@@ -204,9 +213,9 @@ class VirtualMechanismInterfaceFirstOrder
 class VirtualMechanismInterfaceSecondOrder
 {
 	public:
-	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 10, double Bf = 6.324555320336759, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),active_(false),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
+	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
+	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),
+	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -224,10 +233,11 @@ class VirtualMechanismInterfaceSecondOrder
 		std::cout<<err.what()<<std::endl;
 	      }
 	      
-	      // Initialize/resize the attributes
+	      // Resize the attributes
 	      // NOTE We assume that the phase has dim 1
 	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
 	      phase_state_.resize(2); //phase_ and phase_dot
+	      phase_state_integrated_.resize(2);
 	      state_.resize(state_dim);
 	      state_dot_.resize(state_dim);
 	      torque_.resize(1);
@@ -235,7 +245,20 @@ class VirtualMechanismInterfaceSecondOrder
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+	      
+	      k1_.resize(2);
+	      k2_.resize(2);
+	      k3_.resize(2);
+	      k4_.resize(2);
+	      
+	      k1_.fill(0.0);
+              k2_.fill(0.0);
+	      k3_.fill(0.0);
+	      k4_.fill(0.0);
+	      
+              
 
+              
 	  }
 	
 	  ~VirtualMechanismInterfaceSecondOrder()
@@ -253,15 +276,12 @@ class VirtualMechanismInterfaceSecondOrder
 	    phase_prev_ = phase_;
 	    phase_dot_prev_ = phase_dot_;
   
-	    phase_state_(0) = phase_;
-	    phase_state_(1) = phase_dot_;
-	    
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
 	    //J_transp_ = J_.transpose();
 	    
 	    // Update the phase
-	    UpdatePhase(force,phase_state_,dt);
+	    UpdatePhase(force,dt);
 	    
 	    // Saturations
 	    if(phase_ > 1.0)
@@ -314,6 +334,7 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline double getDet() const {return det_;}
 	  inline double getTorque() const {return torque_(0,0);}
 	  
+	  inline double getPhaseDDot() const {return phase_ddot_;}
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::Ref<Eigen::VectorXd> state) const {assert(state.size() == state_dim_); state = state_;}
@@ -322,52 +343,92 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline double getB() const {return B_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
-	  inline void setActive(const bool& active) {active_ = active;}
+	  inline void setActive(const bool active) {active_ = active;}
+	  
+	  inline void Init()
+          {
+              // Initialize the attributes
+              UpdateJacobian();
+              UpdateState();
+              UpdateStateDot();
+          }
 	  
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
-	  
+          
 
-	  
-	  /*void DynamicalSystem::integrateStepRungeKutta(double dt, const Ref<const VectorXd> x, Ref<VectorXd> x_dot, Ref<VectorXd> xd_updated) const
+	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state, Eigen::Ref<Eigen::VectorXd> phase_state_integrated)
 	  {
-	  // 4th order Runge-Kutta for a 1st order system
-	  // http://en.wikipedia.org/wiki/Runge-Kutta_method#The_Runge.E2.80.93Kutta_method
+	 
+	    phase_state_integrated = phase_state;
+	    
+	    DynSystem(dt,input,phase_state_integrated);
+	    k1_ = phase_state_dot_;
+	    
+	    phase_state_integrated = phase_state_ + 0.5*dt*k1_;
+	    DynSystem(dt,input,phase_state_integrated);
+	    k2_ = phase_state_dot_;
+	    
+	    phase_state_integrated = phase_state_ + 0.5*dt*k2_;
+	    DynSystem(dt,input,phase_state_integrated);
+	    k3_ = phase_state_dot_;
+	    
+	    phase_state_integrated = phase_state_ + dt*k3_;
+	    DynSystem(dt,input,phase_state_integrated);
+	    k4_ = phase_state_dot_;
+	    
+	    phase_state_integrated = phase_state_ + dt*(k1_ + 2.0*(k2_+k3_) + k4_)/6.0;
 	  
-	  int l = x.size();
-	  VectorXd k1(l), k2(l), k3(l), k4(l);
-	  differentialEquation(x,k1);
-	  VectorXd input_k2 = x + dt*0.5*k1;
-	  differentialEquation(input_k2,k2);
-	  VectorXd input_k3 = x + dt*0.5*k2;
-	  differentialEquation(input_k3,k3);
-	  VectorXd input_k4 = x + dt*k3;
-	  differentialEquation(input_k4,k4);
-	      
-	  x_updated = x + dt*(k1 + 2.0*(k2+k3) + k4)/6.0;
-	  differentialEquation(x_updated,xd_updated); 
-	  }*/
+	  }
 	  
+	  inline void DynSystem(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state)
+	  {
+	     if(active_)
+	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
+		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
+	      else
+		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input;
+		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+	      phase_state_dot_(0) = phase_state(1);
+	  }
 	  
-	  
-	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const Eigen::Ref<const Eigen::VectorXd>& phase_state, const double dt)
+	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
 	  {
 	      JxJt_ = J_transp_ * J_;
 	     
 	      torque_ = J_transp_ * force;
 
-	      if(active_)
+	      phase_state_(0) = phase_;
+	      phase_state_(1) = phase_dot_;
+	      
+	      DynSystem(dt,torque_(0.0),phase_state_);
+	      
+	      IntegrateStepRungeKutta(dt,torque_(0.0),phase_state_,phase_state_integrated_);
+	      
+	      phase_ = phase_state_integrated_(0);
+	      phase_dot_ = phase_state_integrated_(1);
+	      phase_ddot_ = phase_state_dot_(1);
+	      
+	      //DynSystem(const Eigen::Ref<const Eigen::VectorXd>& phase_state, const double& dt, const double& input);
+	      
+	      /*if(active_)
 	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0) - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	      else
-		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (0 - phase_);
+		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0);
+		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+	      
+	      phase_state_dot_(0) = phase_state(1);*/
+	      
+	      
+	      
 	      
 	      // Compute the new phase
 	      // FIXME Switch to RungeKutta  
-	      phase_dot_ = phase_ddot_ * dt + phase_dot_prev_; 
-	      phase_ = phase_dot_ * dt + phase_prev_;
+	      //phase_dot_ = phase_ddot_ * dt + phase_dot_prev_; 
+	      //phase_ = phase_dot_ * dt + phase_prev_;
 	  }
 	  
 	  inline void UpdateStateDot()
@@ -388,6 +449,7 @@ class VirtualMechanismInterfaceSecondOrder
 	  
 	  Eigen::VectorXd phase_state_;
 	  Eigen::VectorXd phase_state_dot_;
+	  Eigen::VectorXd phase_state_integrated_;
 	  Eigen::VectorXd state_;
 	  Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
@@ -395,6 +457,8 @@ class VirtualMechanismInterfaceSecondOrder
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
+	  
+	  Eigen::VectorXd k1_, k2_, k3_, k4_;
 
 	  // Gains
 	  double Bf_;
