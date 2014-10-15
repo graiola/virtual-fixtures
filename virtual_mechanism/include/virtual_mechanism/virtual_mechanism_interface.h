@@ -88,13 +88,13 @@ class VirtualMechanismInterfaceFirstOrder
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
 	      phase_ = 1;
-	      phase_dot_ = 0;
+	      //phase_dot_ = 0;
 	    }
 	    else if (phase_ < 0.0)
 	    {
 	      //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 	      phase_ = 0;
-	      phase_dot_ = 0;
+	      //phase_dot_ = 0;
 	    }
 	    
 	    /*clamp_ = 1.0;
@@ -153,8 +153,8 @@ class VirtualMechanismInterfaceFirstOrder
 	      JxJt_ = J_transp_ * J_;
 	      
 	      // Adapt Bf
-	      //Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
-	      Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
+	      Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
+	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
 	      
 	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
 	      
