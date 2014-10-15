@@ -25,7 +25,7 @@ class VirtualMechanismInterfaceFirstOrder
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 10, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),Bf_max_(Bf_max),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
