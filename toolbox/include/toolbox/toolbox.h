@@ -10,8 +10,45 @@
 ////////// BOOST
 #include <boost/bind.hpp>
 
-namespace tool_box {
+namespace tool_box 
+{
 
+class AdaptiveGain
+{
+	public:
+		
+		AdaptiveGain(std::vector<double> gains_params)
+		{
+			assert(gains_params.size()==3);
+			AdaptiveGain(gains_params[0],gains_params[1],gains_params[2]);
+		}
+		
+		AdaptiveGain(double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0)
+		{
+			if(gain_at_inf==0.0) // Constant gain
+				b_ = 0.0;
+			else // Adaptive gain
+			{	
+				// Checks
+				assert(gain_at_inf > 0.0);
+				assert(gain_at_zero > gain_at_inf);
+				assert(zero_slope_error_value > 0.0);
+				b_ = 6/zero_slope_error_value;
+			}
+			c_ = gain_at_inf;
+			a_ = gain_at_zero - gain_at_inf;	
+		}
+		
+		double ComputeGain(const double& error)
+		{
+			return a_ * std::exp(-b_ * std::abs(error)) + c_;
+		}
+		
+	private:
+		double a_;
+		double b_;
+		double c_;
+};
 
 class RosNode
 {

@@ -257,7 +257,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      k4_.fill(0.0);
 	      
               
-
+	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
               
 	  }
 	
@@ -265,6 +265,8 @@ class VirtualMechanismInterfaceSecondOrder
 	   {
 	      if(ros_node_ptr_!=NULL)
 		delete ros_node_ptr_;
+	      if(adaptive_gain_ptr_!=NULL)
+		delete adaptive_gain_ptr_;
 	   }
 	  
 	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
@@ -326,7 +328,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	      
-	      if(true) //FIXME
+	      if(false) //FIXME
 		AdaptGains(pos);
 	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
@@ -390,9 +392,12 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline void DynSystem(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state)
 	  {
 	     if(active_)
-	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
+	     {
+	        Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
-	      else
+	     }
+	     else
 		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input;
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	      phase_state_dot_(0) = phase_state(1);
@@ -476,6 +481,8 @@ class VirtualMechanismInterfaceSecondOrder
 	  double num_; 
 	  
 	  double clamp_;
+	  
+	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 };
 
 }
