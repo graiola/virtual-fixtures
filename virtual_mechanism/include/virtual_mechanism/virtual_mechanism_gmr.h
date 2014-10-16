@@ -32,12 +32,20 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
-
+	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos);
+	  
 	  boost::shared_ptr<fa_t> fa_ptr_;
 
 	  Eigen::MatrixXd fa_input_;
 	  Eigen::MatrixXd fa_output_;
 	  Eigen::MatrixXd fa_output_dot_;
+	  Eigen::MatrixXd variance_;
+	  
+	  Eigen::VectorXd normal_vector_;
+	  double std_variance_;
+	  double max_std_variance_;
+	  double K_max_;
+	  double K_min_;
 	  
 };
 

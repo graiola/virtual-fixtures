@@ -325,7 +325,10 @@ class VirtualMechanismInterfaceSecondOrder
 	  {
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
-	    
+	      
+	      if(true) //FIXME
+		AdaptGains(pos);
+	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
 	      Update(force_,dt);
 	  }
@@ -357,6 +360,7 @@ class VirtualMechanismInterfaceSecondOrder
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
+	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos){}
           
 
 	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state, Eigen::Ref<Eigen::VectorXd> phase_state_integrated)
