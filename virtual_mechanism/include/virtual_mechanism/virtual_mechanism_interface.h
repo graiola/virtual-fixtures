@@ -328,7 +328,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	      
-	      if(false) //FIXME
+	      if(true) //FIXME
 		AdaptGains(pos);
 	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);

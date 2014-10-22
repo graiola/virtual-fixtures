@@ -40,9 +40,13 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  Eigen::MatrixXd fa_output_;
 	  Eigen::MatrixXd fa_output_dot_;
 	  Eigen::MatrixXd variance_;
+	  Eigen::MatrixXd covariance_;
+	  Eigen::MatrixXd covariance_inv_;
 	  
 	  Eigen::VectorXd normal_vector_;
+	  
 	  double std_variance_;
+	  //double distance_;
 	  double max_std_variance_;
 	  double K_max_;
 	  double K_min_;
