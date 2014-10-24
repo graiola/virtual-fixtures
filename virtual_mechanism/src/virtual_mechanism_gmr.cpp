@@ -87,13 +87,13 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
 double VirtualMechanismGmr::getDistance(const Ref<const VectorXd>& pos)
 {
   
-  for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
-    covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
-  
+  //for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
+  //  covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
   //distance_ = std::sqrt(pos.transpose()*covariance_inv_*state_);
+  //return  std::sqrt(pos.transpose()*covariance_inv_*state_);
   
-  return  std::sqrt(pos.transpose()*covariance_inv_*state_);
-  
+  return  (pos - state_).norm();
+
 }
 
 

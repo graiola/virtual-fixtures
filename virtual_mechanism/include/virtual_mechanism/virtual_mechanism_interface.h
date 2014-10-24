@@ -256,6 +256,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
 	      
+	      fade_ = 0.0;
               
 	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
               
@@ -328,7 +329,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	      
-	      if(true) //FIXME
+	      if(false) //FIXME
 		AdaptGains(pos);
 	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
@@ -393,13 +394,21 @@ class VirtualMechanismInterfaceSecondOrder
 	  {
 	     if(active_)
 	     {
-	        Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
+		
+		fade_ = 100 * (1 - fade_) * dt + fade_;
+		
+		Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+		
+		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	     }
 	     else
-		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input;
+	     {
+		fade_ = 100 * (fade_) * dt + fade_;
+	       
+		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+	     }
 	      phase_state_dot_(0) = phase_state(1);
 	  }
 	  
@@ -478,7 +487,9 @@ class VirtualMechanismInterfaceSecondOrder
 	   
 	  // Tmp variables
 	  double det_;
-	  double num_; 
+	  double num_;
+	  
+	  double fade_;
 	  
 	  double clamp_;
 	  
