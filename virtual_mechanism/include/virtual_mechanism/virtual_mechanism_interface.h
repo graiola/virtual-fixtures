@@ -347,6 +347,7 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline void getStateDot(Eigen::Ref<Eigen::VectorXd> state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
 	  inline double getK() const {return K_;}
 	  inline double getB() const {return B_;}
+	  inline double getFade() const {return fade_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  inline void setActive(const bool active) {active_ = active;}
