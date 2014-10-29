@@ -84,6 +84,16 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
    
 }
 
+void VirtualMechanismGmr::getLocalKernel(Ref<VectorXd> mean_variance) const
+{
+  assert(mean_variance.size() == state_dim_*2);
+  for(int i = 0; i < state_dim_; i++)
+  {
+    mean_variance(i) = state_(i);
+    mean_variance(i+3) = variance_(i);
+  }
+}
+
 double VirtualMechanismGmr::getDistance(const Ref<const VectorXd>& pos)
 {
   
