@@ -67,7 +67,7 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
    fa_input_(0,0) = phase_; // Convert to Eigen Matrix
    fa_ptr_->predictVariance(fa_input_,variance_);
    
-   covariance_ = variance_.row(0).asDiagonal();
+   //covariance_ = variance_.row(0).asDiagonal();
    
    /*normal_vector_ = (pos-state_)/(pos-state_).norm(); // NOTE it is the error versor
    

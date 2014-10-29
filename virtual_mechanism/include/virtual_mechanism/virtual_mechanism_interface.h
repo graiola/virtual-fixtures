@@ -163,7 +163,7 @@ class VirtualMechanismInterfaceFirstOrder
 	      
 	      // Adapt Bf
 	      Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
-	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_;
+	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
 	      
 	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
 	      
@@ -329,7 +329,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	      
-	      if(false) //FIXME
+	      if(true) //FIXME
 		AdaptGains(pos);
 	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
