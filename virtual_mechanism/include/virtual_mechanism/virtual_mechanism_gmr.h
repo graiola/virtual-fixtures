@@ -35,7 +35,7 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
-	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos);
+	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos, const double dt);
 	  
 	  boost::shared_ptr<fa_t> fa_ptr_;
 

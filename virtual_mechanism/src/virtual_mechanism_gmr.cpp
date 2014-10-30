@@ -39,12 +39,11 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
   
   std_variance_ = 0.0;
   //distance_ = 0.0;
-  max_std_variance_ = 0.1; // HACK
+  max_std_variance_ = 0.04; // HACK
   K_max_ = K_;
   K_min_ = 100;
   
-  
-  
+
 }
 
 void VirtualMechanismGmr::UpdateJacobian()
@@ -66,7 +65,7 @@ void VirtualMechanismGmr::UpdateState()
   //state_ = fa_output_;
 }
 
-void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
+void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos,  const double dt)
 {
    fa_input_(0,0) = phase_; // Convert to Eigen Matrix
    fa_ptr_->predictVariance(fa_input_,variance_);
@@ -74,7 +73,10 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
    covariance_ = variance_.row(0).asDiagonal();
    
    if((pos-state_).norm() <= 0.001)
+   {
+     std::cout<<"skip"<<std::endl;
      normal_vector_ = prev_normal_vector_;
+   }
    else
      normal_vector_ = (pos-state_)/(pos-state_).norm(); // NOTE it is the error versor
    
@@ -82,13 +84,17 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos)
    
    prev_normal_vector_ = normal_vector_;
    
-   K_ = K_max_ - (K_max_/max_std_variance_) * std_variance_;
+   //K_ = K_max_ - (K_max_/max_std_variance_) * std_variance_;
+   
+   K_ = dt * (100 * ((K_max_ - (K_max_/max_std_variance_) * std_variance_) - K_ )) + K_;
    
    if(K_ < K_min_)
      K_ = K_min_;
+   else if(K_ > K_max_)
+       K_ = K_max_;
+       
    
    //B_ = 2*std::sqrt(K_);
-   
    //std::cout<< std_variance_ << std::endl;
    
 }
