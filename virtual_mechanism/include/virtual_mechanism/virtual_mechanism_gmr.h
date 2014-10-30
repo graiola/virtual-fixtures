@@ -47,6 +47,7 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  Eigen::MatrixXd covariance_inv_;
 	  
 	  Eigen::VectorXd normal_vector_;
+	  Eigen::VectorXd prev_normal_vector_;
 	  
 	  double std_variance_;
 	  //double distance_;
