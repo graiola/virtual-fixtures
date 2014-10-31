@@ -43,6 +43,9 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
   K_max_ = K_;
   K_min_ = 100;
   
+  // By default don't use the Mahalanobis distance
+  use_weighted_dist_ = false;
+  
   // Create the scale adapter
   gain_adapter_.Create(K_min_,0.0,0.0,K_max_,0.0,max_std_variance_);
 
@@ -116,15 +119,22 @@ void VirtualMechanismGmr::getLocalKernel(Ref<VectorXd> mean_variance) const
   }
 }
 
+void VirtualMechanismGmr::setWeightedDist(const bool& activate)
+{
+  use_weighted_dist_ = activate;
+}
+
 double VirtualMechanismGmr::getDistance(const Ref<const VectorXd>& pos)
 {
   
-  //for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
-  //  covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
-  //distance_ = std::sqrt(pos.transpose()*covariance_inv_*state_);
-  //return  std::sqrt(pos.transpose()*covariance_inv_*state_);
-  
-  return  (pos - state_).norm();
+  if(use_weighted_dist_)
+  {
+    for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
+      covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
+    return std::sqrt(pos.transpose()*covariance_inv_*state_);
+  }
+  else
+    return  (pos - state_).norm();
 
 }
 
