@@ -42,9 +42,10 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
   max_std_variance_ = 0.04; // HACK
   K_max_ = K_;
   K_min_ = 100;
-  
+
+
   // Create the scale adapter
-  gain_adapter_.Create(K_min_,0.0,0.0,K_max_,0.0,max_std_variance_);
+  gain_adapter_.Create(K_min_,0.0,0.0,K_max_,max_std_variance_,0.0);
 
 }
 
