@@ -215,7 +215,7 @@ class VirtualMechanismInterfaceSecondOrder
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
 	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),
-	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
+	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -329,7 +329,7 @@ class VirtualMechanismInterfaceSecondOrder
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	      
-	      if(true) //FIXME
+	      if(adapt_gains_) //FIXME
 		AdaptGains(pos,dt);
 	      
 	      force_ = K_ * (state_ - pos) - B_ * (vel);
@@ -351,6 +351,7 @@ class VirtualMechanismInterfaceSecondOrder
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  inline void setActive(const bool active) {active_ = active;}
+	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  
 	  inline void Init()
           {
@@ -494,6 +495,8 @@ class VirtualMechanismInterfaceSecondOrder
 	  double clamp_;
 	  
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
+	  bool adapt_gains_;
+	  
 };
 
 }
