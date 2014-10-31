@@ -20,7 +20,7 @@ namespace virtual_mechanism_gmr
 class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismInterfaceSecondOrder
 {
 	public:
-	  
+
 	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr);
 
 	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt);
@@ -54,6 +54,8 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  double max_std_variance_;
 	  double K_max_;
 	  double K_min_;
+	  
+	  tool_box::MinJerk gain_adapter_;
 	  
 };
 

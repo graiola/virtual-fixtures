@@ -43,6 +43,8 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
   K_max_ = K_;
   K_min_ = 100;
   
+  // Create the scale adapter
+  gain_adapter_.Create(K_min_,0.0,0.0,K_max_,0.0,max_std_variance_);
 
 }
 
@@ -85,8 +87,13 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos,  const doub
    prev_normal_vector_ = normal_vector_;
    
    //K_ = K_max_ - (K_max_/max_std_variance_) * std_variance_;
+   //K_ = dt * (100 * ((K_max_ - (K_max_/max_std_variance_) * std_variance_) - K_ )) + K_;
    
-   K_ = dt * (100 * ((K_max_ - (K_max_/max_std_variance_) * std_variance_) - K_ )) + K_;
+   gain_adapter_.Compute(std_variance_);
+   gain_adapter_.GetX();
+   
+   K_ = dt * (100 * (gain_adapter_.GetX() - K_ )) + K_;
+   
    
    if(K_ < K_min_)
      K_ = K_min_;
