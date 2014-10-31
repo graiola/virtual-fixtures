@@ -28,7 +28,7 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  
 	  double getDistance(const Eigen::Ref<const Eigen::VectorXd>& pos);
 	 
-	  
+	  void setWeightedDist(const bool& activate);
 	  void getLocalKernel(Eigen::Ref<Eigen::VectorXd> mean_variance) const;
 	  
 	protected:
@@ -55,6 +55,8 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  double K_max_;
 	  double K_min_;
 	  
+	  
+	  bool use_weighted_dist_;
 	  tool_box::MinJerk gain_adapter_;
 	  
 };
