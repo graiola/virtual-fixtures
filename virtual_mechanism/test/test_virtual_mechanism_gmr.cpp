@@ -49,44 +49,19 @@ void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values
 
 fa_t* generateDemoFa(){
 
-	// MAKE THE FUNCTION APPROXIMATORS
-	int input_dim = 1;
-	int n_basis_functions = 25;
+
 	
-	// GMR
-	MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(input_dim,n_basis_functions);
-	FunctionApproximatorGMR* fa = new FunctionApproximatorGMR(meta_parameters_gmr);
-	
-	// Read from file the inputs / targets
-	std::vector<std::vector<double> > data;
-	std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/trj_5.txt";
-	ReadTxtFile(file_name.c_str(),data);
-	
-	MatrixXd inputs = VectorXd::LinSpaced(data.size(),0.0,1.0);;
-	
-	MatrixXd targets(data.size(), data[0].size()-1); // NOTE Skip time
-	for (int i = 0; i < data.size(); i++)
-	  targets.row(i) = VectorXd::Map(&data[i][1],data[0].size()-1);
-	
-	//eigen_data = eigen_data.
-	
-// 	std::cout<<targets<<std::endl;
-// 	std::cout<<"******************"<<std::endl;
-// 	std::cout<<inputs<<std::endl;
-// 	getchar();
-	
-	//std::cout<<inputs.size()<<std::endl;
-	//getchar();
-	//std::cout<<targets<<std::endl;
-	//getchar();
-	
-	fa->train(inputs,targets);
-	
-// 	fa->predict(inputs,targets);
-// 	std::cout<<targets<<std::endl;
-// 	getchar();
-	
-	return fa;  
+  // Read from file the inputs / targets
+  std::vector<std::vector<double> > data;
+  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt";
+  ReadTxtFile(file_name.c_str(),data);
+  
+
+  ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
+  FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
+  
+  
+  return fa_ptr;  
 }
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectly)
@@ -96,8 +71,8 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
-  ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
+  //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
+  //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
   EXPECT_NO_THROW(VirtualMechanismGmr(3,fa_ptr));
 }
 
@@ -110,7 +85,8 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   // Force input interface
   Eigen::VectorXd force;
   force.resize(test_dim);
-  //  force << 100.0, 0.0 , 0.0;
+  force.fill(1.0);
+  //force << 100.0, 0.0 , 0.0;
   
   EXPECT_NO_THROW(vm.Update(force,dt));
   
@@ -139,7 +115,7 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
   // Force input interface
   Eigen::VectorXd force;
   force.resize(test_dim);
-  force << 100.0, 0.0 , 0.0;
+  force.fill(100.0);
   
   // State
   Eigen::VectorXd state;

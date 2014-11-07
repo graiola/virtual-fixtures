@@ -1,6 +1,8 @@
 #ifndef VIRTUAL_MECHANISM_INTERFACE_H
 #define VIRTUAL_MECHANISM_INTERFACE_H
 
+//#define EIGEN_RUNTIME_NO_MALLOC
+
 ////////// ToolBox
 #include "toolbox/toolbox.h"
 
@@ -67,9 +69,8 @@ class VirtualMechanismInterfaceFirstOrder
 		delete ros_node_ptr_;
 	   }
 	  
-	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
+	  inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
-	    
 	    assert(dt > 0.0);
 	    
 	    // Save the previous phase
@@ -157,7 +158,7 @@ class VirtualMechanismInterfaceFirstOrder
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  
-	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
+	  inline void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)
 	  {
 	      JxJt_ = J_transp_ * J_;
 	      
@@ -270,10 +271,13 @@ class VirtualMechanismInterfaceSecondOrder
 		delete adaptive_gain_ptr_;
 	   }
 	  
-	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
+	  inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
 	    
+	    //Eigen::internal::set_is_malloc_allowed(false);
 	    assert(dt > 0.0);
+	    //assert(force.rows() == state_dim_);
+	    //assert(force.cols() == 1);
 	    
 	    // Save the previous phase
 	    phase_prev_ = phase_;
@@ -321,7 +325,9 @@ class VirtualMechanismInterfaceSecondOrder
 	    
 	    // Compute the new state dot
 	    UpdateStateDot();
-	   
+	    
+	    //Eigen::internal::set_is_malloc_allowed(true);
+	    
 	  }
 	  
 	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt)
@@ -398,33 +404,35 @@ class VirtualMechanismInterfaceSecondOrder
 		
 		fade_ = 10 * (1 - fade_) * dt + fade_;
 		
-		Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
 		
-		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
+		
+		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	     }
 	     else
 	     {
 		fade_ = 10 * (-fade_) * dt + fade_;
 	       
-		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
+		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	     }
-	      phase_state_dot_(0) = phase_state(1);
+	     Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+	     phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
+	     phase_state_dot_(0) = phase_state(1);
 	  }
 	  
-	  inline void UpdatePhase(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt)
+	  inline void UpdatePhase(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
-	      JxJt_ = J_transp_ * J_;
-	     
-	      torque_ = J_transp_ * force;
+	      JxJt_.noalias() = J_transp_ * J_;
+	    
+	      torque_.noalias() = J_transp_ * force;
 
 	      phase_state_(0) = phase_;
 	      phase_state_(1) = phase_dot_;
 	      
-	      DynSystem(dt,torque_(0.0),phase_state_);
+	      DynSystem(dt,torque_(0),phase_state_);
 	      
-	      IntegrateStepRungeKutta(dt,torque_(0.0),phase_state_,phase_state_integrated_);
+	      IntegrateStepRungeKutta(dt,torque_(0),phase_state_,phase_state_integrated_);
 	      
 	      phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
