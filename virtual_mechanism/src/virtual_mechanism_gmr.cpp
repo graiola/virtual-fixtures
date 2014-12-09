@@ -56,6 +56,10 @@ void VirtualMechanismGmr::UpdateJacobian()
   fa_input_(0,0) = phase_; // Convert to Eigen Matrix
   fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_);
   
+  fa_ptr_->predictVariance(fa_input_,variance_);
+  covariance_ = variance_.row(0).asDiagonal();
+  
+  
   J_transp_ = fa_output_dot_; // NOTE The output is transposed!
   J_ = J_transp_.transpose();
 
@@ -73,9 +77,9 @@ void VirtualMechanismGmr::UpdateState()
 void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos,  const double dt)
 {
    fa_input_(0,0) = phase_; // Convert to Eigen Matrix
-   fa_ptr_->predictVariance(fa_input_,variance_);
    
-   covariance_ = variance_.row(0).asDiagonal();
+   //fa_ptr_->predictVariance(fa_input_,variance_);
+   //covariance_ = variance_.row(0).asDiagonal();
    
    if((pos-state_).norm() <= 0.001)
    {
@@ -119,7 +123,7 @@ void VirtualMechanismGmr::getLocalKernel(Ref<VectorXd> mean_variance) const
 
 void VirtualMechanismGmr::UpdateInvCov()
 {
-  for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
+  for (int i = 0; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
     covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
 }
 
@@ -132,7 +136,9 @@ double VirtualMechanismGmr::getProbability(const Ref<const VectorXd>& pos)
   // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
   // Hence the 1.0/covariance_inv_.determinant() below
   //  ( (2\pi)^N*|\Sigma| )^(-1/2)
-  return output *= pow(pow(2*M_PI,state_.size())/covariance_inv_.determinant(),-0.5);   
+  
+  return output *= pow(pow(2*M_PI,state_.size())/covariance_inv_.determinant(),-0.5);
+  
 }
 
 
