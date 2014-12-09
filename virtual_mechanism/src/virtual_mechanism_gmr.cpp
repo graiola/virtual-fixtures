@@ -97,13 +97,11 @@ void VirtualMechanismGmr::AdaptGains(const Ref<const VectorXd>& pos,  const doub
    
    K_ = dt * (100 * (gain_adapter_.GetX() - K_ )) + K_;
    
-   
    if(K_ < K_min_)
      K_ = K_min_;
    else if(K_ > K_max_)
        K_ = K_max_;
        
-   
    //B_ = 2*std::sqrt(K_);
    //std::cout<< std_variance_ << std::endl;
    
@@ -119,6 +117,25 @@ void VirtualMechanismGmr::getLocalKernel(Ref<VectorXd> mean_variance) const
   }
 }
 
+void VirtualMechanismGmr::UpdateInvCov()
+{
+  for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
+    covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
+}
+
+double VirtualMechanismGmr::getProbability(const Ref<const VectorXd>& pos)
+{
+
+  UpdateInvCov();
+  
+  double output = exp(-0.5*(pos - state_).transpose()*covariance_inv_*(pos - state_));
+  // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
+  // Hence the 1.0/covar_inverse.determinant() below
+  //  ( (2\pi)^N*|\Sigma| )^(-1/2)
+  return output *= pow(pow(2*M_PI,state_.size())/covariance_inv_.determinant(),-0.5);   
+}
+
+
 void VirtualMechanismGmr::setWeightedDist(const bool& activate)
 {
   use_weighted_dist_ = activate;
@@ -129,9 +146,10 @@ double VirtualMechanismGmr::getDistance(const Ref<const VectorXd>& pos)
   
   if(use_weighted_dist_)
   {
-    for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
-      covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
-    return std::sqrt(pos.transpose()*covariance_inv_*state_);
+    UpdateInvCov();
+    //for (int i = 1; i<state_dim_; i++) // NOTE We assume that is a diagonal matrix
+    //  covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
+    return std::sqrt((pos - state_).transpose()*covariance_inv_*(pos - state_));
   }
   else
     return  (pos - state_).norm();
