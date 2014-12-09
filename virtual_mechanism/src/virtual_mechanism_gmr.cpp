@@ -130,7 +130,7 @@ double VirtualMechanismGmr::getProbability(const Ref<const VectorXd>& pos)
   
   double output = exp(-0.5*(pos - state_).transpose()*covariance_inv_*(pos - state_));
   // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
-  // Hence the 1.0/covar_inverse.determinant() below
+  // Hence the 1.0/covariance_inv_.determinant() below
   //  ( (2\pi)^N*|\Sigma| )^(-1/2)
   return output *= pow(pow(2*M_PI,state_.size())/covariance_inv_.determinant(),-0.5);   
 }

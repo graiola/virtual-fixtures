@@ -11,6 +11,7 @@
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
 #include <boost/concept_check.hpp>
 //#include <eigen3/Eigen/SVD>
 //#include <eigen3/Eigen/Geometry>
@@ -214,7 +215,7 @@ class VirtualMechanismInterfaceFirstOrder
 class VirtualMechanismInterfaceSecondOrder
 {
 	public:
-	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
+	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
 	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),
 	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
 	  {
