@@ -17,7 +17,7 @@ namespace virtual_mechanism_gmr
   
   typedef DmpBbo::FunctionApproximatorGMR fa_t;
   
-class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismInterfaceSecondOrder
+class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder
 {
 	public:
 

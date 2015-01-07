@@ -10,7 +10,7 @@ using namespace DmpBbo;
 namespace virtual_mechanism_gmr 
 {
 
-VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VirtualMechanismInterfaceSecondOrder(state_dim) // FIXME
+VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VirtualMechanismInterfaceFirstOrder(state_dim) // FIXME
 {
   
   // Load from txt file
