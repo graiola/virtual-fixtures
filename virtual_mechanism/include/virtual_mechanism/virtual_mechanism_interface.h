@@ -124,12 +124,12 @@ class VirtualMechanismInterfaceFirstOrder
 	   
 	  }
 	  
-	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt,  const double scale = 1.0)
+	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt)
 	  {
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	    
-	      force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
+	      force_ = K_ * (state_ - pos) - B_ * (vel);
 	      Update(force_,dt);
 	  }
 	  
@@ -331,15 +331,15 @@ class VirtualMechanismInterfaceSecondOrder
 	    
 	  }
 	  
-	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt, const double scale = 1.0)
+	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt)
 	  {
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
-	    
+	      
 	      if(adapt_gains_) //FIXME
 		AdaptGains(pos,dt);
 	      
-	      force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
+	      force_ = K_ * (state_ - pos) - B_ * (vel);
 	      Update(force_,dt);
 	  }
 	  
