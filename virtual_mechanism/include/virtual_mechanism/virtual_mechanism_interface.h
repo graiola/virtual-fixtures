@@ -146,11 +146,6 @@ class VirtualMechanismInterfaceFirstOrder
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
 	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  
-	  // FIXME Added for compatibility with second order interface
-          inline double getFade() const {return 0.0;}
-          inline void setActive(const bool active) {}
-          inline void setAdaptGains(const bool adapt_gains) {}
-	  
           inline void Init()
           {
               // Initialize the attributes
@@ -166,8 +161,7 @@ class VirtualMechanismInterfaceFirstOrder
 	  
 	  inline void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)
 	  {
-              
-	      JxJt_.noalias() = J_transp_ * J_;
+	      JxJt_ = J_transp_ * J_;
 	      
 	      // Adapt Bf
 	      Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_;
@@ -175,7 +169,7 @@ class VirtualMechanismInterfaceFirstOrder
 	      
 	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
 	      
-	      torque_.noalias() = J_transp_ * force;
+	      torque_ = J_transp_ * force;
 	      
 	      // Compute phase dot
 	      phase_dot_ = num_/det_ * torque_(0,0); // FIXME I don't like that
@@ -410,6 +404,8 @@ class VirtualMechanismInterfaceSecondOrder
 	     {
 		
 		fade_ = 10 * (1 - fade_) * dt + fade_;
+		
+		
 		
 		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
