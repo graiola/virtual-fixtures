@@ -54,9 +54,16 @@ VirtualMechanismGmr::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> 
 void VirtualMechanismGmr::UpdateJacobian()
 {
   fa_input_(0,0) = phase_; // Convert to Eigen Matrix
-  fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_);
+  fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
   
-  fa_ptr_->predictVariance(fa_input_,variance_);
+  //std::cout << " *** BEFORE *** " << std::endl;
+  //std::cout << variance_ << std::endl;
+  
+  //fa_ptr_->predictVariance(fa_input_,variance_);
+  
+  //std::cout << " *** AFTER *** " << std::endl;
+  // std::cout << variance_ << std::endl;
+  
   covariance_ = variance_.row(0).asDiagonal();
   
   
@@ -136,8 +143,9 @@ double VirtualMechanismGmr::getProbability(const Ref<const VectorXd>& pos)
   // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
   // Hence the 1.0/covariance_inv_.determinant() below
   //  ( (2\pi)^N*|\Sigma| )^(-1/2)
-  
+
   return output *= pow(pow(2*M_PI,state_.size())/covariance_inv_.determinant(),-0.5);
+  //return output;
   
 }
 
