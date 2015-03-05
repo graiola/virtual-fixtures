@@ -62,7 +62,7 @@ class VirtualMechanismInterface
 		delete ros_node_ptr_;
 	   }
 	  
-	  virtual inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  virtual void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
 	    assert(dt > 0.0);
 	    
@@ -87,7 +87,7 @@ class VirtualMechanismInterface
 	   
 	  }
 	  
-	  virtual inline void ApplySaturation()
+	  virtual void ApplySaturation()
 	  {
 	      // Saturations
 	      if(phase_ > 1.0)
@@ -267,7 +267,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 		delete adaptive_gain_ptr_;
 	   }
 	  
-	  virtual inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
+	  
+	  virtual void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
 	    
 	    phase_dot_prev_ = phase_dot_;
@@ -275,7 +277,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	  }
 	  
-	  virtual inline void ApplySaturation()
+	  virtual void ApplySaturation()
 	  {
 	      // Saturations
 	      if(phase_ > 1.0)
@@ -296,13 +298,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  inline double getFade() const {return fade_;} // For test purpose
 	  inline void setActive(const bool active) {active_ = active;}
 	  
-	  inline void Init()
-          {
-              // Initialize the attributes
-              UpdateJacobian();
-              UpdateState();
-              UpdateStateDot();
-          }
 	  
 	protected:
 	    
@@ -352,7 +347,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	     phase_state_dot_(0) = phase_state(1);
 	  }
 	  
-	  inline void UpdatePhase(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  virtual void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)
 	  {
 	      JxJt_.noalias() = J_transp_ * J_;
 	    
