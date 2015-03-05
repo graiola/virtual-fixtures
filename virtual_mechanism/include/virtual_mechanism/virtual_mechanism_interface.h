@@ -28,8 +28,8 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B, double Bf_max, double epsilon):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),Bf_max_(Bf_max),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
+	  VirtualMechanismInterface(int state_dim, double K, double B, double epsilon):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -155,7 +155,6 @@ class VirtualMechanismInterface
 
 	  // Gains
 	  double Bf_;
-	  double Bf_max_;
 	  double B_;
 	  double K_;
 	  double epsilon_;
@@ -171,8 +170,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):VirtualMechanismInterface(state_dim,K,B,Bf_max,epsilon)
+	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):VirtualMechanismInterface(state_dim,K,B,epsilon)
 	  {
+	    Bf_max_ = Bf_max;
 	  }
 
 	protected:
@@ -198,13 +198,22 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
 	  }
+	  
+	protected:
+	  
+	  double Bf_max_; // Damp term
+	  
 };
+
+//VirtualMechanismInterface(state_dim,K,B,Bf_max,epsilon)
+// : public VirtualMechanismInterface
 
 class VirtualMechanismInterfaceSecondOrder
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):state_dim_(state_dim),ros_node_ptr_(NULL),
+	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):
+	  state_dim_(state_dim),ros_node_ptr_(NULL),
 	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
