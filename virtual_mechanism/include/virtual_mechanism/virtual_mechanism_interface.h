@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
 	  VirtualMechanismInterface(int state_dim, double K, double B, double epsilon):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),Bf_(0.0),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -154,7 +154,6 @@ class VirtualMechanismInterface
 	  Eigen::MatrixXd J_transp_;
 
 	  // Gains
-	  double Bf_;
 	  double B_;
 	  double K_;
 	  double epsilon_;
@@ -170,9 +169,11 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):VirtualMechanismInterface(state_dim,K,B,epsilon)
+	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):
+	  VirtualMechanismInterface(state_dim,K,B,epsilon)
 	  {
-	    Bf_max_ = Bf_max;
+	    Bd_ = 0.0;
+	    Bd_max_ = Bf_max;
 	  }
 
 	protected:
@@ -185,10 +186,10 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      JxJt_ = J_transp_ * J_;
 	      
 	      // Adapt Bf
-	      Bf_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bf_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
+	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
 	      
-	      det_ = B_ * JxJt_(0,0) + Bf_ * Bf_;
+	      det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
 	      
 	      torque_ = J_transp_ * force;
 	      
@@ -201,50 +202,33 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  
 	protected:
 	  
-	  double Bf_max_; // Damp term
+	  double Bd_; // Damp term
+	  double Bd_max_; // Max damp term
 	  
 };
 
-//VirtualMechanismInterface(state_dim,K,B,Bf_max,epsilon)
-// : public VirtualMechanismInterface
-
-class VirtualMechanismInterfaceSecondOrder
+class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
 	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):
-	  state_dim_(state_dim),ros_node_ptr_(NULL),
-	  phase_prev_(0.0),phase_dot_prev_(0.0),active_(false),phase_(0.0),phase_dot_(0.0),phase_ddot_(0.0),K_(K),B_(B),Kf_(Kf),Bf_(Bf),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
+	  VirtualMechanismInterface(state_dim,K,B,epsilon)
 	  {
-	      assert(state_dim_ == 2 || state_dim_ == 3); 
-	      assert(K_ > 0.0);
-	      assert(B_ > 0.0);
 	      assert(Kf_ > 0.0);
 	      assert(Bf_ > 0.0);
-	      
-	      // Initialize the ros node
-	      try
-	      {
-		ros_node_ptr_ = new tool_box::RosNode("virtual_mechanism"); // FIXME change here the name
-	      }
-	      catch(std::runtime_error err)
-	      {
-		std::cout<<err.what()<<std::endl;
-	      }
+
+	      Kf_ = Kf;
+	      Bf_ = Bf;
+	      phase_dot_prev_ = 0.0;
+	      phase_ddot_ = 0.0;
+	      active_ = false;
+	      adapt_gains_ = false;
 	      
 	      // Resize the attributes
-	      // NOTE We assume that the phase has dim 1
 	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
 	      phase_state_.resize(2); //phase_ and phase_dot
 	      phase_state_integrated_.resize(2);
-	      state_.resize(state_dim);
-	      state_dot_.resize(state_dim);
-	      torque_.resize(1);
-	      force_.resize(state_dim);
-	      J_.resize(state_dim,1);
-	      J_transp_.resize(1,state_dim);
-	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
-	      
+
 	      k1_.resize(2);
 	      k2_.resize(2);
 	      k3_.resize(2);
@@ -261,19 +245,19 @@ class VirtualMechanismInterfaceSecondOrder
               
 	  }
 	
-	  ~VirtualMechanismInterfaceSecondOrder()
+	  virtual ~VirtualMechanismInterfaceSecondOrder()
 	   {
-	      if(ros_node_ptr_!=NULL)
-		delete ros_node_ptr_;
 	      if(adaptive_gain_ptr_!=NULL)
 		delete adaptive_gain_ptr_;
 	   }
 	  
-	  inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  virtual inline void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
 	  {
 	    
+	    phase_dot_prev_ = phase_dot_;
+	    VirtualMechanismInterface::Update(force,dt);
+	    
 	    //Eigen::internal::set_is_malloc_allowed(false);
-	    assert(dt > 0.0);
 	    //assert(force.rows() == state_dim_);
 	    //assert(force.cols() == 1);
 	    
