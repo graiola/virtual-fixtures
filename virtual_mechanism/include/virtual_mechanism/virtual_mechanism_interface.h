@@ -84,7 +84,6 @@ class VirtualMechanismInterface
 	    
 	    // Compute the new state dot
 	    UpdateStateDot();
-	   
 	  }
 	  
 	  virtual void ApplySaturation()
@@ -231,8 +230,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):
 	  VirtualMechanismInterface(state_dim,K,B,epsilon)
 	  {
-	      assert(Kf_ > 0.0);
-	      assert(Bf_ > 0.0);
+	      assert(Kf > 0.0);
+	      assert(Bf > 0.0);
 
 	      Kf_ = Kf;
 	      Bf_ = Bf;
