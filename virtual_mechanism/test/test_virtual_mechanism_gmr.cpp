@@ -20,46 +20,12 @@ using namespace DmpBbo;
 int test_dim = 3;
 double dt = 0.001;
 
-template<typename value_t>
-void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
-    std::string line;
-    values.clear();
-    std::ifstream myfile (filename);
-    std::istringstream iss;
-    std::size_t i=0;
-    std::size_t nb_vals=0;
-    if (myfile.is_open())
-    {
-        while (getline(myfile,line)) {
-            values.push_back(std::vector<value_t>());;
-            std::vector<value_t>& v = values[i];
-            iss.clear();
-            iss.str(line);
-            std::copy(std::istream_iterator<value_t>(iss),std::istream_iterator<value_t>(), std::back_inserter(v));
-            nb_vals+=v.size();
-            i++;
-        }
-	std::cout << "File ["<<filename<<"] read with success  ["<<nb_vals<<" values, "<<i<<" lines] "<<std::endl;
-    }
-    else{
-	 std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
-    }
-    myfile.close();
-}
-
 fa_t* generateDemoFa(){
-
-
 	
-  // Read from file the inputs / targets
-  std::vector<std::vector<double> > data;
-  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt";
-  ReadTxtFile(file_name.c_str(),data);
+  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt"; // FIXME
   
-
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
-  
   
   return fa_ptr;  
 }
