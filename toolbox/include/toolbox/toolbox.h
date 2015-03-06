@@ -1,6 +1,10 @@
 #ifndef TOOLBOX_H
 #define TOOLBOX_H
 
+////////// STD
+#include <iostream>
+#include <fstream>
+
 ////////// ROS
 #include <ros/ros.h>
 
@@ -157,12 +161,44 @@ class RosNode
 
 };
 
-//auto fn_half = std::bind (my_divide,_1,2);               // returns x/2
-//std::cout << fn_half(10) << '\n'; 
-/*RungeKutta(const Eigen::Ref<const Eigen::VectorXd>& state_init , Eigen::Ref<Eigen::VectorXd> state_out, double dt, boost::bind dyn_system)
+/*template <typename _T >
+void operator >>(const YAML::Node& input, _T& value) {
+	value = input.as<_T>();
+}
+template <typename _T >
+void operator >> (const YAML::Node &node, std::vector<_T> & v)
 {
-  dyn_system()
+	for(unsigned i = 0; i < node.size(); i++){
+		v.push_back(node[i].as<_T>());
+	}
 }*/
+
+template<typename value_t>
+void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
+    std::string line;
+    values.clear();
+    std::ifstream myfile (filename);
+    std::istringstream iss;
+    std::size_t i=0;
+    std::size_t nb_vals=0;
+    if (myfile.is_open())
+    {
+        while (getline(myfile,line)) {
+            values.push_back(std::vector<value_t>());;
+            std::vector<value_t>& v = values[i];
+            iss.clear();
+            iss.str(line);
+            std::copy(std::istream_iterator<value_t>(iss),std::istream_iterator<value_t>(), std::back_inserter(v));
+            nb_vals+=v.size();
+            i++;
+        }
+	std::cout << "File ["<<filename<<"] read with success  ["<<nb_vals<<" values, "<<i<<" lines] "<<std::endl;
+    }
+    else{
+	 std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
   
 	
 }
