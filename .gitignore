@@ -1,0 +1,17 @@
+build
+.svn*
+*.log
+*.log.*
+.Trash*
+*.pyc
+*~
+*.kde*
+.libs
+*temps.yml
+.cache
+*.pb.h
+*.pb.cpp
+*.la
+*.lo
+*.kate-swp*
+*_pb2.py
