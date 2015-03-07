@@ -24,10 +24,11 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	}
 	
 	// Retrain the parameters from yaml file
-	std::vector<std::string> model_files;
+	std::vector<std::string> model_names;
+	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
 	
-	main_node["models"] >> model_files;
+	main_node["models"] >> model_names;
 	main_node["prob_mode"] >> prob_mode_string;
 	
 	//main_node["file_names"] >> file_names;
@@ -44,11 +45,11 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    prob_mode_ = PRIORS; // Default
 	
 	// Create the virtual mechanisms starting from the GMM models
- 	for(int i=0;i<model_files.size();i++)
+ 	for(int i=0;i<model_names.size();i++)
 	{
 	    std::vector<std::vector<double> > data;
-	    ReadTxtFile(model_files[i].c_str(),data);
-	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(model_files[i]);
+	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
+	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
 	    vm_vector_.push_back(new VirtualMechanismGmr(dim_,fa_tmp_shr_ptr)); 
 	}
@@ -59,8 +60,8 @@ MechanismManager::MechanismManager()
 {
       dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
       
-      std::string pkg_path = ros::package::getPath("mechanism_manager");	
-      std::string config_file_path(pkg_path+"/config/cfg.yml");
+      pkg_path_ = ros::package::getPath("mechanism_manager");	
+      std::string config_file_path(pkg_path_+"/config/cfg.yml");
       
       if(ReadConfig(config_file_path))
 	  ROS_INFO("Loaded config file: %s",config_file_path.c_str());
