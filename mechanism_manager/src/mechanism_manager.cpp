@@ -8,8 +8,7 @@ namespace mechanism_manager
   using namespace tool_box;
   using namespace Eigen;
   
- 
-  
+
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
 {
 	YAML::Node main_node;
@@ -70,7 +69,6 @@ MechanismManager::MechanismManager()
       
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
-      
       assert(vm_nb_ >= 1);
       
       // Initialize the virtual mechanisms and support vectors
@@ -84,10 +82,36 @@ MechanismManager::MechanismManager()
       // Some Initializations
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
+      robot_position_.resize(dim_);
 	
       // Clear
       scales_ .fill(0.0);
       phase_.fill(0.0);
+      robot_position_.fill(0.0);
+      
+      #ifdef USE_ROS_RT_PUBLISHER
+      try
+      {
+	  ros_node_.Init("mechanism_manager");
+	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
+	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);	  
+	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
+	  for(int i=0; i<vm_nb_;i++)
+	  {
+	    std::string topic_name = "vm_pos_" + std::to_string(i+1);
+	    rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_state_[i].size(),&vm_state_[i]);
+	    //topic_name = "vm_ker_" + std::to_string(i+1);
+	    //boost::shared_ptr<RealTimePublisherMarkers> tmp_ptr = boost::make_shared<RealTimePublisherMarkers>(ros_node_.GetNode(),topic_name,root_name_);
+	    //rt_publishers_markers_.AddPublisher(tmp_ptr,&vm_kernel_[i]);
+	  } 
+      }
+      catch(const std::runtime_error& e)
+      {
+	   ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+      }
+      #endif
+      
+      
 }
   
 MechanismManager::~MechanismManager()
@@ -105,6 +129,8 @@ void MechanismManager::Update(const Ref<const VectorXd>& robot_position, const R
 	assert(robot_velocity.size() == dim_);
 	assert(dt > 0.0);
 	assert(f_out.size() == dim_);
+	
+	robot_position_ = robot_position; // For plot pourpose
 	
 	// Update the virtual mechanisms states, compute single probabilities
 	for(int i=0; i<vm_nb_;i++)
@@ -162,6 +188,12 @@ void MechanismManager::Update(const Ref<const VectorXd>& robot_position, const R
 	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
 	}
 
+	
+	#ifdef USE_ROS_RT_PUBLISHER
+	rt_publishers_values_.PublishAll();
+	rt_publishers_path_.PublishAll();
+	#endif
+	
 	//SAVE_TIME(end_dt_status_);
         //PRINT_TIME(start_dt_status_,end_dt_status_,tmp_dt_status_,"status");
 	//Eigen::internal::set_is_malloc_allowed(true);

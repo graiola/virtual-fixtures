@@ -6,14 +6,26 @@ set(CMAKE_CXX_FLAGS "-std=c++0x")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin 
+  REQUIRED COMPONENTS
   roscpp
   roslib
   rospy
   std_msgs
   toolbox
   virtual_mechanism
+  COMPONENTS
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+  visualization_msgs
+  realtime_tools
 )
+
+if(realtime_tools_FOUND AND sensor_msgs_FOUND)
+   add_definitions(-DUSE_ROS_RT_PUBLISHER)
+   message(STATUS "Realtime tools found")
+endif()
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 

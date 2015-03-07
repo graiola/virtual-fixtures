@@ -1,6 +1,8 @@
 #ifndef MECHANISM_MANAGER_H
 #define MECHANISM_MANAGER_H
 
+//#define USE_ROS_RT_PUBLISHER
+
 ////////// Toolbox
 #include <toolbox/toolbox.h>
 
@@ -38,7 +40,6 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 	      v.push_back(node[i].as<_T>());
 }
   
-  
 class MechanismManager
 {
   
@@ -56,6 +57,8 @@ class MechanismManager
     enum prob_mode_t {CONDITIONAL,PRIORS,MIX};
     prob_mode_t prob_mode_;
     
+    std::string pkg_path_;
+    
     //boost::shared_ptr<fa_t> fa_shr_ptr_; // Function Approximator
     //std::vector<boost::shared_ptr<fa_t> > fa_vector_;
     
@@ -64,6 +67,7 @@ class MechanismManager
     double sum_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
+    Eigen::VectorXd robot_position_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
     
@@ -75,6 +79,14 @@ class MechanismManager
     
     //std::vector<bool> use_weighted_dist_;
     //std::vector<bool> adapt_gains_;
+    
+    
+    
+#ifdef USE_ROS_RT_PUBLISHER
+    tool_box::RosNode ros_node_;
+    tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
+    tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
+#endif
     
 };
 
