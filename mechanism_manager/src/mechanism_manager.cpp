@@ -71,6 +71,8 @@ MechanismManager::MechanismManager()
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
       
+      assert(vm_nb_ >= 1);
+      
       // Initialize the virtual mechanisms and support vectors
       for(int i=0; i<vm_nb_;i++)
       {
