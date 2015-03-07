@@ -6,6 +6,7 @@
 
 ////////// ROS
 #include <ros/ros.h>
+#include <ros/package.h>
 
 ////////// YAML-CPP
 #include <yaml-cpp/yaml.h>

@@ -59,11 +59,13 @@ MechanismManager::MechanismManager()
 {
       dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
       
-      std::string file_path("/home/gennaro/catkin_ws/src/virtual-fixtures/mechanism_manager/config/cfg.yml"); //FIXME
-      if(ReadConfig(file_path))
-	  ROS_INFO("Loaded config file: %s",file_path.c_str());
+      std::string pkg_path = ros::package::getPath("mechanism_manager");	
+      std::string config_file_path(pkg_path+"/config/cfg.yml");
+      
+      if(ReadConfig(config_file_path))
+	  ROS_INFO("Loaded config file: %s",config_file_path.c_str());
       else
-	  ROS_ERROR("Can not load config file: %s",file_path.c_str());
+	  ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
       
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
@@ -106,12 +108,9 @@ void MechanismManager::Update(const Ref<const VectorXd>& robot_position, const R
 	{
 	  vm_vector_[i]->Update(robot_position,robot_velocity,dt);
 	  
-	  
-	  
 	  switch(prob_mode_) 
 	  {
 	    case CONDITIONAL:
-	      
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
 	      break;
 	    case PRIORS:
@@ -133,7 +132,6 @@ void MechanismManager::Update(const Ref<const VectorXd>& robot_position, const R
 	
 	for(int i=0; i<vm_nb_;i++)
 	{
-	  
 	  // Compute the conditional probabilities
 	  switch(prob_mode_) 
 	  {

@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   rospy
   std_msgs
   toolbox
@@ -87,7 +88,7 @@ set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp rospy std_msgs toolbox virtual_mechanism
+  CATKIN_DEPENDS roscpp roslib rospy std_msgs toolbox virtual_mechanism
   DEPENDS system_lib boost dmpbbo yaml-cpp
 )
 
