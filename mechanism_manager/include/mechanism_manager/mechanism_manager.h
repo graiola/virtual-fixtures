@@ -17,6 +17,7 @@
 #include <eigen3/Eigen/Core>
 
 ////////// VIRTUAL_MECHANISM
+#include <virtual_mechanism/virtual_mechanism_interface.h>
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
 
 ////////// Function Approximator
@@ -72,7 +73,7 @@ class MechanismManager
     std::vector<Eigen::VectorXd> vm_state_dot_;
     
     // FIXME Put them in a struct...?
-    std::vector<virtual_mechanism_gmr::VirtualMechanismGmr*> vm_vector_; // TODO to template order
+    std::vector<virtual_mechanism_gmr::VirtualMechanismGmr<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder>* > vm_vector_; // TODO move chose of template to ReadConfig
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;

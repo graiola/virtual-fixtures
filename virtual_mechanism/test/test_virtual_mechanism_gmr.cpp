@@ -12,6 +12,7 @@
 #include <functionapproximators/MetaParametersGMR.hpp>
 #include <functionapproximators/ModelParametersGMR.hpp>
 
+using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
 using namespace Eigen;
 using namespace boost;
@@ -39,14 +40,16 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr(3,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(3,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(3,fa_ptr));
 }
 
 TEST(VirtualMechanismGmrTest, UpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr vm(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
   
   // Force input interface
   Eigen::VectorXd force;
@@ -54,7 +57,9 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   force.fill(1.0);
   //force << 100.0, 0.0 , 0.0;
   
-  EXPECT_NO_THROW(vm.Update(force,dt));
+  EXPECT_NO_THROW(vm1.Update(force,dt));
+  EXPECT_NO_THROW(vm2.Update(force,dt));
+  
   
 //   Eigen::VectorXd state;
 //   state.resize(test_dim);
@@ -67,7 +72,8 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   pos.resize(test_dim);
   Eigen::VectorXd vel;
   vel.resize(test_dim);
-  EXPECT_NO_THROW(vm.Update(pos,vel,dt));
+  EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
+  EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
 }
 
 TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
@@ -76,7 +82,8 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
   
   double phase, phase_dot;
   
-  VirtualMechanismGmr vm(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
   
   // Force input interface
   Eigen::VectorXd force;
@@ -88,22 +95,36 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
   state.resize(test_dim);
   Eigen::VectorXd state_dot;
   state_dot.resize(test_dim);
+  
   for (int i = 0; i < 500; i++)
   {
-    vm.Update(force,dt);
-    vm.getState(state);
-    vm.getStateDot(state_dot);
-    phase = vm.getPhase();
-    phase_dot = vm.getPhaseDot();
+    vm1.Update(force,dt);
+    vm1.getState(state);
+    vm1.getStateDot(state_dot);
+    phase = vm1.getPhase();
+    phase_dot = vm1.getPhaseDot();
     
-    std::cout<<"*******"<<std::endl;
-    std::cout<<"STATE\n "<<state<<std::endl;
-    std::cout<<"PHASE "<<phase<<std::endl;
-    std::cout<<"PHASE_DOT "<<phase_dot<<std::endl;
-    
+    //std::cout<<"*******"<<std::endl;
+    //std::cout<<"STATE\n "<<state<<std::endl;
+    //std::cout<<"PHASE "<<phase<<std::endl;
+    //std::cout<<"PHASE_DOT "<<phase_dot<<std::endl;
   }
+  EXPECT_NO_THROW(vm1.getStateDot(state_dot));
   
-  EXPECT_NO_THROW(vm.getStateDot(state_dot));
+  for (int i = 0; i < 500; i++)
+  {
+    vm2.Update(force,dt);
+    vm2.getState(state);
+    vm2.getStateDot(state_dot);
+    phase = vm2.getPhase();
+    phase_dot = vm2.getPhaseDot();
+    
+    //std::cout<<"*******"<<std::endl;
+    //std::cout<<"STATE\n "<<state<<std::endl;
+    //std::cout<<"PHASE "<<phase<<std::endl;
+    //std::cout<<"PHASE_DOT "<<phase_dot<<std::endl;
+  }
+  EXPECT_NO_THROW(vm2.getStateDot(state_dot));
   
 }
 
@@ -111,17 +132,20 @@ TEST(VirtualMechanismGmrTest, GetMethods)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr vm(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
   
   // State
   Eigen::VectorXd state;
   state.resize(test_dim);
-  EXPECT_NO_THROW(vm.getState(state));
+  EXPECT_NO_THROW(vm1.getState(state));
+  EXPECT_NO_THROW(vm2.getState(state));
   
   // StateDot
   Eigen::VectorXd state_dot;
   state_dot.resize(test_dim);
-  EXPECT_NO_THROW(vm.getStateDot(state_dot));
+  EXPECT_NO_THROW(vm1.getStateDot(state_dot));
+  EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
 
 int main(int argc, char** argv)

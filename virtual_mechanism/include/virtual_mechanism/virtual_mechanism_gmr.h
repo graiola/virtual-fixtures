@@ -16,8 +16,9 @@ namespace virtual_mechanism_gmr
 {
   
   typedef DmpBbo::FunctionApproximatorGMR fa_t;
-  
-class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder
+
+template <class VM_t>  
+class VirtualMechanismGmr: public VM_t
 {
 	public:
 
@@ -27,7 +28,6 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt);
 	  
 	  double getDistance(const Eigen::Ref<const Eigen::VectorXd>& pos);
-	 
 	  void setWeightedDist(const bool& activate);
 	  void getLocalKernel(Eigen::Ref<Eigen::VectorXd> mean_variance) const;
 	  double getProbability(const Eigen::Ref<const Eigen::VectorXd>& pos);
@@ -58,10 +58,8 @@ class VirtualMechanismGmr: public virtual_mechanism_interface::VirtualMechanismI
 	  double K_max_;
 	  double K_min_;
 	  
-	  
 	  bool use_weighted_dist_;
 	  tool_box::MinJerk gain_adapter_;
-	  
 };
 
 }
