@@ -21,6 +21,9 @@ using namespace DmpBbo;
 int test_dim = 3;
 double dt = 0.001;
 
+typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
+typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
+
 fa_t* generateDemoFa(){
 	
   std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt"; // FIXME
@@ -40,16 +43,16 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(3,fa_ptr));
-  EXPECT_NO_THROW(VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(3,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(3,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(3,fa_ptr));
 }
 
 TEST(VirtualMechanismGmrTest, UpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
   
   // Force input interface
   Eigen::VectorXd force;
@@ -82,8 +85,8 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
   
   double phase, phase_dot;
   
-  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
   
   // Force input interface
   Eigen::VectorXd force;
@@ -132,8 +135,8 @@ TEST(VirtualMechanismGmrTest, GetMethods)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
   
   // State
   Eigen::VectorXd state;
