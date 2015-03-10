@@ -50,7 +50,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new VirtualMechanismGmr(dim_,fa_tmp_shr_ptr)); 
+	    vm_vector_.push_back(new vm_t(dim_,fa_tmp_shr_ptr)); 
 	}
 	return true;
 }

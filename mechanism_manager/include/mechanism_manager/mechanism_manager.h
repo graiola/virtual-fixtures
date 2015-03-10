@@ -29,7 +29,8 @@ namespace mechanism_manager
 {
 
 typedef DmpBbo::FunctionApproximatorGMR fa_t;
-  
+typedef virtual_mechanism_gmr::VirtualMechanismGmr<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder> vm_t;  
+
 template <typename _T >
 void operator >>(const YAML::Node& input, _T& value) {
       value = input.as<_T>();
@@ -73,7 +74,7 @@ class MechanismManager
     std::vector<Eigen::VectorXd> vm_state_dot_;
     
     // FIXME Put them in a struct...?
-    std::vector<virtual_mechanism_gmr::VirtualMechanismGmr<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder>* > vm_vector_; // TODO move chose of template to ReadConfig
+    std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
