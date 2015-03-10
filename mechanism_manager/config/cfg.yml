@@ -1,4 +1,4 @@
-models: ['/home/gennaro/catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm_1.txt']
+models: ['gmm_1.txt','gmm_1.txt']
 prob_mode: conditional
 adapt_gains: [false,false]
 use_weighted_dist: [false,false]
