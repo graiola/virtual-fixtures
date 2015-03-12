@@ -49,7 +49,7 @@ class MechanismManager
     MechanismManager();
     ~MechanismManager();
   
-    void Update(const Eigen::Ref<const Eigen::VectorXd>& robot_position, const Eigen::Ref<const Eigen::VectorXd>& robot_velocity, double dt, Eigen::Ref<Eigen::VectorXd> f_out);
+    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
     
   protected:
     

@@ -1,3 +1,5 @@
+#include <toolbox/debug.h>
+
 #include <gtest/gtest.h>
 #include "mechanism_manager/mechanism_manager.h"
 
@@ -46,8 +48,10 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   rob_pos.fill(1.0);
   rob_vel.fill(1.0);
   f_out.fill(0.0);
-
+  
+  START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
+  END_REAL_TIME_CRITICAL_CODE();
 }
 
 int main(int argc, char** argv)

@@ -120,7 +120,7 @@ MechanismManager::~MechanismManager()
 	delete vm_vector_[i];
 }
   
-void MechanismManager::Update(const Ref<const VectorXd>& robot_position, const Ref<const VectorXd>& robot_velocity, double dt, Ref<VectorXd> f_out)
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
 	//Eigen::internal::set_is_malloc_allowed(false);
         //SAVE_TIME(start_dt_status_);
