@@ -43,6 +43,8 @@
   <run_depend>toolbox</run_depend>
   <run_depend>virtual_mechanism</run_depend>
   <run_depend>controller</run_depend>
+  <run_depend>vf_controller</run_depend>
+  <run_depend>mechanism_manager</run_depend>
 	
 
   <!-- The export tag contains other, unspecified, tags -->
