@@ -74,7 +74,7 @@ void VirtualMechanismGmr<VM_t>::UpdateState()
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::AdaptGains(const Ref<const VectorXd>& pos,  const double dt)
+void VirtualMechanismGmr<VM_t>::AdaptGains(const VectorXd& pos,  const double dt)
 {
    fa_input_(0,0) = VM_t::phase_; // Convert to Eigen Matrix
    
@@ -111,7 +111,7 @@ void VirtualMechanismGmr<VM_t>::AdaptGains(const Ref<const VectorXd>& pos,  cons
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::getLocalKernel(Ref<VectorXd> mean_variance) const
+void VirtualMechanismGmr<VM_t>::getLocalKernel(VectorXd& mean_variance) const
 {
   assert(mean_variance.size() == VM_t::state_dim_*2);
   for(int i = 0; i < VM_t::state_dim_; i++)
@@ -129,7 +129,7 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 }
 
 template<class VM_t>
-double VirtualMechanismGmr<VM_t>::getProbability(const Ref<const VectorXd>& pos)
+double VirtualMechanismGmr<VM_t>::getProbability(const VectorXd& pos)
 {
   UpdateInvCov();
    
@@ -149,7 +149,7 @@ void VirtualMechanismGmr<VM_t>::setWeightedDist(const bool& activate)
 }
 
 template<class VM_t>
-double VirtualMechanismGmr<VM_t>::getDistance(const Ref<const VectorXd>& pos)
+double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 {
   
   if(use_weighted_dist_)

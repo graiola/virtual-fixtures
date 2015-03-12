@@ -24,19 +24,19 @@ class VirtualMechanismGmr: public VM_t
 
 	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr);
 
-	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& force, const double dt);
-	  //void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt);
+	  //void Update(const Eigen::VectorXd& force, const double dt);
+	  //void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt);
 	  
-	  double getDistance(const Eigen::Ref<const Eigen::VectorXd>& pos);
+	  double getDistance(const Eigen::VectorXd& pos);
 	  void setWeightedDist(const bool& activate);
-	  void getLocalKernel(Eigen::Ref<Eigen::VectorXd> mean_variance) const;
-	  double getProbability(const Eigen::Ref<const Eigen::VectorXd>& pos);
+	  void getLocalKernel(Eigen::VectorXd& mean_variance) const;
+	  double getProbability(const Eigen::VectorXd& pos);
 	  
 	protected:
 	  
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
-	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos, const double dt);
+	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt);
 	  
 	  void UpdateInvCov();
 
