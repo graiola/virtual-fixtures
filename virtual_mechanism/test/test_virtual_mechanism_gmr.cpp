@@ -1,11 +1,4 @@
-#ifdef EIGEN_MALLOC_CHECKS
-  #define EIGEN_RUNTIME_NO_MALLOC
-  #define START_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
-  #define END_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
-#else
-  #define START_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
-  #define END_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
-#endif
+#include <toolbox/debug.h>
 
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
@@ -74,10 +67,56 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   EXPECT_NO_THROW(vm1.Update(force,dt));
   EXPECT_NO_THROW(vm2.Update(force,dt));
   
-  
   // Cart input interface
   EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
   EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+  
+}
+
+TEST(VirtualMechanismGmrTest, GetProbability)
+{
+  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
+  
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  
+  Eigen::VectorXd pos(test_dim);
+  pos.fill(1.0);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  EXPECT_NO_THROW(vm1.getProbability(pos));
+  EXPECT_NO_THROW(vm2.getProbability(pos));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+}
+
+TEST(VirtualMechanismGmrTest, GetDistance)
+{
+  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
+  
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  
+  Eigen::VectorXd pos(test_dim);
+  pos.fill(1.0);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  EXPECT_NO_THROW(vm1.getDistance(pos));
+  EXPECT_NO_THROW(vm2.getDistance(pos));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+  
+  vm1.setWeightedDist(true);
+  vm2.setWeightedDist(true);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  EXPECT_NO_THROW(vm1.getDistance(pos));
+  EXPECT_NO_THROW(vm2.getDistance(pos));
   
   END_REAL_TIME_CRITICAL_CODE();
   
