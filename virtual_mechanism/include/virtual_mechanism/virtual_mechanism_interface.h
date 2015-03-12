@@ -1,8 +1,6 @@
 #ifndef VIRTUAL_MECHANISM_INTERFACE_H
 #define VIRTUAL_MECHANISM_INTERFACE_H
 
-//#define EIGEN_RUNTIME_NO_MALLOC
-
 ////////// Toolbox
 #include <toolbox/toolbox.h>
 
@@ -62,7 +60,7 @@ class VirtualMechanismInterface
 		delete ros_node_ptr_;
 	   }
 	  
-	  virtual void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
 	    assert(dt > 0.0);
 	    
@@ -103,7 +101,7 @@ class VirtualMechanismInterface
 	      }
 	  }
 	  
-	  inline void Update(const Eigen::Ref<const Eigen::VectorXd>& pos, const Eigen::Ref<const Eigen::VectorXd>& vel , const double dt, const double scale = 1.0)
+	  inline void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt, const double scale = 1.0)
 	  {
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
@@ -111,11 +109,14 @@ class VirtualMechanismInterface
 	      if(adapt_gains_) //FIXME
 		AdaptGains(pos,dt);
 	      
-	      force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
+	      force_ = K_ * (state_ - pos);
+	      force_ = force_ - B_ * vel;
+	      force_ = scale * force_;
+	      //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
 	      Update(force_,dt);
 	  }
 	  
-	  virtual void AdaptGains(const Eigen::Ref<const Eigen::VectorXd>& pos, const double dt){}
+	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  
 	  inline double getDet() const {return det_;} // For test purpose
@@ -123,8 +124,8 @@ class VirtualMechanismInterface
 	  
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
-	  inline void getState(Eigen::Ref<Eigen::VectorXd> state) const {assert(state.size() == state_dim_); state = state_;}
-	  inline void getStateDot(Eigen::Ref<Eigen::VectorXd> state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
+	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
+	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
 	  inline double getK() const {return K_;}
 	  inline double getB() const {return B_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
@@ -142,7 +143,7 @@ class VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
-	  virtual void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)=0;
+	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  
 	  inline void UpdateStateDot()
 	  {
@@ -197,9 +198,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  
-	  virtual void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)
+	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
-	      JxJt_ = J_transp_ * J_;
+	      JxJt_.noalias() = J_transp_ * J_;
 	      
 	      // Adapt Bf
 	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
@@ -207,7 +208,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      
 	      det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
 	      
-	      torque_ = J_transp_ * force;
+	      torque_.noalias() = J_transp_ * force;
 	      
 	      // Compute phase dot
 	      phase_dot_ = num_/det_ * torque_(0,0);
@@ -268,7 +269,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
 	  using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
 	  
-	  virtual void Update(Eigen::Ref<Eigen::VectorXd> force, const double dt)
+	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
 	    
 	    phase_dot_prev_ = phase_dot_;
@@ -303,7 +304,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 
-	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state, Eigen::Ref<Eigen::VectorXd> phase_state_integrated)
+	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
 	  {
 	 
 	    phase_state_integrated = phase_state;
@@ -327,7 +328,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
 	  }
 	  
-	  inline void DynSystem(const double& dt, const double& input, const Eigen::Ref<const Eigen::VectorXd>& phase_state)
+	  inline void DynSystem(const double& dt, const double& input, const Eigen::VectorXd& phase_state)
 	  {
 	     if(active_)
 	     {
@@ -346,7 +347,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	     phase_state_dot_(0) = phase_state(1);
 	  }
 	  
-	  virtual void UpdatePhase(Eigen::Ref<const Eigen::VectorXd> force, const double dt)
+	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
 	      JxJt_.noalias() = J_transp_ * J_;
 	    
@@ -363,7 +364,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      phase_dot_ = phase_state_integrated_(1);
 	      phase_ddot_ = phase_state_dot_(1);
 	      
-	      //DynSystem(const Eigen::Ref<const Eigen::VectorXd>& phase_state, const double& dt, const double& input);
+	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
 	      
 	      /*if(active_)
 	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0) - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
