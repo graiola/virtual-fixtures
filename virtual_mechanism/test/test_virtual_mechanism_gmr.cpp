@@ -1,3 +1,12 @@
+#ifdef EIGEN_MALLOC_CHECKS
+  #define EIGEN_RUNTIME_NO_MALLOC
+  #define START_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
+  #define END_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
+#else
+  #define START_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+  #define END_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+#endif
+
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 
@@ -54,32 +63,27 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
   VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
   
-  // Force input interface
-  Eigen::VectorXd force;
-  force.resize(test_dim);
+  Eigen::VectorXd force(test_dim);
+  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd vel(test_dim);
   force.fill(1.0);
-  //force << 100.0, 0.0 , 0.0;
   
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  // Force input interface
   EXPECT_NO_THROW(vm1.Update(force,dt));
   EXPECT_NO_THROW(vm2.Update(force,dt));
   
   
-//   Eigen::VectorXd state;
-//   state.resize(test_dim);
-//   vm.getState(state);
-//   std::cout<<state<<std::endl;
-//   getchar();
-  
   // Cart input interface
-  Eigen::VectorXd pos;
-  pos.resize(test_dim);
-  Eigen::VectorXd vel;
-  vel.resize(test_dim);
   EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
   EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+  
 }
 
-TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
+/*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
@@ -128,8 +132,7 @@ TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
     //std::cout<<"PHASE_DOT "<<phase_dot<<std::endl;
   }
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
-  
-}
+}*/
 
 TEST(VirtualMechanismGmrTest, GetMethods)
 {

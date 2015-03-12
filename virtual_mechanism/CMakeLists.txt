@@ -3,7 +3,7 @@ project(virtual_mechanism)
 
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++0x")
 set(CMAKE_CXX_FLAGS "-std=c++0x")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 ## Find catkin macros and libraries
