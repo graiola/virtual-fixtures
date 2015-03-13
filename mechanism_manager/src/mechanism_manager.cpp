@@ -29,6 +29,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	main_node["models"] >> model_names;
 	main_node["prob_mode"] >> prob_mode_string;
+        main_node["use_weighted_dist"] >> use_weighted_dist_;
 	
 	//main_node["file_names"] >> file_names;
 	//doc["adapt_gains"] >> use_adapt_gains_;
@@ -75,8 +76,10 @@ MechanismManager::MechanismManager()
       for(int i=0; i<vm_nb_;i++)
       {
 	  vm_vector_[i]->Init();
+          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
 	  vm_state_.push_back(VectorXd(dim_));
 	  vm_state_dot_.push_back(VectorXd(dim_));
+          
       }
       
       // Some Initializations
