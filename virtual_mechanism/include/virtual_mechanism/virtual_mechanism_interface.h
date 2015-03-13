@@ -26,8 +26,8 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B, double epsilon):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),epsilon_(epsilon),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
+	  VirtualMechanismInterface(int state_dim, double K, double B):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -169,8 +169,7 @@ class VirtualMechanismInterface
 	  // Gains
 	  double B_;
 	  double K_;
-	  double epsilon_;
-	   
+	  
 	  // Tmp variables
 	  double det_;
 	  double num_; 
@@ -187,8 +186,10 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	public:
 	  //double K = 300, double B = 34.641016,
 	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):
-	  VirtualMechanismInterface(state_dim,K,B,epsilon)
+	  VirtualMechanismInterface(state_dim,K,B)
 	  {
+            assert(epsilon > 0.1);
+            epsilon_ = epsilon;
 	    Bd_ = 0.0;
 	    Bd_max_ = Bf_max;
 	  }
@@ -221,6 +222,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  
 	  double Bd_; // Damp term
 	  double Bd_max_; // Max damp term
+	  double epsilon_;
 	  
 };
 
@@ -228,8 +230,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916, double epsilon = 0.01):
-	  VirtualMechanismInterface(state_dim,K,B,epsilon)
+	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916):
+	  VirtualMechanismInterface(state_dim,K,B)
 	  {
 	      assert(Kf > 0.0);
 	      assert(Bf > 0.0);
