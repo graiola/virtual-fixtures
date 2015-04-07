@@ -76,7 +76,7 @@ MechanismManager::MechanismManager()
       {
 	  vm_vector_[i]->Init();
 	  vm_state_.push_back(VectorXd(dim_));
-	  vm_state_dot_.push_back(VectorXd(dim_));
+	  //vm_state_dot_.push_back(VectorXd(dim_));
       }
       
       // Some Initializations
@@ -122,9 +122,6 @@ MechanismManager::~MechanismManager()
   
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
-	//Eigen::internal::set_is_malloc_allowed(false);
-        //SAVE_TIME(start_dt_status_);
-  
 	assert(robot_position.size() == dim_);
 	assert(robot_velocity.size() == dim_);
 	assert(dt > 0.0);
@@ -193,10 +190,6 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	rt_publishers_values_.PublishAll();
 	rt_publishers_path_.PublishAll();
 	#endif
-	
-	//SAVE_TIME(end_dt_status_);
-        //PRINT_TIME(start_dt_status_,end_dt_status_,tmp_dt_status_,"status");
-	//Eigen::internal::set_is_malloc_allowed(true);
 }
   
   
