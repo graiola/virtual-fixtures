@@ -75,15 +75,13 @@ class MechanismManager
     
     // FIXME Put them in a struct...?
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
+    std::vector<bool> use_weighted_dist_;
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
     
-    //std::vector<bool> use_weighted_dist_;
     //std::vector<bool> adapt_gains_;
-    
-    
-    
+
 #ifdef USE_ROS_RT_PUBLISHER
     tool_box::RosNode ros_node_;
     tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;

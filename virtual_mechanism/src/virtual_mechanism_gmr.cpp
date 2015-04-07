@@ -158,7 +158,22 @@ double VirtualMechanismGmr<VM_t>::getProbability(const VectorXd& pos)
   // Hence the 1.0/covariance_inv_.determinant() below
   //  ( (2\pi)^N*|\Sigma| )^(-1/2)
 
-  return prob_ *= pow(pow(2*M_PI,VM_t::state_.size())/determinant_cov_,-0.5);
+  prob_ *= pow(pow(2*M_PI,VM_t::state_.size())/determinant_cov_,-0.5);
+  //std::cout<<prob_<<std::endl;
+  return prob_;
+  
+  /*UpdateInvCov();
+   
+  double output = exp(-0.5*(pos - VM_t::state_).transpose()*covariance_inv_*(pos - VM_t::state_));
+  // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
+  // Hence the 1.0/covariance_inv_.determinant() below
+  //  ( (2\pi)^N*|\Sigma| )^(-1/2)
+
+  output *= pow(pow(2*M_PI,VM_t::state_.size())/covariance_inv_.determinant(),-0.5);
+  //std::cout<<output<<std::endl;
+  
+  return output;*/
+  
 }
 
 template<class VM_t>
