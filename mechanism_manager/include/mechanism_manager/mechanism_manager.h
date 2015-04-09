@@ -56,7 +56,7 @@ class MechanismManager
     bool ReadConfig(std::string file_path);
    
   private:
-    enum prob_mode_t {CONDITIONAL,PRIORS,MIX};
+    enum prob_mode_t {CONDITIONAL,NORMALIZED,PRIORS,MIX};
     prob_mode_t prob_mode_;
     
     std::string pkg_path_;
@@ -67,6 +67,7 @@ class MechanismManager
     int vm_nb_;
     int dim_;
     double sum_;
+    double curr_norm_factor_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;

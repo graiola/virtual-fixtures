@@ -37,6 +37,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	if (prob_mode_string == "conditional")
 	    prob_mode_ = CONDITIONAL;
+	if (prob_mode_string == "normalized")
+	    prob_mode_ = NORMALIZED;
 	else if (prob_mode_string == "priors")
 	    prob_mode_ = PRIORS;
 	else if (prob_mode_string == "mix")
@@ -141,6 +143,13 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	    case CONDITIONAL:
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
 	      break;
+	    case NORMALIZED:
+	      curr_norm_factor_ = 1;
+	      for(int k=0; k<vm_nb_;k++)
+		if(k!=i)
+		  curr_norm_factor_ = curr_norm_factor_ * vm_vector_[k]->getDistance(robot_position);
+	      scales_(i) = curr_norm_factor_ * vm_vector_[i]->getProbability(robot_position);
+	      break;
 	    case PRIORS:
 	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position));
 	      break;
@@ -164,6 +173,9 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  switch(prob_mode_) 
 	  {
 	    case CONDITIONAL:
+	      scales_(i) =  scales_(i)/sum_;
+	      break;
+	    case NORMALIZED:
 	      scales_(i) =  scales_(i)/sum_;
 	      break;
 	    case PRIORS:
