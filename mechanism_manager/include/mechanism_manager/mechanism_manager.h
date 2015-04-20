@@ -56,6 +56,9 @@ class MechanismManager
     bool ReadConfig(std::string file_path);
    
   private:
+    
+    void UpdateTrackingReference(const Eigen::VectorXd& robot_position); // To update the reference for the head tracking
+    
     enum prob_mode_t {CONDITIONAL,NORMALIZED,PRIORS,MIX};
     prob_mode_t prob_mode_;
     
@@ -71,6 +74,7 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
+    Eigen::VectorXd tracking_reference_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
     

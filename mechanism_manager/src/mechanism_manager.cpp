@@ -63,7 +63,7 @@ MechanismManager::MechanismManager()
       dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
       
       pkg_path_ = ros::package::getPath("mechanism_manager");	
-      std::string config_file_path(pkg_path_+"/config/cfg.yml");
+      std::string config_file_path(pkg_path_+"/config/cfg.yml"); //FIXME load it from param server
       
       if(ReadConfig(config_file_path))
 	  ROS_INFO("Loaded config file: %s",config_file_path.c_str());
@@ -87,6 +87,7 @@ MechanismManager::MechanismManager()
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
       robot_position_.resize(dim_);
+      tracking_reference_.resize(dim_);
 	
       // Clear
       scales_ .fill(0.0);
@@ -98,7 +99,8 @@ MechanismManager::MechanismManager()
       {
 	  ros_node_.Init("mechanism_manager");
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
-	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);	  
+	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
+	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
 	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
 	  for(int i=0; i<vm_nb_;i++)
 	  {
@@ -120,8 +122,20 @@ MechanismManager::MechanismManager()
   
 MechanismManager::~MechanismManager()
 {
-    for(int i=0;i<vm_vector_.size();i++)
-	delete vm_vector_[i];
+      for(int i=0;i<vm_vector_.size();i++)
+	  delete vm_vector_[i];
+}
+  
+void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
+{
+      for(int i=0; i<vm_nb_;i++)
+      {
+	if (scales_(i) >= 0.8)
+	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
+	else
+	  tracking_reference_ = robot_position;
+      }
+  
 }
   
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
@@ -199,12 +213,12 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
 	}
 
+	UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER
 	rt_publishers_values_.PublishAll();
 	rt_publishers_path_.PublishAll();
 	#endif
 }
-  
   
 }
