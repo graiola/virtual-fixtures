@@ -14,10 +14,6 @@ template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim) // FIXME
 {
   
-  // Load from txt file
-  //ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
-  //FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
-  
   assert(fa_ptr);
   assert(fa_ptr->isTrained());
   assert(fa_ptr->getExpectedInputDim() == 1);
@@ -55,7 +51,49 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<
   
   // Create the scale adapter
   //gain_adapter_.Create(K_min_,0.0,0.0,K_max_,max_std_variance_,0.0);
+  
+  // Initialize the state of the virtual mechanism
+  VM_t::Init();
+}
 
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out) // Not for rt
+{
+  assert(phase_in <= 1.0);
+  assert(phase_in >= 0.0);
+  assert(state_out.size() == VM_t::state_dim_);
+  MatrixXd fa_input, fa_output;
+  fa_input.resize(1,1);
+  fa_output.resize(1,VM_t::state_dim_);
+  fa_input(0,0) = phase_in;
+  fa_ptr_->predict(fa_input,fa_output);
+  state_out = fa_output.transpose();
+}
+
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::ComputeInitialState() 
+{
+  /*MatrixXd fa_input, fa_output;
+  fa_input.resize(1,1);
+  fa_output.resize(1,VM_t::state_dim_);
+  fa_input(0,0) = 0.0;
+  fa_ptr_->predict(fa_input,fa_output);
+  initial_state_ = fa_output.transpose();*/
+  
+  ComputeStateGivenPhase(0.0,VM_t::initial_state_);
+}
+
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::ComputeFinalState()
+{
+  /*MatrixXd fa_input, fa_output;
+  fa_input.resize(1,1);
+  fa_output.resize(1,VM_t::state_dim_);
+  fa_input(0,0) = 1.0;
+  fa_ptr_->predict(fa_input,fa_output);
+  final_state_ = fa_output.transpose();*/
+  
+  ComputeStateGivenPhase(1.0,VM_t::final_state_);
 }
 
 template<class VM_t>
@@ -101,7 +139,8 @@ void VirtualMechanismGmr<VM_t>::AdaptGains(const VectorXd& pos,  const double dt
    
    //K_ = K_max_ - (K_max_/max_std_variance_) * std_variance_;
    //K_ = dt * (100 * ((K_max_ - (K_max_/max_std_variance_) * std_variance_) - K_ )) + K_;
-   
+   virtual void ComputeInitialState()=0;
+	  virtual void ComputeFinalState()=0;
    gain_adapter_.Compute(std_variance_);
    gain_adapter_.GetX();
    

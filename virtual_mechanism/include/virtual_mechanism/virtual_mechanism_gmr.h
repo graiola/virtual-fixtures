@@ -33,7 +33,10 @@ class VirtualMechanismGmr: public VM_t
 	  
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
+	  virtual void ComputeInitialState();
+	  virtual void ComputeFinalState();
 	  void UpdateInvCov();
+	  void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
 
 	  boost::shared_ptr<fa_t> fa_ptr_;
 

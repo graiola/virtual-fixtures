@@ -49,9 +49,12 @@ class VirtualMechanismInterface
 	      state_dot_.resize(state_dim);
 	      torque_.resize(1);
 	      force_.resize(state_dim);
+	      final_state_.resize(state_dim);
+	      initial_state_.resize(state_dim);
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
-	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp 
+	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -117,6 +120,10 @@ class VirtualMechanismInterface
 	  }
 	  
 	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
+	  
+	  virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;};
+	  virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;};
+	  
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  
 	  inline double getDet() const {return det_;} // For test purpose
@@ -137,6 +144,8 @@ class VirtualMechanismInterface
               UpdateJacobian();
               UpdateState();
               UpdateStateDot();
+	      ComputeInitialState();
+	      ComputeFinalState();
           }
 	  
 	protected:
@@ -144,6 +153,8 @@ class VirtualMechanismInterface
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
+	  virtual void ComputeInitialState()=0;
+	  virtual void ComputeFinalState()=0;
 	  
 	  inline void UpdateStateDot()
 	  {
@@ -162,6 +173,8 @@ class VirtualMechanismInterface
 	  Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
 	  Eigen::VectorXd force_;
+	  Eigen::VectorXd initial_state_;
+	  Eigen::VectorXd final_state_;
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
@@ -198,6 +211,8 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
+	  virtual void ComputeInitialState()=0;
+	  virtual void ComputeFinalState()=0;
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
@@ -305,6 +320,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
+	  virtual void ComputeInitialState()=0;
+	  virtual void ComputeFinalState()=0;
 
 	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
 	  {
