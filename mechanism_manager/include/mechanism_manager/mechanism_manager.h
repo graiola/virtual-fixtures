@@ -90,6 +90,7 @@ class MechanismManager
 #ifdef USE_ROS_RT_PUBLISHER
     tool_box::RosNode ros_node_;
     tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
+    tool_box::RealTimePublishers<tool_box::RealTimePublisherPoseStamped> rt_publishers_pose_;
     tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
 #endif
     

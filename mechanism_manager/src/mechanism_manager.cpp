@@ -100,7 +100,7 @@ MechanismManager::MechanismManager()
 	  ros_node_.Init("mechanism_manager");
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
-	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
+	  rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
 	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
 	  for(int i=0; i<vm_nb_;i++)
 	  {
@@ -217,6 +217,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	
 	#ifdef USE_ROS_RT_PUBLISHER
 	rt_publishers_values_.PublishAll();
+	rt_publishers_pose_.PublishAll();
 	rt_publishers_path_.PublishAll();
 	#endif
 }

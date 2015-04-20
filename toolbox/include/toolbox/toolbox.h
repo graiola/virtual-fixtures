@@ -237,6 +237,84 @@ class RealTimePublisherJoints
 		boost::shared_ptr<rt_publisher_t > pub_ptr_;
 };
 
+class RealTimePublisherPoseStamped
+{
+	public:
+		
+		/** Initialize the real time publisher. */
+		RealTimePublisherPoseStamped(const ros::NodeHandle& ros_nh, const std::string topic_name, int msg_size, Eigen::VectorXd init_cond)
+		{
+			// Checks
+			assert(msg_size > 0);
+			assert(topic_name.size() > 0);
+			
+			topic_name_ = topic_name;
+			
+			assert(init_cond.size() >= 3);
+
+			pub_ptr_.reset(new rt_publisher_t(ros_nh,topic_name,10));
+			pub_ptr_->msg_.header.frame_id = "T0"; // HACK
+			
+			pub_ptr_->msg_.pose.position.x = init_cond[0];
+			pub_ptr_->msg_.pose.position.y = init_cond[1];
+			pub_ptr_->msg_.pose.position.z = init_cond[2];
+
+			if(init_cond.size() > 3)
+			{  
+			  pub_ptr_->msg_.pose.orientation.x = init_cond[3];
+			  pub_ptr_->msg_.pose.orientation.y = init_cond[4];
+			  pub_ptr_->msg_.pose.orientation.z = init_cond[5];
+			  pub_ptr_->msg_.pose.orientation.w = init_cond[6];
+			}
+			else // NOTE no orientation
+			{
+			  pub_ptr_->msg_.pose.orientation.x = 0.0;
+			  pub_ptr_->msg_.pose.orientation.y = 0.0;
+			  pub_ptr_->msg_.pose.orientation.z = 0.0;
+			  pub_ptr_->msg_.pose.orientation.w = 1.0;
+			}
+		}
+		/** Publish the topic. */
+		inline void publish(const Eigen::Ref<const Eigen::VectorXd>& in)
+		{
+			if(pub_ptr_ && pub_ptr_->trylock())
+			{ 
+				pub_ptr_->msg_.header.stamp = ros::Time::now();
+				
+				pub_ptr_->msg_.pose.position.x = in[0];
+				pub_ptr_->msg_.pose.position.y = in[1];
+				pub_ptr_->msg_.pose.position.z = in[2];
+				
+				if(in.size() > 3)
+				{  
+				  pub_ptr_->msg_.pose.orientation.x = in[3];
+				  pub_ptr_->msg_.pose.orientation.y = in[4];
+				  pub_ptr_->msg_.pose.orientation.z = in[5];
+				  pub_ptr_->msg_.pose.orientation.w = in[6];
+				
+				}
+				else // NOTE no orientation
+				{
+				  pub_ptr_->msg_.pose.orientation.x = 0.0;
+				  pub_ptr_->msg_.pose.orientation.y = 0.0;
+				  pub_ptr_->msg_.pose.orientation.z = 0.0;
+				  pub_ptr_->msg_.pose.orientation.w = 1.0;
+				}
+				
+				
+				pub_ptr_->unlockAndPublish();
+			}
+		}
+		
+		inline std::string getTopic(){return topic_name_;}
+		
+	private:
+		
+		typedef realtime_tools::RealtimePublisher<geometry_msgs::PoseStamped> rt_publisher_t;
+		std::string topic_name_;
+		boost::shared_ptr<rt_publisher_t > pub_ptr_;
+};
+
 class RealTimePublisherPath
 {
 	public:
