@@ -128,12 +128,12 @@ MechanismManager::~MechanismManager()
   
 void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
 {
+      tracking_reference_ = robot_position;
+  
       for(int i=0; i<vm_nb_;i++)
       {
 	if (scales_(i) >= 0.8)
 	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
-	else
-	  tracking_reference_ = robot_position;
       }
   
 }
