@@ -1,2 +1,6 @@
 vf_controller:
   type: "vf_controller/VFController"
+  ik:
+    damp_max: 0.8
+    epsilon: 0.1
+  

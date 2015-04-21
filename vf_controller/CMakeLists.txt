@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  kdl_kinematics
 )
 
 ## System dependencies are found with CMake's conventions
@@ -31,7 +32,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS pluginlib control_toolbox controller_interface forward_command_controller controller_manager hardware_interface roscpp rospy std_msgs
+ CATKIN_DEPENDS pluginlib control_toolbox controller_interface forward_command_controller controller_manager hardware_interface roscpp rospy std_msgs kdl_kinematics
  DEPENDS system_lib
 )
 
