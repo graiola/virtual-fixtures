@@ -37,7 +37,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	if (prob_mode_string == "conditional")
 	    prob_mode_ = CONDITIONAL;
-	if (prob_mode_string == "normalized")
+	else if (prob_mode_string == "normalized")
 	    prob_mode_ = NORMALIZED;
 	else if (prob_mode_string == "priors")
 	    prob_mode_ = PRIORS;
