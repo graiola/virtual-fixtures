@@ -6,11 +6,11 @@ using namespace kdl_kinematics;
 using namespace Eigen;
 using namespace XmlRpc;
 
-bool VFController::init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh)
+bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh)
 {
   
-    XmlRpcValue damp_max, epsilon; 
-    std::string param_name = "ik/damp_max";
+    XmlRpcValue damp_max, epsilon, root, end_effector; 
+    std::string param_name = "kinematics/damp_max";
     if (!controller_nh.getParam(param_name, damp_max))
     {
 	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
@@ -21,7 +21,7 @@ bool VFController::init(hardware_interface::PositionJointInterface* hw, ros::Nod
 	ROS_ERROR_STREAM("Malformed " + param_name + " specification (namespace: " + param_name + ").");
 	return false;
     }
-    param_name = "ik/epsilon";
+    param_name = "kinematics/epsilon";
     if (!controller_nh.getParam(param_name, epsilon))
     {
 	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
@@ -32,49 +32,59 @@ bool VFController::init(hardware_interface::PositionJointInterface* hw, ros::Nod
 	ROS_ERROR_STREAM("Malformed " + param_name + " specification (namespace: " + param_name + ").");
 	return false;
     }
+    param_name = "kinematics/root";
+    if (!controller_nh.getParam(param_name, root))
+    {
+	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
+	return false;
+    }
+    if (root.getType() != XmlRpcValue::TypeString)
+    {
+	ROS_ERROR_STREAM("Malformed " + param_name + " specification (namespace: " + param_name + ").");
+	return false;
+    }
+    param_name = "kinematics/end_effector";
+    if (!controller_nh.getParam(param_name, end_effector))
+    {
+	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
+	return false;
+    }
+    if (end_effector.getType() != XmlRpcValue::TypeString)
+    {
+	ROS_ERROR_STREAM("Malformed " + param_name + " specification (namespace: " + param_name + ").");
+	return false;
+    }
 
     // Controller sample time
     //dt_ = 1/static_cast<double>(RT_TASK_FREQUENCY);
     
-    // IK
-    std::string root_name = "T0"; //FIXME
-    std::string end_effector_name = "fixed_right_wrist";
+    // KDL kinematics construction
+    //std::string root_name = "T0"; //FIXME
+    //std::string end_effector_name = "fixed_right_wrist";
     try
     {
-	    kin_ = new KDLKinematics (root_name,end_effector_name,damp_max,epsilon);
+	    kin_ = new KDLKinematics (root,end_effector,damp_max,epsilon);
     }
     catch(const std::runtime_error& e)
     {
 	    ROS_ERROR_STREAM("Failed to create kdl kinematics: " << e.what());
 	    return false;
     }
+    
     // Set the kinematic mask
     kin_->setMask("1,1,1,0,0,0"); // xyz
     cart_size_ = kin_->getCartSize();
     Nodf_kin_ = kin_->getNdof();
-    
+
     // Resize
-    //torques_cmd_.resize(Nodf_kin_);
-   
-    // Resize
+    torques_cmd_.resize(Nodf_kin_);
     joint_pos_status_.resize(Nodf_kin_);
+    joint_vel_status_.resize(Nodf_kin_);
     cart_pos_status_.resize(cart_size_);
-    cart_pos_cmd_.resize(cart_size_);
     cart_vel_status_.resize(cart_size_);
-	
-    // User velocity, vf and joint vel commands
+    f_vm_.resize(cart_size_);
     jacobian_.resize(cart_size_,Nodf_kin_);
-    jacobian_t_.resize(Nodf_kin_,cart_size_); // only pos
-    jacobian_t_pinv_.resize(cart_size_,Nodf_kin_); // only pos
-    
-    svd_vect_.resize(cart_size_);
-    svd_.reset(new svd_t(Nodf_kin_,cart_size_)); // It should have the same dimensionality of the problem
-	  
-    // Inverse kinematics pre-allocations
-    svd_->compute(jacobian_t_, ComputeThinU | ComputeThinV); // This is not rt safe! We trigger it here to pre-allocate the internal variables
-    matrixU_t_.resize(cart_size_,Nodf_kin_); // Eigen does some tricks with the dimensionalities, check the .h for info
-    matrixV_.resize(cart_size_,cart_size_);
-    jacobian_t_pinv_tmp_.resize(cart_size_,cart_size_);
+    jacobian_t_.resize(Nodf_kin_,cart_size_); 
     
     // Retrain the joint handles
     joints_.resize(Nodf_kin_);
@@ -111,41 +121,25 @@ bool VFController::init(hardware_interface::PositionJointInterface* hw, ros::Nod
 void VFController::update(const ros::Time& time, const ros::Duration& period)
 {
   
-      for (int i = 0; i<Nodf_kin_; i++)
-        joint_pos_status_(i) = joints_[i].getCommand();
+    for (int i = 0; i<Nodf_kin_; i++)
+    {
+      joint_pos_status_(i) = joints_[i].getPosition();
+      joint_vel_status_(i) = joints_[i].getVelocity();
+    }
   
     kin_->ComputeJac(joint_pos_status_,jacobian_);
-    
     jacobian_t_= jacobian_.transpose();
-    
-    // Compute IK
-    svd_->compute(jacobian_t_, ComputeThinU | ComputeThinV);
-    svd_vect_ = svd_->singularValues();
-    damp_max = 0.001;
-    epsilon = 0.01;
-    for (int i = 0; i < svd_vect_.size(); i++)
-    {
-	    svd_curr = svd_vect_[i];
-	    damp = std::exp(-4/epsilon*svd_vect_[i])*damp_max;
-	    svd_vect_[i] = svd_curr/(svd_curr*svd_curr+damp*damp);
-    }
-    
-    matrixU_t_ = svd_->matrixU().transpose();
-    matrixV_ = svd_->matrixV();
-    
-    jacobian_t_pinv_tmp_ = svd_->matrixV() * svd_vect_.asDiagonal();
-    jacobian_t_pinv_.noalias() = jacobian_t_pinv_tmp_ * matrixU_t_; // NOTE .noalias() does the trick
-    // End Compute IK
-
-    // Robot cart stuff
     kin_->ComputeFk(joint_pos_status_,cart_pos_status_);
     kin_->ComputeFkDot(joint_pos_status_,joint_vel_status_,cart_vel_status_);
     
     // Update the virtual mechanisms
-    mechanism_manager_.Update(cart_pos_status_,cart_vel_status_,dt_,f_vm_);
-  
-    std::cout<<"MAMMT"<<std::endl;
-  
+    mechanism_manager_.Update(cart_pos_status_,cart_vel_status_,period.toSec(),f_vm_);
+
+    torques_cmd_.noalias() = jacobian_t_ * f_vm_;
+    
+    for (int i = 0; i<Nodf_kin_; i++)
+      joints_[i].setCommand(torques_cmd_(i));
+
 }
 
 
