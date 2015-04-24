@@ -50,6 +50,7 @@ class MechanismManager
     ~MechanismManager();
   
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
+    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied);
     
   protected:
     
@@ -71,6 +72,7 @@ class MechanismManager
     int dim_;
     double sum_;
     double curr_norm_factor_;
+    double scale_threshold_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
@@ -81,6 +83,7 @@ class MechanismManager
     // FIXME Put them in a struct...?
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
     std::vector<bool> use_weighted_dist_;
+    std::vector<bool> use_active_guide_;
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;

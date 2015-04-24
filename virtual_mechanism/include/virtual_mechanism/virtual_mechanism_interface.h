@@ -26,12 +26,13 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),det_(1.0),num_(-1.0),clamp_(1.0),adapt_gains_(false)
+	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
 	      assert(B_ > 0.0);
+	      assert(Kf_ > 0.0);
 	      
 	      // Initialize the ros node
 	      try
@@ -125,9 +126,10 @@ class VirtualMechanismInterface
 	  virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;};
 	  
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
+	  inline void setActive(const bool active) {active_ = active;}
 	  
-	  inline double getDet() const {return det_;} // For test purpose
 	  inline double getTorque() const {return torque_(0,0);} // For test purpose
+	  inline double getFade() const {return fade_;} // For test purpose
 	  
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
@@ -183,28 +185,31 @@ class VirtualMechanismInterface
 	  double B_;
 	  double K_;
 	  
-	  // Tmp variables
-	  double det_;
-	  double num_; 
-	  
 	  // Clamping
 	  double clamp_;
 	  
 	  // To activate the gain adapting
 	  bool adapt_gains_;
+	  
+	  // Auto completion
+	  double Kf_;
+	  double fade_;
+	  bool active_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Bf_max = 1, double epsilon = 10):
-	  VirtualMechanismInterface(state_dim,K,B)
+	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bd_max = 1, double epsilon = 10):
+	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
             assert(epsilon > 0.1);
             epsilon_ = epsilon;
 	    Bd_ = 0.0;
-	    Bd_max_ = Bf_max;
+	    Bd_max_ = Bd_max;
+	    det_ = 1.0;
+	    num_ = -1.0;
 	  }
 
 	protected:
@@ -226,14 +231,24 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      
 	      torque_.noalias() = J_transp_ * force;
 	      
+	      if(active_)
+		  fade_ = 10 * (1 - fade_) * dt + fade_;
+
+	      else
+		  fade_ = 10 * (-fade_) * dt + fade_;
+
 	      // Compute phase dot
-	      phase_dot_ = num_/det_ * torque_(0,0);
+	      phase_dot_ = num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
 	      
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
 	  }
 	  
 	protected:
+	  
+	  // Tmp variables
+	  double det_;
+	  double num_; 
 	  
 	  double Bd_; // Damp term
 	  double Bd_max_; // Max damp term
@@ -246,16 +261,14 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
 	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916):
-	  VirtualMechanismInterface(state_dim,K,B)
+	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
-	      assert(Kf > 0.0);
+	      
 	      assert(Bf > 0.0);
-
-	      Kf_ = Kf;
+	      
 	      Bf_ = Bf;
 	      phase_dot_prev_ = 0.0;
 	      phase_ddot_ = 0.0;
-	      active_ = false;
 	      
 	      // Resize the attributes
 	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
@@ -271,8 +284,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
               k2_.fill(0.0);
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
-	      
-	      fade_ = 0.0;
               
 	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
               
@@ -312,10 +323,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  }
 	  
 	  inline double getPhaseDDot() const {return phase_ddot_;}
-	  inline double getFade() const {return fade_;} // For test purpose
-	  inline void setActive(const bool active) {active_ = active;}
-	  
-	  
+
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
@@ -400,10 +408,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      //phase_ = phase_dot_ * dt + phase_prev_;
 	  }
 	  
-
-	  // Switch to auto-completion
-	  bool active_;
-
 	  double phase_dot_prev_;
 	  double phase_ddot_;
 
@@ -416,8 +420,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	  // Fade system variables
 	  double Bf_;
-	  double Kf_;
-	  double fade_;
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 
 };

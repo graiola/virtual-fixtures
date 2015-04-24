@@ -2,5 +2,6 @@ models: ['gmm_1.txt','gmm_1.txt']
 prob_mode: conditional
 adapt_gains: [false,false]
 use_weighted_dist: [false,false]
+use_active_guide: [true,true]
 
 

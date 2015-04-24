@@ -30,6 +30,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	main_node["models"] >> model_names;
 	main_node["prob_mode"] >> prob_mode_string;
         main_node["use_weighted_dist"] >> use_weighted_dist_;
+	main_node["use_active_guide"] >> use_active_guide_;
 	
 	//main_node["file_names"] >> file_names;
 	//doc["adapt_gains"] >> use_adapt_gains_;
@@ -117,6 +118,8 @@ MechanismManager::MechanismManager()
       }
       #endif
       
+      // Define the scale threshold to check when a guide is more "probable"
+      scale_threshold_ = 1/vm_nb_ + 0.2;
       
 }
   
@@ -132,12 +135,27 @@ void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
   
       for(int i=0; i<vm_nb_;i++)
       {
-	if (scales_(i) >= 0.8)
+	if (scales_(i) >= scale_threshold_)
 	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
       }
   
 }
-  
+
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
+{
+  if (!force_applied)
+  {
+     for(int i=0; i<vm_nb_;i++)
+      {
+	if (scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
+	  vm_vector_[i]->setActive(true);
+	else
+	  vm_vector_[i]->setActive(false);
+      }
+  }
+  Update(robot_position,robot_velocity,dt,f_out);
+}
+
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
 	assert(robot_position.size() == dim_);
