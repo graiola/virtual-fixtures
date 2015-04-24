@@ -143,15 +143,18 @@ void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
-  if (!force_applied)
-  {
      for(int i=0; i<vm_nb_;i++)
       {
-	if (scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
+	if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
+        {
 	  vm_vector_[i]->setActive(true);
+          //std::cout << "Active "<< force_applied << std::endl;
+        }
 	else
+        {
 	  vm_vector_[i]->setActive(false);
-      }
+          //std::cout << "Deactive " << force_applied << std::endl;
+        }
   }
   Update(robot_position,robot_velocity,dt,f_out);
 }

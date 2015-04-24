@@ -201,7 +201,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bd_max = 1, double epsilon = 10):
+	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 1, double Bd_max = 1, double epsilon = 10):
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
             assert(epsilon > 0.1);
