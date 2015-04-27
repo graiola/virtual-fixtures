@@ -55,6 +55,8 @@ class VirtualMechanismInterface
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+	      
+	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
 
 	  }
 	
@@ -62,6 +64,8 @@ class VirtualMechanismInterface
 	   {
 	      if(ros_node_ptr_!=NULL)
 		delete ros_node_ptr_;
+	      if(adaptive_gain_ptr_!=NULL)
+		delete adaptive_gain_ptr_;
 	   }
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
@@ -195,6 +199,7 @@ class VirtualMechanismInterface
 	  double Kf_;
 	  double fade_;
 	  bool active_;
+	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -238,6 +243,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 		  fade_ = 10 * (-fade_) * dt + fade_;
 
 	      // Compute phase dot
+	      Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
 	      phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
 	      
 	      // Compute the new phase
@@ -285,15 +291,12 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
               
-	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
-              
 	  }
 	
 	  virtual ~VirtualMechanismInterfaceSecondOrder()
-	   {
-	      if(adaptive_gain_ptr_!=NULL)
-		delete adaptive_gain_ptr_;
-	   }
+	  {
+	    
+	  }
 	  
 	  using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
 	  
@@ -420,7 +423,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	  // Fade system variables
 	  double Bf_;
-	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 
 };
 
