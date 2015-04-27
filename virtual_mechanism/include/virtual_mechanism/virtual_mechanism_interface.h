@@ -238,7 +238,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 		  fade_ = 10 * (-fade_) * dt + fade_;
 
 	      // Compute phase dot
-	      phase_dot_ = num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
+	      phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
 	      
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
