@@ -77,6 +77,7 @@ class MechanismManager
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd tracking_reference_;
+    std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
     

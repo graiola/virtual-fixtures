@@ -85,6 +85,7 @@ MechanismManager::MechanismManager()
       }
       
       // Some Initializations
+      active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
       robot_position_.resize(dim_);
@@ -119,8 +120,7 @@ MechanismManager::MechanismManager()
       #endif
       
       // Define the scale threshold to check when a guide is more "probable"
-      scale_threshold_ = 1/vm_nb_ + 0.2;
-      
+      scale_threshold_ = 1.0/static_cast<double>(vm_nb_) + 0.2;
 }
   
 MechanismManager::~MechanismManager()
@@ -135,7 +135,7 @@ void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
   
       for(int i=0; i<vm_nb_;i++)
       {
-	if (scales_(i) >= scale_threshold_)
+	if (scales_(i) > scale_threshold_)
 	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
       }
   
@@ -143,20 +143,22 @@ void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
-     for(int i=0; i<vm_nb_;i++)
-      {
-	if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
+    for(int i=0; i<vm_nb_;i++)
+    {
+    if (force_applied == false && scales_(i) > scale_threshold_ && use_active_guide_[i] == true)
+    {
+            vm_vector_[i]->setActive(true);
+            active_guide_[i] = true;
+            //std::cout << "Active " <<i<< std::endl;
+    }
+    else
         {
-	  vm_vector_[i]->setActive(true);
-          //std::cout << "Active "<< force_applied << std::endl;
+            vm_vector_[i]->setActive(false);
+            active_guide_[i] = false;
+            //std::cout << "Deactive "<<i<< std::endl;
         }
-	else
-        {
-	  vm_vector_[i]->setActive(false);
-          //std::cout << "Deactive " << force_applied << std::endl;
-        }
-  }
-  Update(robot_position,robot_velocity,dt,f_out);
+    }
+    Update(robot_position,robot_velocity,dt,f_out);
 }
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
