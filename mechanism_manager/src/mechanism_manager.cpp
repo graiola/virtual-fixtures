@@ -29,7 +29,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	main_node["models"] >> model_names;
 	main_node["prob_mode"] >> prob_mode_string;
-        main_node["use_weighted_dist"] >> use_weighted_dist_;
+    main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
 	
 	//main_node["file_names"] >> file_names;
@@ -38,6 +38,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	if (prob_mode_string == "conditional")
 	    prob_mode_ = CONDITIONAL;
+    else if (prob_mode_string == "historical")
+        prob_mode_ = HISTORICAL;
 	else if (prob_mode_string == "normalized")
 	    prob_mode_ = NORMALIZED;
 	else if (prob_mode_string == "priors")
@@ -78,10 +80,10 @@ MechanismManager::MechanismManager()
       // Initialize the virtual mechanisms and support vectors
       for(int i=0; i<vm_nb_;i++)
       {
-	  vm_vector_[i]->Init();
-          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
-	  vm_state_.push_back(VectorXd(dim_));
-	  vm_state_dot_.push_back(VectorXd(dim_));
+         vm_vector_[i]->Init();
+         vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
+         vm_state_.push_back(VectorXd(dim_));
+         vm_state_dot_.push_back(VectorXd(dim_));
       }
       
       // Some Initializations
@@ -90,6 +92,11 @@ MechanismManager::MechanismManager()
       phase_.resize(vm_nb_);
       robot_position_.resize(dim_);
       tracking_reference_.resize(dim_);
+      activation_values_.resize(vm_nb_);
+      for (int i=0;i<vm_nb_;i++) // Resize the queues
+      {
+          activation_values_[i].resize(100); //FIXME
+      }
 	
       // Clear
       scales_ .fill(0.0);
@@ -180,6 +187,12 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	    case CONDITIONAL:
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
 	      break;
+        case HISTORICAL:
+          activation_values_[i].push_front(vm_vector_[i]->getProbability(robot_position));
+          for(int j=0;j<activation_values_[i].size();j++) // Oblivion
+              activation_values_[i][j]*= std::pow(0.8,j);
+          scales_(i) = std::accumulate(activation_values_[i].begin(), activation_values_[i].end(), 0);
+          break;
 	    case NORMALIZED:
 	      curr_norm_factor_ = 1;
 	      for(int k=0; k<vm_nb_;k++)
@@ -212,6 +225,9 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	    case CONDITIONAL:
 	      scales_(i) =  scales_(i)/sum_;
 	      break;
+      case HISTORICAL:
+          scales_(i) =  scales_(i)/sum_;
+          break;
 	    case NORMALIZED:
 	      scales_(i) =  scales_(i)/sum_;
 	      break;
