@@ -27,7 +27,7 @@ class VirtualMechanismInterface
 {
 	public:
 	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),idx_(0)
+	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -55,7 +55,6 @@ class VirtualMechanismInterface
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
-	      prev_phase_dot_.resize(10);
 	      
 	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
 
@@ -75,12 +74,6 @@ class VirtualMechanismInterface
 	    
 	    // Save the previous phase
 	    phase_prev_ = phase_;
-	    
-	    // Save the last phase_dot
-	    if(idx_ >= prev_phase_dot_.size())
-	      idx_ = 0;
-	    prev_phase_dot_(idx_) = phase_dot_;
-	    idx_++;
   
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
@@ -139,6 +132,9 @@ class VirtualMechanismInterface
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  inline void setActive(const bool active) {active_ = active;}
 	  
+	  inline void moveBackward() {move_forward_ = false;}
+	  inline void moveForward() {move_forward_ = true;}
+	  
 	  inline double getTorque() const {return torque_(0,0);} // For test purpose
 	  inline double getFade() const {return fade_;} // For test purpose
 	  
@@ -191,7 +187,6 @@ class VirtualMechanismInterface
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
-	  Eigen::VectorXd prev_phase_dot_;
 
 	  // Gains
 	  double B_;
@@ -207,8 +202,8 @@ class VirtualMechanismInterface
 	  double Kf_;
 	  double fade_;
 	  bool active_;
+	  bool move_forward_;
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
-	  int idx_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -247,12 +242,11 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      
 	      if(active_)
 		  fade_ = 10 * (1 - fade_) * dt + fade_;
-
 	      else
 		  fade_ = 10 * (-fade_) * dt + fade_;
 
 	      // Compute phase dot
-	      if(prev_phase_dot_.sum()/prev_phase_dot_.size() > 0) // Go forward
+	      if(move_forward_) // Go forward
 	      {
 		  Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
 		  phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
