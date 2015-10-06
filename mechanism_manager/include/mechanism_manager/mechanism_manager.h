@@ -16,9 +16,6 @@
 ////////// Eigen
 #include <eigen3/Eigen/Core>
 
-////////// Boost
-#include <boost/circular_buffer.hpp>
-
 ////////// VIRTUAL_MECHANISM
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
@@ -63,7 +60,7 @@ class MechanismManager
     
     void UpdateTrackingReference(const Eigen::VectorXd& robot_position); // To update the reference for the head tracking
     
-    enum prob_mode_t {CONDITIONAL,HISTORICAL,NORMALIZED,PRIORS,MIX};
+    enum prob_mode_t {HARD,POTENTIAL,SOFT};
     prob_mode_t prob_mode_;
     
     std::string pkg_path_;
@@ -79,7 +76,7 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
-    Eigen::VectorXd tracking_reference_;
+    //Eigen::VectorXd tracking_reference_;
     std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
@@ -88,11 +85,10 @@ class MechanismManager
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
     std::vector<bool> use_weighted_dist_;
     std::vector<bool> use_active_guide_;
-    std::vector<boost::circular_buffer<double> > activation_values_;
+    //std::vector<boost::circular_buffer<double> > activation_values_;
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
-    
     //std::vector<bool> adapt_gains_;
 
 #ifdef USE_ROS_RT_PUBLISHER

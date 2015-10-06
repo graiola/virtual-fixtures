@@ -29,25 +29,17 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	main_node["models"] >> model_names;
 	main_node["prob_mode"] >> prob_mode_string;
-    main_node["use_weighted_dist"] >> use_weighted_dist_;
+	main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
 	
-	//main_node["file_names"] >> file_names;
-	//doc["adapt_gains"] >> use_adapt_gains_;
-	//doc["weighted_dist"] >> use_weighted_dist_;
-	
-	if (prob_mode_string == "conditional")
-	    prob_mode_ = CONDITIONAL;
-    else if (prob_mode_string == "historical")
-        prob_mode_ = HISTORICAL;
-	else if (prob_mode_string == "normalized")
-	    prob_mode_ = NORMALIZED;
-	else if (prob_mode_string == "priors")
-	    prob_mode_ = PRIORS;
-	else if (prob_mode_string == "mix")
-	    prob_mode_ = MIX;
+	if (prob_mode_string == "hard")
+	    prob_mode_ = HARD;
+	else if (prob_mode_string == "potential")
+	    prob_mode_ = POTENTIAL;
+	else if (prob_mode_string == "soft")
+	    prob_mode_ = SOFT;
 	else
-	    prob_mode_ = PRIORS; // Default
+	    prob_mode_ = POTENTIAL; // Default
 	
 	// Create the virtual mechanisms starting from the GMM models
  	for(int i=0;i<model_names.size();i++)
@@ -91,13 +83,13 @@ MechanismManager::MechanismManager()
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
       robot_position_.resize(dim_);
-      tracking_reference_.resize(dim_);
-      activation_values_.resize(vm_nb_);
-      for (int i=0;i<vm_nb_;i++) // Resize the queues
+      //tracking_reference_.resize(dim_);
+      //activation_values_.resize(vm_nb_);
+      /*for (int i=0;i<vm_nb_;i++) // Resize the queues
       {
-          activation_values_[i].resize(100); //FIXME
-      }
-	
+          activation_values_[i].resize(5000); //FIXME
+      }*/
+      
       // Clear
       scales_ .fill(0.0);
       phase_.fill(0.0);
@@ -109,7 +101,7 @@ MechanismManager::MechanismManager()
 	  ros_node_.Init("mechanism_manager");
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
-	  rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
+	  //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
 	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
 	  for(int i=0; i<vm_nb_;i++)
 	  {
@@ -136,7 +128,7 @@ MechanismManager::~MechanismManager()
 	  delete vm_vector_[i];
 }
   
-void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
+/*void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
 {
       tracking_reference_ = robot_position;
   
@@ -146,7 +138,7 @@ void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
 	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
       }
   
-}
+}*/
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
@@ -184,26 +176,13 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  
 	  switch(prob_mode_) 
 	  {
-	    case CONDITIONAL:
+	    case HARD:
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
 	      break;
-        case HISTORICAL:
-          activation_values_[i].push_front(vm_vector_[i]->getProbability(robot_position));
-          for(int j=0;j<activation_values_[i].size();j++) // Oblivion
-              activation_values_[i][j]*= std::pow(0.8,j);
-          scales_(i) = std::accumulate(activation_values_[i].begin(), activation_values_[i].end(), 0);
-          break;
-	    case NORMALIZED:
-	      curr_norm_factor_ = 1;
-	      for(int k=0; k<vm_nb_;k++)
-		if(k!=i)
-		  curr_norm_factor_ = curr_norm_factor_ * vm_vector_[k]->getDistance(robot_position);
-	      scales_(i) = curr_norm_factor_ * vm_vector_[i]->getProbability(robot_position);
-	      break;
-	    case PRIORS:
+	    case POTENTIAL:
 	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position));
 	      break;
-	    case MIX:
+	    case SOFT:
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
 	      break;
 	    default:
@@ -222,19 +201,13 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  // Compute the conditional probabilities
 	  switch(prob_mode_) 
 	  {
-	    case CONDITIONAL:
+	    case HARD:
 	      scales_(i) =  scales_(i)/sum_;
 	      break;
-      case HISTORICAL:
-          scales_(i) =  scales_(i)/sum_;
-          break;
-	    case NORMALIZED:
-	      scales_(i) =  scales_(i)/sum_;
-	      break;
-	    case PRIORS:
+	    case POTENTIAL:
 	      scales_(i) = scales_(i);
 	      break;
-	     case MIX:
+	    case SOFT:
 	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position)) * scales_(i)/sum_;
 	      break;
 	    default:
@@ -252,7 +225,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
 	}
 
-	UpdateTrackingReference(robot_position);
+	//UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER
 	rt_publishers_values_.PublishAll();
