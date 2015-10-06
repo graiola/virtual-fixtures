@@ -1,7 +1,4 @@
 models: ['gmm_1.txt']
 prob_mode: hard
-adapt_gains: [false,false]
 use_weighted_dist: [false,false]
 use_active_guide: [false,false]
-
-
