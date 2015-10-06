@@ -1,4 +1,5 @@
 #include "mechanism_manager/mechanism_manager.h"
+#include "../../../../install_isolated/include/mechanism_manager/mechanism_manager.h"
 
 namespace mechanism_manager
 {
@@ -122,22 +123,46 @@ MechanismManager::~MechanismManager()
 	  delete vm_vector_[i];
 }
 
+/*void MechanismManager::MoveForward()
+{
+    for(int i=0; i<vm_nb_;i++)
+      vm_vector_[i].move_forward_ = true;
+}
+
+void MechanismManager::MoveBackward()
+{
+    for(int i=0; i<vm_nb_;i++)
+      vm_vector_[i].move_forward_ = false;
+}*/
+
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied, bool move_forward)
+{
+    for(int i=0; i<vm_nb_;i++)
+    {
+      if(move_forward)
+	vm_vector_[i]->moveForward();
+      else
+	vm_vector_[i]->moveBackward();
+    }
+    Update(robot_position,robot_velocity,dt,f_out,force_applied);
+}
+
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
     for(int i=0; i<vm_nb_;i++)
     {
-    if (force_applied == false && scales_(i) > scale_threshold_ && use_active_guide_[i] == true)
-    {
-            vm_vector_[i]->setActive(true);
-            active_guide_[i] = true;
-            //std::cout << "Active " <<i<< std::endl;
-    }
-    else
-        {
-            vm_vector_[i]->setActive(false);
-            active_guide_[i] = false;
-            //std::cout << "Deactive "<<i<< std::endl;
-        }
+      if (force_applied == false && scales_(i) > scale_threshold_ && use_active_guide_[i] == true)
+      {
+	      vm_vector_[i]->setActive(true);
+	      active_guide_[i] = true;
+	      //std::cout << "Active " <<i<< std::endl;
+      }
+      else
+	  {
+	      vm_vector_[i]->setActive(false);
+	      active_guide_[i] = false;
+	      //std::cout << "Deactive "<<i<< std::endl;
+	  }
     }
     Update(robot_position,robot_velocity,dt,f_out);
 }
@@ -204,7 +229,9 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  //K_ = vm_vector_[i]->getK();
 	  //B_ = vm_vector_[i]->getB();
 	  
+	  
 	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
+	    
 	}
 
 	//UpdateTrackingReference(robot_position);

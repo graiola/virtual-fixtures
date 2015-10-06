@@ -51,6 +51,12 @@ class MechanismManager
   
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied);
+    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
+    inline double GetPhase(const int idx) {return vm_vector_[idx]->getPhase();}
+    inline int GetNbVms() {return vm_nb_;}
+    //void MoveForward();
+    //void MoveBackward();
+    
     
   protected:
     
