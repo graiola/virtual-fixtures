@@ -83,12 +83,6 @@ MechanismManager::MechanismManager()
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
       robot_position_.resize(dim_);
-      //tracking_reference_.resize(dim_);
-      //activation_values_.resize(vm_nb_);
-      /*for (int i=0;i<vm_nb_;i++) // Resize the queues
-      {
-          activation_values_[i].resize(5000); //FIXME
-      }*/
       
       // Clear
       scales_ .fill(0.0);
@@ -127,18 +121,6 @@ MechanismManager::~MechanismManager()
       for(int i=0;i<vm_vector_.size();i++)
 	  delete vm_vector_[i];
 }
-  
-/*void MechanismManager::UpdateTrackingReference(const VectorXd& robot_position)
-{
-      tracking_reference_ = robot_position;
-  
-      for(int i=0; i<vm_nb_;i++)
-      {
-	if (scales_(i) > scale_threshold_)
-	  vm_vector_[i]->getFinalPos(tracking_reference_); // FIXME I could pre-load them, in order to avoid the copy
-      }
-  
-}*/
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {

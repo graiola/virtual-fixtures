@@ -76,7 +76,6 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
-    //Eigen::VectorXd tracking_reference_;
     std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
@@ -89,7 +88,6 @@ class MechanismManager
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
-    //std::vector<bool> adapt_gains_;
 
 #ifdef USE_ROS_RT_PUBLISHER
     tool_box::RosNode ros_node_;
