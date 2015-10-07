@@ -24,7 +24,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/epsilon";
     if (!controller_nh.getParam(param_name, epsilon))
     {
-	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No epsilon given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (epsilon.getType() != XmlRpcValue::TypeDouble)
@@ -35,7 +35,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/root";
     if (!controller_nh.getParam(param_name, root))
     {
-	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No root given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (root.getType() != XmlRpcValue::TypeString)
@@ -46,7 +46,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/end_effector";
     if (!controller_nh.getParam(param_name, end_effector))
     {
-	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No end_effector given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (end_effector.getType() != XmlRpcValue::TypeString)
