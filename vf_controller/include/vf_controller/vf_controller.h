@@ -54,6 +54,8 @@ private:
   Eigen::VectorXd cart_pos_status_;
   Eigen::VectorXd cart_vel_status_;
   Eigen::VectorXd f_vm_;
+  Eigen::VectorXd t_vm_;
+  Eigen::VectorXd ft_vm_;
   
   Eigen::MatrixXd jacobian_;
   Eigen::MatrixXd jacobian_t_;               

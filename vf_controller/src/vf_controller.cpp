@@ -24,7 +24,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/epsilon";
     if (!controller_nh.getParam(param_name, epsilon))
     {
-	ROS_ERROR_STREAM("No epsilon given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (epsilon.getType() != XmlRpcValue::TypeDouble)
@@ -35,7 +35,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/root";
     if (!controller_nh.getParam(param_name, root))
     {
-	ROS_ERROR_STREAM("No root given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (root.getType() != XmlRpcValue::TypeString)
@@ -46,7 +46,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     param_name = "kinematics/end_effector";
     if (!controller_nh.getParam(param_name, end_effector))
     {
-	ROS_ERROR_STREAM("No end_effector given (expected namespace: " + param_name + ").");
+	ROS_ERROR_STREAM("No damp_max given (expected namespace: " + param_name + ").");
 	return false;
     }
     if (end_effector.getType() != XmlRpcValue::TypeString)
@@ -72,7 +72,7 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     }
     
     // Set the kinematic mask
-    kin_->setMask("1,1,1,0,0,0"); // xyz
+    kin_->setMask("1,1,1,1,1,1"); // xyz
     cart_size_ = kin_->getCartSize();
     Nodf_kin_ = kin_->getNdof();
 
@@ -82,7 +82,10 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     joint_vel_status_.resize(Nodf_kin_);
     cart_pos_status_.resize(cart_size_);
     cart_vel_status_.resize(cart_size_);
-    f_vm_.resize(cart_size_);
+    f_vm_.resize(3);
+    t_vm_.resize(3);
+    t_vm_.fill(0.0);
+    ft_vm_.resize(6);
     jacobian_.resize(cart_size_,Nodf_kin_);
     jacobian_t_.resize(Nodf_kin_,cart_size_); 
     
@@ -133,9 +136,40 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     kin_->ComputeFkDot(joint_pos_status_,joint_vel_status_,cart_vel_status_);
     
     // Update the virtual mechanisms
-    mechanism_manager_.Update(cart_pos_status_,cart_vel_status_,period.toSec(),f_vm_);
+    mechanism_manager_.Update(cart_pos_status_.segment<3>(0),cart_vel_status_.segment<3>(0),period.toSec(),f_vm_);
 
-    torques_cmd_.noalias() = jacobian_t_ * f_vm_;
+    
+    Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
+    Eigen::AngleAxisd rollAngle(orientation(2), Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd yawAngle(orientation(1), Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd pitchAngle(orientation(0), Eigen::Vector3d::UnitX());
+    Eigen::Quaternion<double> q = rollAngle  * pitchAngle *  yawAngle;
+    Eigen::Quaternion<double> qref(1.0,0.0,0.0,0.0);
+    Eigen::MatrixXd rotArm = q.matrix();
+    Eigen::MatrixXd rotRef = qref.matrix();
+    Eigen::MatrixXd rotWrist = rotArm.transpose() * rotRef;
+
+    // Original
+    Eigen::VectorXd joints_orientation_cmd(3);
+    joints_orientation_cmd(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
+    joints_orientation_cmd(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
+    joints_orientation_cmd(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
+
+    //joints_orientation_cmd_(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
+    //joints_orientation_cmd_(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
+    //joints_orientation_cmd_(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
+
+    Eigen::VectorXd joint_orientation = joint_pos_status_.segment<3>(4);
+
+    t_vm_ = 10 * (joints_orientation_cmd - joint_orientation);
+    //joints_orientation_cmd_ = joints_orientation_dot_ * dt_ + joint_orientation;
+    
+    ft_vm_ << f_vm_, t_vm_;
+    
+    std::cout<<"***"<<std::endl;
+    std::cout<<ft_vm_<<std::endl;
+    
+    torques_cmd_.noalias() = jacobian_t_ * ft_vm_;
     
     for (int i = 0; i<Nodf_kin_; i++)
       joints_[i].setCommand(torques_cmd_(i));
