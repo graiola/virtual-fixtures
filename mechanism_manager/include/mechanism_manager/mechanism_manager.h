@@ -75,7 +75,9 @@ class MechanismManager
     //std::vector<boost::shared_ptr<fa_t> > fa_vector_;
     
     int vm_nb_;
-    int dim_;
+    int pos_dim_;
+    int orientation_dim_;
+    int expected_gmm_dim_;
     double sum_;
     double curr_norm_factor_;
     double scale_threshold_;
@@ -83,8 +85,9 @@ class MechanismManager
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
     std::vector<bool> active_guide_;
-    std::vector<Eigen::VectorXd> vm_state_;
-    std::vector<Eigen::VectorXd> vm_state_dot_;
+    std::vector<Eigen::VectorXd> vm_position_;
+    std::vector<Eigen::VectorXd> vm_position_dot_;
+    std::vector<Eigen::VectorXd> vm_orientation_;
     
     // FIXME Put them in a struct...?
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig

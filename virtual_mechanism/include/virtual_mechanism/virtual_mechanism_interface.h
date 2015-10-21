@@ -26,10 +26,10 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  VirtualMechanismInterface(int expected_gmm_dim, double K, double B, double Kf):fa_dim_(expected_gmm_dim),ros_node_ptr_(NULL),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
 	  {
-	      assert(state_dim_ == 2 || state_dim_ == 3); 
+	      assert(fa_dim_ == 3 || fa_dim_ == 7); //xyz || xyz q
 	      assert(K_ > 0.0);
 	      assert(B_ > 0.0);
 	      assert(Kf_ > 0.0);
@@ -46,18 +46,25 @@ class VirtualMechanismInterface
 	      
 	      // Initialize/resize the attributes
 	      // NOTE We assume that the phase has dim 1x1
-	      state_.resize(state_dim);
-	      state_dot_.resize(state_dim);
+	      position_dim_ = 3; // Always xyz
+	      orientation_dim_ = 4; // Always quaternion
+	      state_dim_ = position_dim_ + orientation_dim_; // Always pos + orientation
+	      state_.resize(state_dim_);
+	      //state_dot_.resize(state_dim);
+	      position_.resize(position_dim_);
+	      position_dot_.resize(position_dim_);
+	      orientation_.resize(orientation_dim_);
 	      torque_.resize(1);
-	      force_.resize(state_dim);
-	      final_state_.resize(state_dim);
-	      initial_state_.resize(state_dim);
-	      J_.resize(state_dim,1);
-	      J_transp_.resize(1,state_dim);
+	      force_.resize(position_dim_);
+	      final_state_.resize(state_dim_);
+	      initial_state_.resize(state_dim_);
+	      J_.resize(position_dim_,1);
+	      J_transp_.resize(1,position_dim_);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
 	      
 	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
 
+	      orientation_ << 0.0, 0.0, 0.0, 1.0; // Identity quaterion
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -88,8 +95,9 @@ class VirtualMechanismInterface
 	    // Compute the new state
 	    UpdateState();
 	    
-	    // Compute the new state dot
-	    UpdateStateDot();
+	    // Compute the new position dot
+	    //UpdateStateDot();
+	    UpdatePositionDot();
 	  }
 	  
 	  virtual void ApplySaturation()
@@ -111,16 +119,17 @@ class VirtualMechanismInterface
 	  
 	  inline void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt, const double scale = 1.0)
 	  {
-	      assert(pos.size() == state_dim_);
-	      assert(vel.size() == state_dim_);
+	      assert(pos.size() == position_dim_);
+	      assert(vel.size() == position_dim_);
 	    
 	      if(adapt_gains_) //FIXME
 		AdaptGains(pos,dt);
 	      
-	      force_ = K_ * (state_ - pos);
+	      force_ = K_ * (position_ - pos);
 	      force_ = force_ - B_ * vel;
 	      force_ = scale * force_;
 	      //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
+	      
 	      Update(force_,dt);
 	  }
 	  
@@ -141,7 +150,11 @@ class VirtualMechanismInterface
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
-	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
+	  //inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
+	  inline void getPosition(Eigen::VectorXd& position) const {assert(position.size() == position_dim_); position = position_;}
+	  inline void getPositionDot(Eigen::VectorXd& position_dot) const {assert(position_dot.size() == position_dim_); position_dot = position_dot_;}
+	  inline void getOrientation(Eigen::VectorXd& orientation) const {assert(orientation.size() == orientation_dim_); orientation = orientation_;}
+	  
 	  inline double getK() const {return K_;}
 	  inline double getB() const {return B_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
@@ -152,7 +165,7 @@ class VirtualMechanismInterface
               // Initialize the attributes
               UpdateJacobian();
               UpdateState();
-              UpdateStateDot();
+              UpdatePositionDot();
 	      ComputeInitialState();
 	      ComputeFinalState();
           }
@@ -161,13 +174,20 @@ class VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
+	  virtual void UpdatePosition()=0;
+	  virtual void UpdateOrientation()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
 	  
-	  inline void UpdateStateDot()
+	  /*inline void UpdateStateDot()
 	  {
 	      state_dot_ = J_ * phase_dot_;
+	  }*/
+	  
+	  inline void UpdatePositionDot()
+	  {
+	      position_dot_ = J_ * phase_dot_;
 	  }
 	  
 	  // Ros node
@@ -178,8 +198,13 @@ class VirtualMechanismInterface
 	  double phase_prev_;
 	  double phase_dot_;
 	  int state_dim_;
+	  int position_dim_;
+	  int orientation_dim_;
 	  Eigen::VectorXd state_;
-	  Eigen::VectorXd state_dot_;
+	  //Eigen::VectorXd state_dot_;
+	  Eigen::VectorXd position_;
+	  Eigen::VectorXd position_dot_;
+	  Eigen::VectorXd orientation_;
 	  Eigen::VectorXd torque_;
 	  Eigen::VectorXd force_;
 	  Eigen::VectorXd initial_state_;
@@ -198,6 +223,8 @@ class VirtualMechanismInterface
 	  // To activate the gain adapting
 	  bool adapt_gains_;
 	  
+	  int fa_dim_;
+	  
 	  // Auto completion
 	  double Kf_;
 	  double fade_;
@@ -210,8 +237,8 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 1, double Bd_max = 1, double epsilon = 10):
-	  VirtualMechanismInterface(state_dim,K,B,Kf)
+	  VirtualMechanismInterfaceFirstOrder(int expected_gmm_dim, double K = 700, double B = 52.91502622129181, double Kf = 1, double Bd_max = 1, double epsilon = 10):
+	  VirtualMechanismInterface(expected_gmm_dim,K,B,Kf)
 	  {
             assert(epsilon > 0.1);
             epsilon_ = epsilon;
@@ -230,6 +257,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
+	    
+	      assert(force.size() == position_dim_);
+	    
 	      JxJt_.noalias() = J_transp_ * J_;
 	      
 	      // Adapt Bf
@@ -276,8 +306,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916):
-	  VirtualMechanismInterface(state_dim,K,B,Kf)
+	  VirtualMechanismInterfaceSecondOrder(int expected_gmm_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916):
+	  VirtualMechanismInterface(expected_gmm_dim,K,B,Kf)
 	  {
 	      
 	      assert(Bf > 0.0);

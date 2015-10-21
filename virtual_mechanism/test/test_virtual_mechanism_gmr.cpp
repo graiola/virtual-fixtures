@@ -20,15 +20,18 @@ using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
 
-int test_dim = 3;
 double dt = 0.001;
+
+int position_dim = 3;
+int state_dim = 7;
+int expected_gmm_dim = 7;
 
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt"; // FIXME
+  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/wonderfall_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
@@ -45,20 +48,20 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(3,fa_ptr));
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(3,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(expected_gmm_dim,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(expected_gmm_dim,fa_ptr));
 }
 
 TEST(VirtualMechanismGmrTest, UpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
-  Eigen::VectorXd force(test_dim);
-  Eigen::VectorXd pos(test_dim);
-  Eigen::VectorXd vel(test_dim);
+  Eigen::VectorXd force(position_dim);
+  Eigen::VectorXd pos(position_dim);
+  Eigen::VectorXd vel(position_dim);
   force.fill(1.0);
   
   START_REAL_TIME_CRITICAL_CODE();
@@ -79,10 +82,10 @@ TEST(VirtualMechanismGmrTest, GetProbability)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
-  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd pos(position_dim);
   pos.fill(1.0);
   
   START_REAL_TIME_CRITICAL_CODE();
@@ -97,10 +100,10 @@ TEST(VirtualMechanismGmrTest, GetDistance)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
-  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd pos(position_dim);
   pos.fill(1.0);
   
   START_REAL_TIME_CRITICAL_CODE();
@@ -177,20 +180,20 @@ TEST(VirtualMechanismGmrTest, GetMethods)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
   // State
   Eigen::VectorXd state;
-  state.resize(test_dim);
+  state.resize(state_dim);
   EXPECT_NO_THROW(vm1.getState(state));
   EXPECT_NO_THROW(vm2.getState(state));
   
-  // StateDot
-  Eigen::VectorXd state_dot;
-  state_dot.resize(test_dim);
-  EXPECT_NO_THROW(vm1.getStateDot(state_dot));
-  EXPECT_NO_THROW(vm2.getStateDot(state_dot));
+  // PositionDot
+  Eigen::VectorXd position_dot;
+  position_dot.resize(position_dim);
+  EXPECT_NO_THROW(vm1.getPositionDot(position_dot));
+  EXPECT_NO_THROW(vm2.getPositionDot(position_dot));
 }
 
 int main(int argc, char** argv)

@@ -141,7 +141,6 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     // Update the virtual mechanisms
     mechanism_manager_.Update(cart_pos_status_.segment<3>(0),cart_vel_status_.segment<3>(0),period.toSec(),f_vm_);
 
-    
     //Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
     //Eigen::VectorXd orientation_ref(3);
     
@@ -204,11 +203,6 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     for (int i = 0; i<Nodf_kin_; i++)
       joints_[i].setCommand(torques_cmd_(i));
 }
-
-
-
-
-
 
 
 /*PLUGINLIB_DECLARE_CLASS(vf_controller,

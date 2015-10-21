@@ -29,6 +29,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string prob_mode_string;
 	
 	main_node["models"] >> model_names;
+	main_node["expected_gmm_dim"] >> expected_gmm_dim_;
 	main_node["prob_mode"] >> prob_mode_string;
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
@@ -49,14 +50,16 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new vm_t(dim_,fa_tmp_shr_ptr)); 
+	    vm_vector_.push_back(new vm_t(expected_gmm_dim_,fa_tmp_shr_ptr)); 
 	}
+	
 	return true;
 }
   
 MechanismManager::MechanismManager()
 {
-      dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
+      pos_dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
+      orientation_dim_ = 4;
       
       pkg_path_ = ros::package::getPath("mechanism_manager");	
       std::string config_file_path(pkg_path_+"/config/cfg.yml"); //FIXME load it from param server
@@ -75,15 +78,16 @@ MechanismManager::MechanismManager()
       {
          vm_vector_[i]->Init();
          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
-         vm_state_.push_back(VectorXd(dim_));
-         vm_state_dot_.push_back(VectorXd(dim_));
+         vm_position_.push_back(VectorXd(pos_dim_));
+         vm_position_dot_.push_back(VectorXd(pos_dim_));
+	 vm_orientation_.push_back(VectorXd(orientation_dim_));
       }
       
       // Some Initializations
       active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
-      robot_position_.resize(dim_);
+      robot_position_.resize(pos_dim_);
       
       // Clear
       scales_ .fill(0.0);
@@ -101,7 +105,7 @@ MechanismManager::MechanismManager()
 	  for(int i=0; i<vm_nb_;i++)
 	  {
 	    std::string topic_name = "vm_pos_" + std::to_string(i+1);
-	    rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_state_[i].size(),&vm_state_[i]);
+	    rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_position_[i].size(),&vm_position_[i]);
 	    //topic_name = "vm_ker_" + std::to_string(i+1);
 	    //boost::shared_ptr<RealTimePublisherMarkers> tmp_ptr = boost::make_shared<RealTimePublisherMarkers>(ros_node_.GetNode(),topic_name,root_name_);
 	    //rt_publishers_markers_.AddPublisher(tmp_ptr,&vm_kernel_[i]);
@@ -169,10 +173,10 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
-	assert(robot_position.size() == dim_);
-	assert(robot_velocity.size() == dim_);
+	assert(robot_position.size() == pos_dim_);
+	assert(robot_velocity.size() == pos_dim_);
 	assert(dt > 0.0);
-	assert(f_out.size() == dim_);
+	assert(f_out.size() == pos_dim_);
 	
 	robot_position_ = robot_position; // For plot pourpose
 	
@@ -222,15 +226,16 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  }
 
 	  // Compute the force from the vms
-	  vm_vector_[i]->getState(vm_state_[i]);
-	  vm_vector_[i]->getStateDot(vm_state_dot_[i]);
+	  vm_vector_[i]->getPosition(vm_position_[i]);
+	  vm_vector_[i]->getPositionDot(vm_position_dot_[i]);
+	  vm_vector_[i]->getOrientation(vm_orientation_[i]);
 	  
 	  //vm_vector_[i]->getLocalKernel(vm_kernel_[i]);
 	  //K_ = vm_vector_[i]->getK();
 	  //B_ = vm_vector_[i]->getB();
 	  
 	  
-	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
+	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_position_[i] - robot_position) + vm_vector_[i]->getB() * (vm_position_dot_[i] - robot_velocity)); // Sum over all the vms
 	    
 	}
 

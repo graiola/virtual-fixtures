@@ -22,7 +22,7 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr);
+	  VirtualMechanismGmr(int expected_gmm_dim, boost::shared_ptr<fa_t> fa_ptr);
 	  
 	  double getDistance(const Eigen::VectorXd& pos);
 	  void setWeightedDist(const bool activate);
@@ -33,6 +33,8 @@ class VirtualMechanismGmr: public VM_t
 	  
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
+	  virtual void UpdatePosition();
+	  virtual void UpdateOrientation();
 	  virtual void ComputeInitialState();
 	  virtual void ComputeFinalState();
 	  void UpdateInvCov();
@@ -44,14 +46,15 @@ class VirtualMechanismGmr: public VM_t
 	  Eigen::MatrixXd fa_output_;
 	  Eigen::MatrixXd fa_output_dot_;
 	  Eigen::MatrixXd variance_;
-	  Eigen::MatrixXd covariance_;
-	  Eigen::MatrixXd covariance_inv_;
+	  Eigen::MatrixXd covariance_id_;
+	  Eigen::MatrixXd covariance_id_inv_;
 	  
 	  Eigen::VectorXd err_;
 
 	  double determinant_cov_;
 	  double prob_;
 	  bool use_weighted_dist_;
+	  int fa_dim_;
 	  
 	  /*virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt);
 	  Eigen::VectorXd normal_vector_;

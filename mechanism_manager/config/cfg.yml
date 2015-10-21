@@ -1,4 +1,5 @@
 models: ['gmm_1.txt']
+expected_gmm_dim: 3
 prob_mode: hard
 use_weighted_dist: [false,false]
 use_active_guide: [false,false]
