@@ -89,6 +89,9 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     jacobian_.resize(cart_size_,Nodf_kin_);
     jacobian_t_.resize(Nodf_kin_,cart_size_); 
     
+    // Set the fixed orientation for the tooltip
+    qref_.reset(new quaternion_t(1.0,0.0,0.0,0.0)); //1.0,0.0,0.0,0.0    0.70710678,0.0,-0.70710678,0.0
+    
     // Retrain the joint handles
     joints_.resize(Nodf_kin_);
     std::string joint_name;
@@ -139,41 +142,67 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     mechanism_manager_.Update(cart_pos_status_.segment<3>(0),cart_vel_status_.segment<3>(0),period.toSec(),f_vm_);
 
     
-    Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
-    Eigen::AngleAxisd rollAngle(orientation(2), Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd yawAngle(orientation(1), Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd pitchAngle(orientation(0), Eigen::Vector3d::UnitX());
-    Eigen::Quaternion<double> q = rollAngle  * pitchAngle *  yawAngle;
-    Eigen::Quaternion<double> qref(1.0,0.0,0.0,0.0);
-    Eigen::MatrixXd rotArm = q.matrix();
-    Eigen::MatrixXd rotRef = qref.matrix();
-    Eigen::MatrixXd rotWrist = rotArm.transpose() * rotRef;
-
-    // Original
-    Eigen::VectorXd joints_orientation_cmd(3);
-    joints_orientation_cmd(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
-    joints_orientation_cmd(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
-    joints_orientation_cmd(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
-
-    //joints_orientation_cmd_(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
-    //joints_orientation_cmd_(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
-    //joints_orientation_cmd_(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
-
-    Eigen::VectorXd joint_orientation = joint_pos_status_.segment<3>(4);
-
-    t_vm_ = 10 * (joints_orientation_cmd - joint_orientation);
-    //joints_orientation_cmd_ = joints_orientation_dot_ * dt_ + joint_orientation;
+    //Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
+    //Eigen::VectorXd orientation_ref(3);
     
-    ft_vm_ << f_vm_, t_vm_;
+    Eigen::AngleAxisd rollAngle(cart_pos_status_(5), Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd yawAngle(cart_pos_status_(4), Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd pitchAngle(cart_pos_status_(3), Eigen::Vector3d::UnitX());
+    //Eigen::Quaternion<double> qcur = rollAngle  * pitchAngle *  yawAngle;
+    //Eigen::Quaternion<double> qcur = pitchAngle * yawAngle * rollAngle;
+    //Eigen::Quaternion<double> qcur = yawAngle * pitchAngle  * rollAngle;
+    qcur_ = rollAngle * yawAngle  * pitchAngle;
+    
+    /*Eigen::MatrixXd rotCur(3,3);
+    rotCur = qcur.matrix();
+    Eigen::MatrixXd rotRef(3,3);
+    rotRef = qref.matrix();
+    Eigen::MatrixXd rotWrist(3,3);
+    rotWrist = rotCur.transpose() * rotRef; //CHECK*/
+
+    t_vm_(0) = 5*(qcur_.w() * qref_->x() - qref_->w() * qcur_.x());
+    t_vm_(1) = 5*(qcur_.w() * qref_->y() - qref_->w() * qcur_.y());
+    t_vm_(2) = 5*(qcur_.w() * qref_->z() - qref_->w() * qcur_.z());
+    
+    //Eigen::Matrix3f rotWrist3 = rotWrist.cast<float>();
+    //Eigen::VectorXf ea(3);
+    //ea  = rotWrist3.eulerAngles(2, 1, 0);
+    //orientation_ref(0) = ea(0,0);
+    //orientation_ref(1) = ea(1,0);
+    //orientation_ref(2) = ea(2,0);
+
+    /*Eigen::Matrix3f rotWrist3 = rotRef.cast<float>();
+    Eigen::VectorXf ea(3);
+    ea  = rotWrist3.eulerAngles(2, 1, 0);
+    orientation_ref(0) = ea(0,0);
+    orientation_ref(1) = ea(1,0);
+    orientation_ref(2) = ea(2,0);
     
     std::cout<<"***"<<std::endl;
-    std::cout<<ft_vm_<<std::endl;
+    std::cout<<orientation_ref<<std::endl;*/
+
+    // Original
+    //Eigen::VectorXd joints_orientation_cmd(3);
+    //joints_orientation_cmd(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
+    //joints_orientation_cmd(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
+    //joints_orientation_cmd(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
+
+    //joints_orientation_cmd(2) = -std::atan2(rotWrist(1,0),rotWrist(0,0));
+    //joints_orientation_cmd(1) = std::atan2(rotWrist(2,0),std::sqrt(std::pow(rotWrist(2,1),2) + std::pow(rotWrist(2,2),2)));
+    //joints_orientation_cmd(0) = std::atan2(rotWrist(2,1),rotWrist(2,2));
+
+    //Eigen::VectorXd joint_orientation = joint_pos_status_.segment<3>(4);
+
+    //t_vm_ = 0.1 * (orientation_ref - orientation);
+    //joints_orientation_cmd_ = joints_orientation_dot_ * dt_ + joint_orientation;
+    //f_vm_ << 0.0,0.0,0.0;
+    
+    ft_vm_ << f_vm_, t_vm_;
     
     torques_cmd_.noalias() = jacobian_t_ * ft_vm_;
     
     for (int i = 0; i<Nodf_kin_; i++)
       joints_[i].setCommand(torques_cmd_(i));
-
 }
 
 

@@ -4,5 +4,5 @@ vf_controller:
     damp_max: 0.8
     epsilon: 0.1
     root: "T0"
-    end_effector: "fixed_right_wrist"
+    end_effector: "palm_right"
   

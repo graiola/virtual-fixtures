@@ -16,10 +16,14 @@
 ////////// KDL_KINEMATICS
 #include <kdl_kinematics/kdl_kinematics.h>
 
+////////// BOOST
+#include <boost/shared_ptr.hpp>
+
 namespace vf_controller
 {
   typedef Eigen::JacobiSVD<Eigen::MatrixXd> svd_t;
   typedef std::vector<hardware_interface::JointHandle> joints_t;
+  typedef Eigen::Quaternion<double> quaternion_t;
   
 /*class VFHardwareInterface : public hardware_interface::HardwareInterface
 {
@@ -56,6 +60,9 @@ private:
   Eigen::VectorXd f_vm_;
   Eigen::VectorXd t_vm_;
   Eigen::VectorXd ft_vm_;
+  
+  quaternion_t qcur_;
+  boost::shared_ptr<quaternion_t > qref_;
   
   Eigen::MatrixXd jacobian_;
   Eigen::MatrixXd jacobian_t_;               
