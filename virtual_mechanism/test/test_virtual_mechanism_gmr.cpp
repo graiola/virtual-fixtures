@@ -31,7 +31,7 @@ typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/wonderfall_1.txt"; // FIXME
+  std::string file_name = "/home/meka/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/wonderfall_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
@@ -48,7 +48,9 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
+  std::cout<<"TESTING FIRST ORDER VM"<<std::endl;
   EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(expected_gmm_dim,fa_ptr));
+  std::cout<<"TESTING SECOND ORDER VM"<<std::endl;
   EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(expected_gmm_dim,fa_ptr));
 }
 
@@ -83,7 +85,7 @@ TEST(VirtualMechanismGmrTest, GetProbability)
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
   VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
   Eigen::VectorXd pos(position_dim);
   pos.fill(1.0);
@@ -91,7 +93,7 @@ TEST(VirtualMechanismGmrTest, GetProbability)
   START_REAL_TIME_CRITICAL_CODE();
   
   EXPECT_NO_THROW(vm1.getProbability(pos));
-  EXPECT_NO_THROW(vm2.getProbability(pos));
+  //EXPECT_NO_THROW(vm2.getProbability(pos));
   
   END_REAL_TIME_CRITICAL_CODE();
 }
@@ -101,7 +103,8 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
   VirtualMechanismGmr<VMP_1ord_t> vm1(expected_gmm_dim,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
+  
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(expected_gmm_dim,fa_ptr);
   
   Eigen::VectorXd pos(position_dim);
   pos.fill(1.0);
@@ -109,17 +112,17 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   START_REAL_TIME_CRITICAL_CODE();
   
   EXPECT_NO_THROW(vm1.getDistance(pos));
-  EXPECT_NO_THROW(vm2.getDistance(pos));
+  //EXPECT_NO_THROW(vm2.getDistance(pos));
   
   END_REAL_TIME_CRITICAL_CODE();
   
   vm1.setWeightedDist(true);
-  vm2.setWeightedDist(true);
+  //vm2.setWeightedDist(true);
   
   START_REAL_TIME_CRITICAL_CODE();
   
   EXPECT_NO_THROW(vm1.getDistance(pos));
-  EXPECT_NO_THROW(vm2.getDistance(pos));
+  //EXPECT_NO_THROW(vm2.getDistance(pos));
   
   END_REAL_TIME_CRITICAL_CODE();
   

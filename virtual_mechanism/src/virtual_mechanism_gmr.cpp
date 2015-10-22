@@ -18,21 +18,24 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int expected_gmm_dim, boost::shar
   assert(fa_ptr->getExpectedInputDim() == 1);
   assert(fa_ptr->getExpectedOutputDim() ==  expected_gmm_dim);
   
+  fa_dim_ = expected_gmm_dim;
+  
   fa_input_.resize(1,1);
   fa_output_.resize(1,fa_dim_);
   fa_output_dot_.resize(1,fa_dim_);
   variance_.resize(1,fa_dim_);
+
   covariance_id_.resize(VM_t::position_dim_,VM_t::position_dim_); // Handle only the covariance of the position
   covariance_id_inv_.resize(VM_t::position_dim_,VM_t::position_dim_);
   //normal_vector_.resize(VM_t::state_dim_);
   //prev_normal_vector_.resize(VM_t::state_dim_);
   err_.resize(VM_t::position_dim_);
-  
+
   variance_.fill(1.0);
-  covariance_id_ = variance_.row(0).asDiagonal();
+  covariance_id_ = variance_.row(0).segment<3>(0).asDiagonal();
   covariance_id_inv_.fill(0.0);
   err_.fill(0.0);
-   
+  
   fa_ptr_ = fa_ptr;
   
   prob_ = 0.0;
@@ -52,6 +55,8 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int expected_gmm_dim, boost::shar
   
   // Initialize the state of the virtual mechanism
   VM_t::Init();
+  
+  
 }
 
 template<class VM_t>
@@ -88,7 +93,6 @@ void VirtualMechanismGmr<VM_t>::UpdateJacobian()
 {
   fa_input_(0,0) = VM_t::phase_; // Convert to Eigen Matrix
   fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
-  
   
   covariance_id_ = variance_.row(0).segment<3>(0).asDiagonal();
   
@@ -228,6 +232,7 @@ template<class VM_t>
 double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 {
   err_ = pos - VM_t::position_;
+  
   if(use_weighted_dist_)
   {
     UpdateInvCov();

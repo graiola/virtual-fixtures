@@ -19,7 +19,7 @@ using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
 
-int position_dim = 3;
+int position_dim = 7;
 double dt = 0.001;
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectly)
@@ -27,11 +27,11 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
   
-  //EXPECT_NO_THROW(MechanismManager());
+  EXPECT_NO_THROW(MechanismManager());
   
 }
 
-TEST(VirtualMechanismGmrTest, UpdateMethod)
+/*TEST(VirtualMechanismGmrTest, UpdateMethod)
 {
   
   MechanismManager mm = MechanismManager();
@@ -52,7 +52,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
-}
+}*/
 
 int main(int argc, char** argv)
 {

@@ -26,10 +26,10 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int expected_gmm_dim, double K, double B, double Kf):fa_dim_(expected_gmm_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  VirtualMechanismInterface(int expected_gmm_dim, double K, double B, double Kf):ros_node_ptr_(NULL),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
 	  {
-	      assert(fa_dim_ == 3 || fa_dim_ == 7); //xyz || xyz q
+	      assert(expected_gmm_dim == 3 || expected_gmm_dim == 7); //xyz || xyz q
 	      assert(K_ > 0.0);
 	      assert(B_ > 0.0);
 	      assert(Kf_ > 0.0);
@@ -165,9 +165,12 @@ class VirtualMechanismInterface
               // Initialize the attributes
               UpdateJacobian();
               UpdateState();
+               
               UpdatePositionDot();
-	      ComputeInitialState();
-	      ComputeFinalState();
+              
+	      //ComputeInitialState();
+	      //ComputeFinalState();
+              
           }
 	  
 	protected:

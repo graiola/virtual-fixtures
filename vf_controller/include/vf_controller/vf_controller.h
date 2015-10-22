@@ -56,6 +56,7 @@ private:
   Eigen::VectorXd joint_pos_status_;
   Eigen::VectorXd joint_vel_status_;
   Eigen::VectorXd cart_pos_status_;
+  Eigen::VectorXd cart_pose_status_;
   Eigen::VectorXd cart_vel_status_;
   Eigen::VectorXd f_vm_;
   Eigen::VectorXd t_vm_;

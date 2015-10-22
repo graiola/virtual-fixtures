@@ -81,11 +81,9 @@ bool VFController::init(hardware_interface::EffortJointInterface* hw, ros::NodeH
     joint_pos_status_.resize(Nodf_kin_);
     joint_vel_status_.resize(Nodf_kin_);
     cart_pos_status_.resize(cart_size_);
+    cart_pose_status_.resize(7);
     cart_vel_status_.resize(cart_size_);
-    f_vm_.resize(3);
-    t_vm_.resize(3);
-    t_vm_.fill(0.0);
-    ft_vm_.resize(6);
+    f_vm_.resize(cart_size_);
     jacobian_.resize(cart_size_,Nodf_kin_);
     jacobian_t_.resize(Nodf_kin_,cart_size_); 
     
@@ -138,12 +136,6 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     kin_->ComputeFk(joint_pos_status_,cart_pos_status_);
     kin_->ComputeFkDot(joint_pos_status_,joint_vel_status_,cart_vel_status_);
     
-    // Update the virtual mechanisms
-    mechanism_manager_.Update(cart_pos_status_.segment<3>(0),cart_vel_status_.segment<3>(0),period.toSec(),f_vm_);
-
-    //Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
-    //Eigen::VectorXd orientation_ref(3);
-    
     Eigen::AngleAxisd rollAngle(cart_pos_status_(5), Eigen::Vector3d::UnitZ());
     Eigen::AngleAxisd yawAngle(cart_pos_status_(4), Eigen::Vector3d::UnitY());
     Eigen::AngleAxisd pitchAngle(cart_pos_status_(3), Eigen::Vector3d::UnitX());
@@ -152,6 +144,17 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     //Eigen::Quaternion<double> qcur = yawAngle * pitchAngle  * rollAngle;
     qcur_ = rollAngle * yawAngle  * pitchAngle;
     
+    cart_pose_status_ << cart_pos_status_.segment<3>(0), qcur_.x(), qcur_.y(), qcur_.z(), qcur_.w();
+    
+    //std::cout<<"****"<<std::endl;
+    //std::cout<<cart_pose_status_<<std::endl;
+    
+    // Update the virtual mechanisms
+    mechanism_manager_.Update(cart_pose_status_,cart_vel_status_.segment<3>(0),period.toSec(),f_vm_);
+
+    //Eigen::VectorXd orientation = cart_pos_status_.segment<3>(3);
+    //Eigen::VectorXd orientation_ref(3);
+    
     /*Eigen::MatrixXd rotCur(3,3);
     rotCur = qcur.matrix();
     Eigen::MatrixXd rotRef(3,3);
@@ -159,9 +162,9 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     Eigen::MatrixXd rotWrist(3,3);
     rotWrist = rotCur.transpose() * rotRef; //CHECK*/
 
-    t_vm_(0) = 5*(qcur_.w() * qref_->x() - qref_->w() * qcur_.x());
+    /*t_vm_(0) = 5*(qcur_.w() * qref_->x() - qref_->w() * qcur_.x());
     t_vm_(1) = 5*(qcur_.w() * qref_->y() - qref_->w() * qcur_.y());
-    t_vm_(2) = 5*(qcur_.w() * qref_->z() - qref_->w() * qcur_.z());
+    t_vm_(2) = 5*(qcur_.w() * qref_->z() - qref_->w() * qcur_.z());*/
     
     //Eigen::Matrix3f rotWrist3 = rotWrist.cast<float>();
     //Eigen::VectorXf ea(3);
@@ -196,9 +199,11 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     //joints_orientation_cmd_ = joints_orientation_dot_ * dt_ + joint_orientation;
     //f_vm_ << 0.0,0.0,0.0;
     
-    ft_vm_ << f_vm_, t_vm_;
+
+    //std::cout << "*****" <<std::endl;
+    //std::cout << f_vm_ <<std::endl;
     
-    torques_cmd_.noalias() = jacobian_t_ * ft_vm_;
+    torques_cmd_.noalias() = jacobian_t_ * f_vm_;
     
     for (int i = 0; i<Nodf_kin_; i++)
       joints_[i].setCommand(torques_cmd_(i));
