@@ -70,7 +70,7 @@ void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, Ve
   fa_output.resize(1,VM_t::fa_dim_);
   fa_input(0,0) = phase_in;
   fa_ptr_->predict(fa_input,fa_output);
-  if(VM_t::fa_dim_ == VM_t::state_dim_)
+  if(fa_dim_ == VM_t::state_dim_)
     state_out = fa_output.transpose();
   else
     state_out << fa_output.transpose(), VM_t::orientation_;
@@ -120,8 +120,29 @@ void VirtualMechanismGmr<VM_t>::UpdatePosition()
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateOrientation()
 {
-  if(VM_t::fa_dim_ == 7)
+    
+  if(fa_dim_ == 7)
+  {
+      
+      
+    
+
+
+      
+      
     VM_t::orientation_ = fa_output_.block<1,4>(0,3).transpose();
+    
+      // Normalize
+     double magnitude = std::sqrt(VM_t::orientation_(0)*VM_t::orientation_(0) + VM_t::orientation_(1)*VM_t::orientation_(1) + VM_t::orientation_(2)*VM_t::orientation_(2) + VM_t::orientation_(3)*VM_t::orientation_(3));
+    VM_t::orientation_(0) = VM_t::orientation_(0)/magnitude;
+    VM_t::orientation_(1) = VM_t::orientation_(1)/magnitude;
+    VM_t::orientation_(2) = VM_t::orientation_(2)/magnitude;
+    VM_t::orientation_(3) = VM_t::orientation_(3)/magnitude;
+
+     std::cout<< "*ORI INSIDE GMR**" <<std::endl;
+            std::cout<< VM_t::orientation_ <<std::endl;
+            
+  }
 }
 
 /*template<class VM_t>
