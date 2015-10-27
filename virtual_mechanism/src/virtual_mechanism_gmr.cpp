@@ -133,14 +133,24 @@ void VirtualMechanismGmr<VM_t>::UpdateOrientation()
     VM_t::orientation_ = fa_output_.block<1,4>(0,3).transpose();
     
       // Normalize
-     double magnitude = std::sqrt(VM_t::orientation_(0)*VM_t::orientation_(0) + VM_t::orientation_(1)*VM_t::orientation_(1) + VM_t::orientation_(2)*VM_t::orientation_(2) + VM_t::orientation_(3)*VM_t::orientation_(3));
+    double magnitude = std::sqrt(VM_t::orientation_(0)*VM_t::orientation_(0) + VM_t::orientation_(1)*VM_t::orientation_(1) + VM_t::orientation_(2)*VM_t::orientation_(2) + VM_t::orientation_(3)*VM_t::orientation_(3));
     VM_t::orientation_(0) = VM_t::orientation_(0)/magnitude;
     VM_t::orientation_(1) = VM_t::orientation_(1)/magnitude;
     VM_t::orientation_(2) = VM_t::orientation_(2)/magnitude;
     VM_t::orientation_(3) = VM_t::orientation_(3)/magnitude;
 
-     std::cout<< "*ORI INSIDE GMR**" <<std::endl;
-            std::cout<< VM_t::orientation_ <<std::endl;
+     /*VM_t::orientation_(0) = 0.70710678;
+     VM_t::orientation_(1) = 0.0;
+     VM_t::orientation_(2) = -0.70710678;
+     VM_t::orientation_(3) = 0.0;*/
+     
+     
+    //0.70710678,0.0,-0.70710678,0.0
+    
+     /*std::cout<< "*ORI INSIDE GMR**" <<std::endl;
+     std::cout<< VM_t::orientation_ <<std::endl;
+     std::cout<< "*PHASE**" <<std::endl;
+     std::cout<< VM_t::phase_ <<std::endl;*/
             
   }
 }

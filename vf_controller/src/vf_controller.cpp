@@ -144,7 +144,7 @@ void VFController::update(const ros::Time& time, const ros::Duration& period)
     //Eigen::Quaternion<double> qcur = yawAngle * pitchAngle  * rollAngle;
     qcur_ = rollAngle * yawAngle  * pitchAngle;
     
-    cart_pose_status_ << cart_pos_status_.segment<3>(0), qcur_.x(), qcur_.y(), qcur_.z(), qcur_.w();
+    cart_pose_status_ << cart_pos_status_.segment<3>(0), qcur_.w(), qcur_.x(), qcur_.y(), qcur_.z();
     
     //std::cout<<"****"<<std::endl;
     //std::cout<<cart_pose_status_<<std::endl;
