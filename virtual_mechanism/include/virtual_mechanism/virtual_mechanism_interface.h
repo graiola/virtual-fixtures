@@ -23,10 +23,12 @@
 namespace virtual_mechanism_interface 
 {
 
+    typedef Eigen::Quaternion<double> quaternion_t;
+    
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),ros_node_ptr_(NULL),phase_(0.0),
+	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),ros_node_ptr_(NULL),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
@@ -56,8 +58,12 @@ class VirtualMechanismInterface
 	      J_transp_.resize(1,state_dim);
 	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
 	      
+              // Default quaternions
+              //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+              //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+              //quaternion_ << 1.0,0.0,0.0,0.0;
+              
 	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/2,0.1);
-
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -90,6 +96,11 @@ class VirtualMechanismInterface
 	    
 	    // Compute the new state dot
 	    UpdateStateDot();
+            
+            // Compute the new quaternion reference
+            if (update_quaternion_)
+                UpdateQuaternion();
+            
 	  }
 	  
 	  virtual void ApplySaturation()
@@ -142,6 +153,15 @@ class VirtualMechanismInterface
 	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
+	  inline void getQuaternion(Eigen::VectorXd& q) const 
+	  {
+              assert(q.size() == 4); 
+              q(0) = quaternion_->w();
+              q(1) = quaternion_->x();
+              q(2) = quaternion_->y();
+              q(3) = quaternion_->z();
+              
+          }
 	  inline double getK() const {return K_;}
 	  inline double getB() const {return B_;}
 	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
@@ -155,6 +175,21 @@ class VirtualMechanismInterface
               UpdateStateDot();
 	      ComputeInitialState();
 	      ComputeFinalState();
+          }
+          
+          inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
+          {
+             assert(q_start.size() == 4);
+             assert(q_end.size() == 4);
+             
+             q_start_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
+             q_end_.reset(new quaternion_t(q_end[0],q_end[1],q_end[2],q_end[3]));
+             
+             quaternion_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
+             
+             update_quaternion_ = true;
+
+             Init();
           }
 	  
 	protected:
@@ -170,6 +205,11 @@ class VirtualMechanismInterface
 	      state_dot_ = J_ * phase_dot_;
 	  }
 	  
+	  inline void UpdateQuaternion()
+          {
+              *quaternion_ = q_start_->slerp(phase_,*q_end_);
+          }
+	  
 	  // Ros node
 	  tool_box::RosNode* ros_node_ptr_;
 	  
@@ -178,12 +218,16 @@ class VirtualMechanismInterface
 	  double phase_prev_;
 	  double phase_dot_;
 	  int state_dim_;
+          bool update_quaternion_;
 	  Eigen::VectorXd state_;
 	  Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
 	  Eigen::VectorXd force_;
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
+          boost::shared_ptr<quaternion_t > q_start_;
+          boost::shared_ptr<quaternion_t > q_end_;
+          boost::shared_ptr<quaternion_t > quaternion_;
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;

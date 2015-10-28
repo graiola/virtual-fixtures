@@ -25,10 +25,16 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	// Retrain the parameters from yaml file
 	std::vector<std::string> model_names;
+        //std::vector<std::vector<double> > quat_start;
+        //std::vector<std::vector<double> > quat_end;
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
 	
 	main_node["models"] >> model_names;
+
+        main_node["quat_start"] >> quat_start_;
+        main_node["quat_end"] >> quat_end_;
+        
 	main_node["prob_mode"] >> prob_mode_string;
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
@@ -49,7 +55,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new vm_t(dim_,fa_tmp_shr_ptr)); 
+	    vm_vector_.push_back(new vm_t(dim_,fa_tmp_shr_ptr));
 	}
 	return true;
 }
@@ -73,10 +79,12 @@ MechanismManager::MechanismManager()
       // Initialize the virtual mechanisms and support vectors
       for(int i=0; i<vm_nb_;i++)
       {
-         vm_vector_[i]->Init();
+         //vm_vector_[i]->Init();
+         vm_vector_[i]->Init(quat_start_[i],quat_end_[i]);
          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
          vm_state_.push_back(VectorXd(dim_));
          vm_state_dot_.push_back(VectorXd(dim_));
+         vm_quat_dot_.push_back(VectorXd(4));
       }
       
       // Some Initializations
@@ -224,11 +232,18 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  // Compute the force from the vms
 	  vm_vector_[i]->getState(vm_state_[i]);
 	  vm_vector_[i]->getStateDot(vm_state_dot_[i]);
+          vm_vector_[i]->getQuaternion(vm_quat_dot_[i]);
 	  
+          //std::cout << "***" << std::endl;
+          //std::cout << vm_quat_dot_[i] << std::endl;
+          
 	  //vm_vector_[i]->getLocalKernel(vm_kernel_[i]);
 	  //K_ = vm_vector_[i]->getK();
 	  //B_ = vm_vector_[i]->getB();
 	  
+          //f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](1)- vm_quat_dot_[i](0) * robot_orientation_(1));
+          //f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](2)- vm_quat_dot_[i](0) * robot_orientation_(2));
+          //f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](3)- vm_quat_dot_[i](0) * robot_orientation_(3));
 	  
 	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
 	    

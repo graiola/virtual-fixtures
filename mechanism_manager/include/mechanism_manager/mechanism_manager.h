@@ -85,6 +85,9 @@ class MechanismManager
     std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
+    std::vector<Eigen::VectorXd> vm_quat_dot_;
+    std::vector<std::vector<double> > quat_start_;
+    std::vector<std::vector<double> > quat_end_;
     
     // FIXME Put them in a struct...?
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
