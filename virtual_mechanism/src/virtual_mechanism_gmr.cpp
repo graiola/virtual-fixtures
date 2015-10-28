@@ -123,27 +123,42 @@ void VirtualMechanismGmr<VM_t>::UpdateOrientation()
     
   if(fa_dim_ == 7)
   {
-      
-      
-    
 
-
-      
-      
     VM_t::orientation_ = fa_output_.block<1,4>(0,3).transpose();
     
-      // Normalize
-    double magnitude = std::sqrt(VM_t::orientation_(0)*VM_t::orientation_(0) + VM_t::orientation_(1)*VM_t::orientation_(1) + VM_t::orientation_(2)*VM_t::orientation_(2) + VM_t::orientation_(3)*VM_t::orientation_(3));
+    // Normalize
+    /*double magnitude = std::sqrt(VM_t::orientation_(0)*VM_t::orientation_(0) + VM_t::orientation_(1)*VM_t::orientation_(1) + VM_t::orientation_(2)*VM_t::orientation_(2) + VM_t::orientation_(3)*VM_t::orientation_(3));
     VM_t::orientation_(0) = VM_t::orientation_(0)/magnitude;
     VM_t::orientation_(1) = VM_t::orientation_(1)/magnitude;
     VM_t::orientation_(2) = VM_t::orientation_(2)/magnitude;
-    VM_t::orientation_(3) = VM_t::orientation_(3)/magnitude;
+    VM_t::orientation_(3) = VM_t::orientation_(3)/magnitude;*/
 
-     /*VM_t::orientation_(0) = 0.70710678;
-     VM_t::orientation_(1) = 0.0;
-     VM_t::orientation_(2) = -0.70710678;
-     VM_t::orientation_(3) = 0.0;*/
-     
+    if(VM_t::phase_ >= 0.7)
+    {
+        VM_t::orientation_(0) = 0.70710678;
+        VM_t::orientation_(1) = 0.0;
+        VM_t::orientation_(2) = -0.70710678;
+        VM_t::orientation_(3) = 0.0;
+    }
+    else if(VM_t::phase_ < 0.4)
+    {
+        VM_t::orientation_(0) = 1.0;
+        VM_t::orientation_(1) = 0.0;
+        VM_t::orientation_(2) = 0.0;
+        VM_t::orientation_(3) = 0.0;
+    }
+    else
+    {
+        VM_t::orientation_(0) = -0.29289321999999995/0.3 * (VM_t::phase_ - 0.4) + 1.0;
+        
+        VM_t::orientation_(1) = 0.0;
+        
+        VM_t::orientation_(2) = -0.70710678/0.3 * (VM_t::phase_ - 0.4);
+        
+        VM_t::orientation_(3) = 0.0;
+    
+    
+    }
      
     //0.70710678,0.0,-0.70710678,0.0
     

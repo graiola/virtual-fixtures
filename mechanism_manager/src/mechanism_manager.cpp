@@ -262,17 +262,22 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	  if(use_orientation_)
           {
               
-              //std::cout << "ROBOT ORIENTATION" <<std::endl;
-              //std::cout << robot_orientation_ <<std::endl;
+            //std::cout << "ROBOT ORIENTATION" <<std::endl;
+            //std::cout << robot_orientation_ <<std::endl;
             //f_pos_ += scales_(i) * (10.0 * (vm_position_[i] - robot_position_) + 6.324555320336759 * (vm_position_dot_[i] - robot_velocity));
-            Eigen::VectorXd cross_prod_ = vm_orientation_[i].segment<3>(1).cross(robot_orientation_.segment<3>(1));
+            //Eigen::VectorXd cross_prod_ = vm_orientation_[i].segment<3>(1).cross(robot_orientation_.segment<3>(1));
             
-            std::cout << cross_prod_ <<std::endl;
+            //std::cout << cross_prod_ <<std::endl;
             
-            f_pos_ += 0.0 * (vm_vector_[i]->getK() * (vm_position_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_position_dot_[i] - robot_velocity));
+            f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_position_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_position_dot_[i] - robot_velocity));
+            f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_orientation_[i](1)- vm_orientation_[i](0) * robot_orientation_(1));
+            f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_orientation_[i](2)- vm_orientation_[i](0) * robot_orientation_(2));
+            f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_orientation_[i](3)- vm_orientation_[i](0) * robot_orientation_(3));
+            
+            /*f_pos_ += 0.0 * (vm_vector_[i]->getK() * (vm_position_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_position_dot_[i] - robot_velocity));
             f_ori_(0)  += scales_(i) * 2.0 * (robot_orientation_(0) * vm_orientation_[i](1)- vm_orientation_[i](0) * robot_orientation_(1) - cross_prod_(0)  );
             f_ori_(1)  += scales_(i) * 2.0 * (robot_orientation_(0) * vm_orientation_[i](2)- vm_orientation_[i](0) * robot_orientation_(2) - cross_prod_(1)  );
-            f_ori_(2)  += scales_(i) * 2.0 * (robot_orientation_(0) * vm_orientation_[i](3)- vm_orientation_[i](0) * robot_orientation_(3) - cross_prod_(2)  );
+            f_ori_(2)  += scales_(i) * 2.0 * (robot_orientation_(0) * vm_orientation_[i](3)- vm_orientation_[i](0) * robot_orientation_(3) - cross_prod_(2)  );*/
           }
           else 
             f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_position_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_position_dot_[i] - robot_velocity)); // Sum over all the vms
