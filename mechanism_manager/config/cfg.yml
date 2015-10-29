@@ -1,6 +1,6 @@
-models: ['gmm_1.txt']
-quat_start: [[1.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0]]
-quat_end: [[1.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0]]
+models: ['pou_1.txt']
+quat_start: [[1.0,0.0,0.0,0.0]]
+quat_end: [[0.70710678,0.0,-0.70710678,0.0]]
 prob_mode: hard
 use_weighted_dist: [false,false]
 use_active_guide: [false,false]

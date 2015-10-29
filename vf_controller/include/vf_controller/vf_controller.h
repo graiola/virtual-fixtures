@@ -20,6 +20,7 @@ namespace vf_controller
 {
   typedef Eigen::JacobiSVD<Eigen::MatrixXd> svd_t;
   typedef std::vector<hardware_interface::JointHandle> joints_t;
+  typedef Eigen::Quaternion<double> quaternion_t;
   
 /*class VFHardwareInterface : public hardware_interface::HardwareInterface
 {
@@ -51,13 +52,17 @@ private:
   Eigen::VectorXd torques_cmd_;
   Eigen::VectorXd joint_pos_status_;
   Eigen::VectorXd joint_vel_status_;
-  Eigen::VectorXd cart_pos_status_;
+  Eigen::VectorXd cart_pose_status_;
+  Eigen::VectorXd cart_pose_with_quat_status_;
   Eigen::VectorXd cart_vel_status_;
   Eigen::VectorXd f_vm_;
   
   Eigen::MatrixXd jacobian_;
   Eigen::MatrixXd jacobian_t_;               
   
+  quaternion_t quat_status_;
+  
+  bool use_orientation_;
   int cart_size_;
   int Nodf_kin_;
   

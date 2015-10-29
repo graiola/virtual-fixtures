@@ -75,17 +75,22 @@ class MechanismManager
     //std::vector<boost::shared_ptr<fa_t> > fa_vector_;
     
     int vm_nb_;
-    int dim_;
+    int position_dim_;
+    int orientation_dim_;
     double sum_;
     double curr_norm_factor_;
     double scale_threshold_;
+    bool use_orientation_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
     Eigen::VectorXd robot_position_;
+    Eigen::VectorXd robot_orientation_;
+    Eigen::VectorXd f_pos_;
+    Eigen::VectorXd f_ori_;
     std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
-    std::vector<Eigen::VectorXd> vm_quat_dot_;
+    std::vector<Eigen::VectorXd> vm_quat_;
     std::vector<std::vector<double> > quat_start_;
     std::vector<std::vector<double> > quat_end_;
     

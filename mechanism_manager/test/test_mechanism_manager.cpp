@@ -19,7 +19,6 @@ using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
 
-int test_dim = 3;
 double dt = 0.001;
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectly)
@@ -31,7 +30,7 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
 }
 
-TEST(VirtualMechanismGmrTest, UpdateMethod)
+TEST(VirtualMechanismGmrTest, UpdateMethodWithOrientation)
 {
   
   MechanismManager mm = MechanismManager();
@@ -41,9 +40,32 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   Eigen::VectorXd rob_vel;
   Eigen::VectorXd f_out;
   
-  rob_pos.resize(test_dim);
-  rob_vel.resize(test_dim);
-  f_out.resize(test_dim);
+  rob_pos.resize(7);
+  rob_vel.resize(3);
+  f_out.resize(6);
+  
+  rob_pos.fill(1.0);
+  rob_vel.fill(1.0);
+  f_out.fill(0.0);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
+  END_REAL_TIME_CRITICAL_CODE();
+}
+
+TEST(VirtualMechanismGmrTest, UpdateMethodOnlyPosition)
+{
+  
+  MechanismManager mm = MechanismManager();
+  
+  // Force input interface
+  Eigen::VectorXd rob_pos;
+  Eigen::VectorXd rob_vel;
+  Eigen::VectorXd f_out;
+  
+  rob_pos.resize(3);
+  rob_vel.resize(3);
+  f_out.resize(3);
   
   rob_pos.fill(1.0);
   rob_vel.fill(1.0);

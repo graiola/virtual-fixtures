@@ -55,14 +55,15 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new vm_t(dim_,fa_tmp_shr_ptr));
+	    vm_vector_.push_back(new vm_t(position_dim_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
 	}
 	return true;
 }
   
 MechanismManager::MechanismManager()
 {
-      dim_ = 3; // NOTE Cartesian dimension is fixed, xyz
+      position_dim_ = 3; // NOTE position dimension is fixed, xyz
+      orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
       
       pkg_path_ = ros::package::getPath("mechanism_manager");	
       std::string config_file_path(pkg_path_+"/config/cfg.yml"); //FIXME load it from param server
@@ -82,21 +83,28 @@ MechanismManager::MechanismManager()
          //vm_vector_[i]->Init();
          vm_vector_[i]->Init(quat_start_[i],quat_end_[i]);
          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
-         vm_state_.push_back(VectorXd(dim_));
-         vm_state_dot_.push_back(VectorXd(dim_));
-         vm_quat_dot_.push_back(VectorXd(4));
+         vm_state_.push_back(VectorXd(position_dim_));
+         vm_state_dot_.push_back(VectorXd(position_dim_));
+         vm_quat_.push_back(VectorXd(orientation_dim_));
       }
       
       // Some Initializations
+      use_orientation_ = false;
       active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
-      robot_position_.resize(dim_);
+      robot_position_.resize(position_dim_);
+      robot_orientation_.resize(orientation_dim_);
+      f_pos_.resize(position_dim_);
+      f_ori_.resize(position_dim_); // NOTE The dimension is the same as for the position 
       
       // Clear
-      scales_ .fill(0.0);
+      scales_.fill(0.0);
       phase_.fill(0.0);
       robot_position_.fill(0.0);
+      robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
+      f_pos_.fill(0.0);
+      f_ori_.fill(0.0);
       
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -143,7 +151,7 @@ void MechanismManager::MoveBackward()
       vm_vector_[i].move_forward_ = false;
 }*/
 
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied, bool move_forward)
+void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied, bool move_forward)
 {
     for(int i=0; i<vm_nb_;i++)
     {
@@ -152,10 +160,10 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
       else
 	vm_vector_[i]->moveBackward();
     }
-    Update(robot_position,robot_velocity,dt,f_out,force_applied);
+    Update(robot_pose,robot_velocity,dt,f_out,force_applied);
 }
 
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
+void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
     for(int i=0; i<vm_nb_;i++)
     {
@@ -172,33 +180,46 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	      //std::cout << "Deactive "<<i<< std::endl;
 	  }
     }
-    Update(robot_position,robot_velocity,dt,f_out);
+    Update(robot_pose,robot_velocity,dt,f_out);
 }
 
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
+void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
-	assert(robot_position.size() == dim_);
-	assert(robot_velocity.size() == dim_);
-	assert(dt > 0.0);
-	assert(f_out.size() == dim_);
 	
-	robot_position_ = robot_position; // For plot pourpose
+	assert(dt > 0.0);
+	//assert(f_out.size() == dim_);
+        //assert(robot_pose.size() == dim_);
+        assert(robot_velocity.size() == position_dim_);
+	
+        if(robot_pose.size() == position_dim_)
+        {
+            use_orientation_ = false;
+            robot_position_ = robot_pose;
+        }
+        else if(robot_pose.size() == position_dim_ + orientation_dim_)
+        {
+            use_orientation_ = true;
+            robot_position_ = robot_pose.segment<3>(0);
+            robot_orientation_ = robot_pose.segment<4>(3);
+            
+        }
+	
 	
 	// Update the virtual mechanisms states, compute single probabilities
 	for(int i=0; i<vm_nb_;i++)
 	{
-	  vm_vector_[i]->Update(robot_position,robot_velocity,dt);
+	  vm_vector_[i]->Update(robot_position_,robot_velocity,dt);
 	  
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
-	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
+	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
 	      break;
 	    case POTENTIAL:
-	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position));
+	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position_));
 	      break;
 	    case SOFT:
-	      scales_(i) = vm_vector_[i]->getProbability(robot_position);
+	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
 	      break;
 	    default:
 	      break;
@@ -210,6 +231,8 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	
 	sum_ = scales_.sum();
 	f_out.fill(0.0); // Reset the force
+        f_pos_.fill(0.0); // Reset the force
+        f_ori_.fill(0.0); // Reset the force
 	
 	for(int i=0; i<vm_nb_;i++)
 	{
@@ -223,7 +246,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	      scales_(i) = scales_(i);
 	      break;
 	    case SOFT:
-	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position)) * scales_(i)/sum_;
+	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum_;
 	      break;
 	    default:
 	      break;
@@ -232,22 +255,30 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 	  // Compute the force from the vms
 	  vm_vector_[i]->getState(vm_state_[i]);
 	  vm_vector_[i]->getStateDot(vm_state_dot_[i]);
-          vm_vector_[i]->getQuaternion(vm_quat_dot_[i]);
+          vm_vector_[i]->getQuaternion(vm_quat_[i]);
 	  
           //std::cout << "***" << std::endl;
-          //std::cout << vm_quat_dot_[i] << std::endl;
+          //std::cout << vm_quat_[i] << std::endl;
           
 	  //vm_vector_[i]->getLocalKernel(vm_kernel_[i]);
 	  //K_ = vm_vector_[i]->getK();
 	  //B_ = vm_vector_[i]->getB();
 	  
-          //f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](1)- vm_quat_dot_[i](0) * robot_orientation_(1));
-          //f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](2)- vm_quat_dot_[i](0) * robot_orientation_(2));
-          //f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_dot_[i](3)- vm_quat_dot_[i](0) * robot_orientation_(3));
-	  
-	  f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
-	    
+          if(use_orientation_)
+          {
+            
+            f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1));
+            f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2));
+            f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3));
+            f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
+          }
+          else
+            f_out += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
 	}
+	
+        if(use_orientation_)
+            f_out << f_pos_ , f_ori_;
+        
 
 	//UpdateTrackingReference(robot_position);
 	

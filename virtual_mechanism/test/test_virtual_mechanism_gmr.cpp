@@ -28,7 +28,7 @@ typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/gennaro/catkin_ws/src/virtual-fixtures/virtual_mechanism/test/gmm_1.txt"; // FIXME
+  std::string file_name = "/home/meka/catkin_ws/src/virtual-fixtures/mechanism_manager/models/pou_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
