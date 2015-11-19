@@ -93,15 +93,29 @@ MechanismManager::MechanismManager()
       active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
+      Kf_.resize(vm_nb_);
+      phase_dot_.resize(vm_nb_);
       robot_position_.resize(position_dim_);
       robot_orientation_.resize(orientation_dim_);
+      orientation_error_.resize(position_dim_);
+      cross_prod_.resize(position_dim_);
+      prev_orientation_error_.resize(position_dim_);
+      orientation_integral_.resize(position_dim_);
+      orientation_derivative_.resize(position_dim_);
       f_pos_.resize(position_dim_);
       f_ori_.resize(position_dim_); // NOTE The dimension is the same as for the position 
       
       // Clear
       scales_.fill(0.0);
       phase_.fill(0.0);
+      Kf_.fill(0.0);
+      phase_dot_.fill(0.0);
       robot_position_.fill(0.0);
+      orientation_error_.fill(0.0);
+      cross_prod_.fill(0.0);
+      prev_orientation_error_.fill(0.0);
+      orientation_integral_.fill(0.0);
+      orientation_derivative_.fill(0.0);
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
       f_ori_.fill(0.0);
@@ -111,6 +125,8 @@ MechanismManager::MechanismManager()
       {
 	  ros_node_.Init("mechanism_manager");
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
 	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
 	  //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
 	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -130,7 +146,11 @@ MechanismManager::MechanismManager()
       #endif
       
       // Define the scale threshold to check when a guide is more "probable"
-      scale_threshold_ = 1.0/static_cast<double>(vm_nb_) + 0.2;
+      scale_threshold_ = 1.0/static_cast<double>(vm_nb_);
+      
+      if(vm_nb_>1)
+          scale_threshold_ = scale_threshold_ + 0.2;
+          
 }
   
 MechanismManager::~MechanismManager()
@@ -165,9 +185,16 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
 {
+    /*std::cout << "tresh" << std::endl;
+    std::cout << scale_threshold_ << std::endl;
+    
+        std::cout << "tresh" << std::endl;
+    std::cout << scale_threshold_ << std::endl;*/
+    
     for(int i=0; i<vm_nb_;i++)
     {
-      if (force_applied == false && scales_(i) > scale_threshold_ && use_active_guide_[i] == true)
+      //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
+      if (force_applied == false && use_active_guide_[i] == true)
       {
 	      vm_vector_[i]->setActive(true);
 	      active_guide_[i] = true;
@@ -227,6 +254,8 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	  
 	  // Take the phase for each vm (For plots)
 	  phase_(i) = vm_vector_[i]->getPhase();
+          phase_dot_(i) = vm_vector_[i]->getPhaseDot();
+          Kf_(i)= vm_vector_[i]->getKf();
 	}
 	
 	sum_ = scales_.sum();
@@ -266,10 +295,22 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	  
           if(use_orientation_)
           {
+            cross_prod_.noalias() = vm_quat_[i].segment<3>(1).cross(robot_orientation_.segment<3>(1));
+              
+            orientation_error_(0) = robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1) - cross_prod_(0);
+            orientation_error_(1) = robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2) - cross_prod_(1);
+            orientation_error_(2) = robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3) - cross_prod_(2);
+           
+            orientation_integral_ = orientation_integral_ + orientation_error_ * dt;
+            orientation_derivative_ = (orientation_error_ - prev_orientation_error_)/dt;
             
-            f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1));
-            f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2));
-            f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3));
+            f_ori_ += scales_(i) * (5.0 * orientation_error_ + 0.0 * orientation_integral_ + 0.0 * orientation_derivative_);
+            
+            prev_orientation_error_ = orientation_error_;
+            
+            //f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1));
+            //f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2));
+            //f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3));
             f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity)); // Sum over all the vms
           }
           else

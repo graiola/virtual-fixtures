@@ -19,7 +19,7 @@ find_package(catkin
   geometry_msgs
   nav_msgs
   visualization_msgs
-  #realtime_tools
+  realtime_tools
 )
 
 if(realtime_tools_FOUND AND sensor_msgs_FOUND)

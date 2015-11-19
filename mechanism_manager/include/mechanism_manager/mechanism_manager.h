@@ -83,8 +83,15 @@ class MechanismManager
     bool use_orientation_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
+    Eigen::VectorXd Kf_;
+    Eigen::VectorXd phase_dot_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_orientation_;
+    Eigen::VectorXd cross_prod_;
+    Eigen::VectorXd orientation_error_;
+    Eigen::VectorXd prev_orientation_error_;
+    Eigen::VectorXd orientation_integral_;
+    Eigen::VectorXd orientation_derivative_;
     Eigen::VectorXd f_pos_;
     Eigen::VectorXd f_ori_;
     std::vector<bool> active_guide_;
