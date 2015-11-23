@@ -438,8 +438,30 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
 		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	     }
-	     Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-	     phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
+	     
+            // HACK 
+            if(phase_dot_> 0.2)
+                moveForward();
+            else if(phase_dot_< -0.2)
+                moveBackward();
+	     
+            
+            // Compute phase dot
+            if(move_forward_) // Go forward
+            {
+                //std::cout << "Forward" <<std::endl;
+                Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
+            }
+            else // Go back
+            {
+                //std::cout << "Backward" <<std::endl;
+                Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_state(0)));
+                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
+            }
+
+	     //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+	     //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
 	     phase_state_dot_(0) = phase_state(1);
 	  }
 	  
