@@ -1,5 +1,4 @@
 #include "mechanism_manager/mechanism_manager.h"
-#include "../../../../install_isolated/include/mechanism_manager/mechanism_manager.h"
 
 namespace mechanism_manager
 {
