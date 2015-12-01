@@ -11,31 +11,42 @@ namespace virtual_mechanism_gmr
 {
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim) // FIXME
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_pos_ptr, boost::shared_ptr<fa_t> fa_phase_dot_ptr): VM_t(state_dim) // FIXME
 {
   
-  assert(fa_ptr);
-  assert(fa_ptr->isTrained());
-  assert(fa_ptr->getExpectedInputDim() == 1);
-  assert(fa_ptr->getExpectedOutputDim() == state_dim);
+  assert(fa_pos_ptr);
+  assert(fa_phase_dot_ptr);
+  
+  assert(fa_pos_ptr->isTrained());
+  assert(fa_phase_dot_ptr->isTrained());
+  
+  assert(fa_pos_ptr->getExpectedInputDim() == 1);
+  assert(fa_phase_dot_ptr->getExpectedInputDim() == 1);
+  
+  assert(fa_pos_ptr->getExpectedOutputDim() == state_dim);
+  assert(fa_phase_dot_ptr->getExpectedOutputDim() == 1);
   
   fa_input_.resize(1,1);
-  fa_output_.resize(1,VM_t::state_dim_);
-  fa_output_dot_.resize(1,VM_t::state_dim_);
-  variance_.resize(1,VM_t::state_dim_);
-  covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
-  covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
+  fa_pos_output_.resize(1,VM_t::state_dim_);
+  fa_phase_dot_output_.resize(1,1);
+  fa_pos_output_dot_.resize(1,VM_t::state_dim_);
+  variance_pos_.resize(1,VM_t::state_dim_);
+  variance_phase_dot_.resize(1,1);
+  covariance_pos_.resize(VM_t::state_dim_,VM_t::state_dim_);
+  covariance_pos_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
   //normal_vector_.resize(VM_t::state_dim_);
   //prev_normal_vector_.resize(VM_t::state_dim_);
   err_.resize(VM_t::state_dim_);
   
-  variance_.fill(1.0);
-  covariance_ = variance_.row(0).asDiagonal();
-  covariance_inv_.fill(0.0);
+  variance_pos_.fill(1.0);
+  variance_phase_dot_.fill(0.0);
+  covariance_pos_ = variance_pos_.row(0).asDiagonal();
+  covariance_pos_inv_.fill(0.0);
   //prev_normal_vector_.fill(0.0);
   err_.fill(0.0);
    
-  fa_ptr_ = fa_ptr;
+  fa_pos_ptr_ = fa_pos_ptr;
+  fa_phase_dot_ptr_ = fa_phase_dot_ptr;
   
   prob_ = 0.0;
   determinant_cov_ = 1.0;
@@ -57,17 +68,20 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out) // Not for rt
+void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out, double& phase_dot_out) // Not for rt
 {
   assert(phase_in <= 1.0);
   assert(phase_in >= 0.0);
   assert(state_out.size() == VM_t::state_dim_);
-  MatrixXd fa_input, fa_output;
+  MatrixXd fa_input, fa_pos_output, fa_phase_dot_output;
   fa_input.resize(1,1);
-  fa_output.resize(1,VM_t::state_dim_);
+  fa_pos_output.resize(1,VM_t::state_dim_);
+  fa_phase_dot_output.resize(1,1);
   fa_input(0,0) = phase_in;
-  fa_ptr_->predict(fa_input,fa_output);
-  state_out = fa_output.transpose();
+  fa_pos_ptr_->predict(fa_input,fa_pos_output);
+  fa_phase_dot_ptr_->predict(fa_input,fa_phase_dot_output);
+  state_out = fa_pos_output.transpose();
+  phase_dot_out = fa_phase_dot_output(0,0);
 }
 
 template<class VM_t>
@@ -77,10 +91,10 @@ void VirtualMechanismGmr<VM_t>::ComputeInitialState()
   fa_input.resize(1,1);
   fa_output.resize(1,VM_t::state_dim_);
   fa_input(0,0) = 0.0;
-  fa_ptr_->predict(fa_input,fa_output);
+  fa_pos_ptr_->predict(fa_input,fa_output);
   initial_state_ = fa_output.transpose();*/
   
-  ComputeStateGivenPhase(0.0,VM_t::initial_state_);
+  ComputeStateGivenPhase(0.0,VM_t::initial_state_,VM_t::phase_dot_learnt_); // NOTE At the beginning/end VM_t::phase_dot_learnt_ should be zero 
 }
 
 template<class VM_t>
@@ -90,31 +104,34 @@ void VirtualMechanismGmr<VM_t>::ComputeFinalState()
   fa_input.resize(1,1);
   fa_output.resize(1,VM_t::state_dim_);
   fa_input(0,0) = 1.0;
-  fa_ptr_->predict(fa_input,fa_output);
+  fa_pos_ptr_->predict(fa_input,fa_output);
   final_state_ = fa_output.transpose();*/
   
-  ComputeStateGivenPhase(1.0,VM_t::final_state_);
+  ComputeStateGivenPhase(1.0,VM_t::final_state_,VM_t::phase_dot_learnt_); // NOTE At the beginning/end VM_t::phase_dot_learnt_ should be zero 
 }
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateJacobian()
 {
   fa_input_(0,0) = VM_t::phase_; // Convert to Eigen Matrix
-  fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
+  fa_pos_ptr_->predictDot(fa_input_,fa_pos_output_,fa_pos_output_dot_,variance_pos_);
+  fa_phase_dot_ptr_->predict(fa_input_,fa_phase_dot_output_,variance_phase_dot_); // NOTE For now we dont use variance_phase_dot_
   
-  covariance_ = variance_.row(0).asDiagonal();
+  covariance_pos_ = variance_pos_.row(0).asDiagonal();
   
-  VM_t::J_transp_ = fa_output_dot_; // NOTE The output is transposed!
+  VM_t::J_transp_ = fa_pos_output_dot_; // NOTE The output is transposed!
   VM_t::J_ = VM_t::J_transp_.transpose();
 
-   //J_ = fa_output_dot_;
-   //J_transp_ = fa_output_dot_.transpose();
+   //J_ = fa_pos_output_dot_;
+   //J_transp_ = fa_pos_output_dot_.transpose();
 }
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateState()
 {
-  VM_t::state_ = fa_output_.transpose();
+  VM_t::state_ = fa_pos_output_.transpose();
+  VM_t::phase_dot_learnt_ = fa_phase_dot_output_(0,0);
+  
 }
 
 /*template<class VM_t>
@@ -162,7 +179,7 @@ void VirtualMechanismGmr<VM_t>::getLocalKernel(VectorXd& mean_variance) const
   for(int i = 0; i < VM_t::state_dim_; i++)
   {
     mean_variance(i) = VM_t::state_(i);
-    mean_variance(i+3) = variance_(i);
+    mean_variance(i+3) = variance_pos_(i);
   }
 }
 
@@ -170,7 +187,7 @@ template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 {
   for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
-    covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
+    covariance_pos_inv_(i,i) = 1/(covariance_pos_(i,i)+0.001); 
 }
 
 template<class VM_t>
@@ -187,8 +204,8 @@ double VirtualMechanismGmr<VM_t>::getProbability(const VectorXd& pos)
   determinant_cov_ = 1.0;
   for (int i = 0; i<VM_t::state_dim_; i++)
   {
-    prob_ += err_(i)*err_(i)*covariance_inv_(i,i);
-    determinant_cov_ *= covariance_inv_(i,i);
+    prob_ += err_(i)*err_(i)*covariance_pos_inv_(i,i);
+    determinant_cov_ *= covariance_pos_inv_(i,i);
   }
   
   prob_ = exp(-0.5*prob_);
@@ -230,7 +247,7 @@ double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
     UpdateInvCov();
     prob_ = 0.0;
     for (int i = 0; i<VM_t::state_dim_; i++)
-      prob_ += err_(i)*err_(i)*covariance_inv_(i,i);
+      prob_ += err_(i)*err_(i)*covariance_pos_inv_(i,i);
     return std::sqrt(prob_);
   }
   else

@@ -22,7 +22,7 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr);
+	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_pos_ptr, boost::shared_ptr<fa_t> fa_phase_dot_ptr);
 	  
 	  double getDistance(const Eigen::VectorXd& pos);
 	  void setWeightedDist(const bool activate);
@@ -36,16 +36,19 @@ class VirtualMechanismGmr: public VM_t
 	  virtual void ComputeInitialState();
 	  virtual void ComputeFinalState();
 	  void UpdateInvCov();
-	  void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
+	  void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, double& phase_dot_out);
 
-	  boost::shared_ptr<fa_t> fa_ptr_;
+	  boost::shared_ptr<fa_t> fa_pos_ptr_;
+          boost::shared_ptr<fa_t> fa_phase_dot_ptr_;
 
 	  Eigen::MatrixXd fa_input_;
-	  Eigen::MatrixXd fa_output_;
-	  Eigen::MatrixXd fa_output_dot_;
-	  Eigen::MatrixXd variance_;
-	  Eigen::MatrixXd covariance_;
-	  Eigen::MatrixXd covariance_inv_;
+	  Eigen::MatrixXd fa_pos_output_;
+	  Eigen::MatrixXd fa_pos_output_dot_;
+          Eigen::MatrixXd fa_phase_dot_output_;
+	  Eigen::MatrixXd variance_pos_;
+          Eigen::MatrixXd variance_phase_dot_;
+	  Eigen::MatrixXd covariance_pos_;
+	  Eigen::MatrixXd covariance_pos_inv_;
 	  
 	  Eigen::VectorXd err_;
 

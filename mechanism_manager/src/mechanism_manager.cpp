@@ -23,14 +23,18 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	}
 	
 	// Retrain the parameters from yaml file
-	std::vector<std::string> model_names;
+	std::vector<std::string> position_model_names;
+        std::vector<std::string> phase_dot_model_names;
         //std::vector<std::vector<double> > quat_start;
         //std::vector<std::vector<double> > quat_end;
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
 	
-	main_node["models"] >> model_names;
+	main_node["position_models"] >> position_model_names;
+        main_node["phase_dot_models"] >> phase_dot_model_names;
 
+        assert(position_model_names.size() == phase_dot_model_names.size());
+        
         main_node["quat_start"] >> quat_start_;
         main_node["quat_end"] >> quat_end_;
         
@@ -48,13 +52,21 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    prob_mode_ = POTENTIAL; // Default
 	
 	// Create the virtual mechanisms starting from the GMM models
- 	for(int i=0;i<model_names.size();i++)
+ 	for(int i=0;i<position_model_names.size();i++)
 	{
-	    std::vector<std::vector<double> > data;
-	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
-	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
-	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new vm_t(position_dim_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+	    std::vector<std::vector<double> > pos_model_data;
+            std::vector<std::vector<double> > phase_dot_model_data;
+            
+	    ReadTxtFile((models_path+position_model_names[i]).c_str(),pos_model_data);
+            ReadTxtFile((models_path+phase_dot_model_names[i]).c_str(),phase_dot_model_data);
+            
+	    ModelParametersGMR* model_pos_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+position_model_names[i]);
+            ModelParametersGMR* model_phase_dot_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+phase_dot_model_names[i]);
+            
+	    boost::shared_ptr<fa_t> fa_pos_tmp_shr_ptr(new FunctionApproximatorGMR(model_pos_parameters_gmr)); // Convert to shared pointer
+            boost::shared_ptr<fa_t> fa_phase_dot_tmp_shr_ptr(new FunctionApproximatorGMR(model_phase_dot_parameters_gmr)); // Convert to shared pointer
+            
+	    vm_vector_.push_back(new vm_t(position_dim_,fa_pos_tmp_shr_ptr,fa_phase_dot_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
 	}
 	return true;
 }
