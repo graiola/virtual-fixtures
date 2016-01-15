@@ -63,15 +63,15 @@ MechanismManager::MechanismManager()
 {
       position_dim_ = 3; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
-      
-      pkg_path_ = ros::package::getPath("mechanism_manager");	
+      pkg_path_ = ros::package::getPath("mechanism_manager");
+
       std::string config_file_path(pkg_path_+"/config/cfg.yml"); //FIXME load it from param server
-      
+
       if(ReadConfig(config_file_path))
-	  ROS_INFO("Loaded config file: %s",config_file_path.c_str());
+        ROS_INFO("Loaded config file: %s",config_file_path.c_str());
       else
-	  ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
-      
+        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
+
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
       assert(vm_nb_ >= 1);
@@ -86,7 +86,7 @@ MechanismManager::MechanismManager()
          vm_state_dot_.push_back(VectorXd(position_dim_));
          vm_quat_.push_back(VectorXd(orientation_dim_));
       }
-      
+
       // Some Initializations
       use_orientation_ = false;
       active_guide_.resize(vm_nb_,false);
@@ -149,7 +149,6 @@ MechanismManager::MechanismManager()
       
       if(vm_nb_>1)
           scale_threshold_ = scale_threshold_ + 0.2;
-          
 }
   
 MechanismManager::~MechanismManager()
@@ -211,26 +210,25 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
-	
+
 	assert(dt > 0.0);
-	//assert(f_out.size() == dim_);
-        //assert(robot_pose.size() == dim_);
-        assert(robot_velocity.size() == position_dim_);
+
+    assert(robot_velocity.size() == position_dim_);
 	
-        if(robot_pose.size() == position_dim_)
-        {
-            use_orientation_ = false;
-            robot_position_ = robot_pose;
-        }
-        else if(robot_pose.size() == position_dim_ + orientation_dim_)
-        {
-            use_orientation_ = true;
-            robot_position_ = robot_pose.segment<3>(0);
-            robot_orientation_ = robot_pose.segment<4>(3);
-            
-        }
+    if(robot_pose.size() == position_dim_)
+    {
+        use_orientation_ = false;
+        robot_position_ = robot_pose;
+    }
+    else if(robot_pose.size() == position_dim_ + orientation_dim_)
+    {
+        use_orientation_ = true;
+        robot_position_ = robot_pose.segment<3>(0);
+        robot_orientation_ = robot_pose.segment<4>(3);
+
+    }
 	
-	
+
 	// Update the virtual mechanisms states, compute single probabilities
 	for(int i=0; i<vm_nb_;i++)
 	{
@@ -253,14 +251,14 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	  
 	  // Take the phase for each vm (For plots)
 	  phase_(i) = vm_vector_[i]->getPhase();
-          phase_dot_(i) = vm_vector_[i]->getPhaseDot();
-          Kf_(i)= vm_vector_[i]->getKf();
+      phase_dot_(i) = vm_vector_[i]->getPhaseDot();
+      Kf_(i)= vm_vector_[i]->getKf();
 	}
-	
+
 	sum_ = scales_.sum();
 	f_out.fill(0.0); // Reset the force
-        f_pos_.fill(0.0); // Reset the force
-        f_ori_.fill(0.0); // Reset the force
+    f_pos_.fill(0.0); // Reset the force
+    f_ori_.fill(0.0); // Reset the force
 	
 	for(int i=0; i<vm_nb_;i++)
 	{
@@ -279,11 +277,10 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	    default:
 	      break;
 	  }
-
 	  // Compute the force from the vms
 	  vm_vector_[i]->getState(vm_state_[i]);
 	  vm_vector_[i]->getStateDot(vm_state_dot_[i]);
-          vm_vector_[i]->getQuaternion(vm_quat_[i]);
+      vm_vector_[i]->getQuaternion(vm_quat_[i]);
 	  
           //std::cout << "***" << std::endl;
           //std::cout << vm_quat_[i] << std::endl;
@@ -319,13 +316,12 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
         if(use_orientation_)
             f_out << f_pos_ , f_ori_;
         
-
 	//UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER
-	rt_publishers_values_.PublishAll();
-	rt_publishers_pose_.PublishAll();
-	rt_publishers_path_.PublishAll();
+    //rt_publishers_values_.PublishAll();
+    //rt_publishers_pose_.PublishAll();
+    //rt_publishers_path_.PublishAll();
 	#endif
 }
   

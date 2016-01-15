@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
 
+#include <sybot_hw_interface/sybot_hw_interface.h>
 #include <controller_interface/controller.h>
 #include <forward_command_controller/forward_command_controller.h>
 #include <hardware_interface/hardware_interface.h>
@@ -13,38 +14,24 @@
 ////////// Mechanism Manager
 #include <mechanism_manager/mechanism_manager.h>
 
-////////// KDL_KINEMATICS
-#include <kdl_kinematics/kdl_kinematics.h>
-
 namespace vf_controller
 {
-  typedef Eigen::JacobiSVD<Eigen::MatrixXd> svd_t;
   typedef std::vector<hardware_interface::JointHandle> joints_t;
   typedef Eigen::Quaternion<double> quaternion_t;
-  
-/*class VFHardwareInterface : public hardware_interface::HardwareInterface
-{
-public:
-  VFHardwareInterface()
-  {
-      
-  }
-};*/
 
-class VFController : public controller_interface::Controller<hardware_interface::EffortJointInterface>
+class VFController : public controller_interface::Controller<sybot_hw_interface::SybotHwInterface>
 {
 public:
-  VFController():kin_(NULL){}
-  ~VFController(){if(kin_!=NULL) delete kin_;}
+  VFController():hw_(NULL){}
+  //~VFController(){if(hw_!=NULL) delete hw_;}
   
-  bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh);
+  bool init(sybot_hw_interface::SybotHwInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh);
   void starting(const ros::Time& time) { }
   void update(const ros::Time& time, const ros::Duration& period);
   void stopping(const ros::Time& time) { }
   
 private:
   
-  kdl_kinematics::KDLKinematics* kin_;
   mechanism_manager::MechanismManager mechanism_manager_;
   
   joints_t joints_;
@@ -56,13 +43,14 @@ private:
   Eigen::VectorXd cart_pose_with_quat_status_;
   Eigen::VectorXd cart_vel_status_;
   Eigen::VectorXd f_vm_;
-  
+
   Eigen::MatrixXd jacobian_;
-  Eigen::MatrixXd jacobian_t_;               
+  mat_t jacobian_tmp_;
   
-  quaternion_t quat_status_;
-  
-  bool use_orientation_;
+  sybot_hw_interface::SybotHwInterface* hw_;
+
+  hardware_interface::EffortJointInterface* hw_eff_interface_;
+
   int cart_size_;
   int Nodf_kin_;
   
