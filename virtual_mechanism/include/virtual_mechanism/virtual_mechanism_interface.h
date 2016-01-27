@@ -2,10 +2,10 @@
 #define VIRTUAL_MECHANISM_INTERFACE_H
 
 ////////// Toolbox
-#include <toolbox/toolbox.h>
+#include "toolbox/toolbox.h"
 
 ////////// ROS
-#include <ros/ros.h>
+//#include <ros/ros.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -15,8 +15,8 @@
 //#include <eigen3/Eigen/Geometry>
 
 ////////// BOOST
-//#include <boost/shared_ptr.hpp>
-//#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
 	
@@ -28,7 +28,7 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-	  VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),ros_node_ptr_(NULL),phase_(0.0),
+      VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
 	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
@@ -37,14 +37,14 @@ class VirtualMechanismInterface
 	      assert(Kf_ > 0.0);
 	      
 	      // Initialize the ros node
-	      try
+          /*try
 	      {
-		ros_node_ptr_ = new tool_box::RosNode("virtual_mechanism"); // FIXME change here the name
+            ros_node_ptr_ = new tool_box::RosNode("virtual_mechanism"); // FIXME change here the name
 	      }
 	      catch(std::runtime_error err)
 	      {
-		std::cout<<err.what()<<std::endl;
-	      }
+            std::cout<<err.what()<<std::endl;
+          }*/
 	      
 	      // Initialize/resize the attributes
 	      // NOTE We assume that the phase has dim 1x1
@@ -68,10 +68,10 @@ class VirtualMechanismInterface
 	
 	  virtual ~VirtualMechanismInterface()
 	   {
-	      if(ros_node_ptr_!=NULL)
-		delete ros_node_ptr_;
+          //if(ros_node_ptr_!=NULL)
+            //delete ros_node_ptr_;
 	      if(adaptive_gain_ptr_!=NULL)
-		delete adaptive_gain_ptr_;
+            delete adaptive_gain_ptr_;
 	   }
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
@@ -163,10 +163,10 @@ class VirtualMechanismInterface
               
           }
           inline double getKf() const {return Kf_;}
-	  inline double getK() const {return K_;}
-	  inline double getB() const {return B_;}
-	  inline void setK(const double& K){assert(K > 0.0); K_ = K;}
-	  inline void setB(const double& B){assert(B > 0.0); B_ = B;}
+          inline double getK() const {return K_;}
+          inline double getB() const {return B_;}
+          inline void setK(const double& K){assert(K > 0.0); K_ = K;}
+          inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 	  
           inline void Init()
           {
@@ -174,8 +174,8 @@ class VirtualMechanismInterface
               UpdateJacobian();
               UpdateState();
               UpdateStateDot();
-	      ComputeInitialState();
-	      ComputeFinalState();
+              ComputeInitialState();
+              ComputeFinalState();
           }
           
           inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
@@ -212,7 +212,7 @@ class VirtualMechanismInterface
           }
 	  
 	  // Ros node
-	  tool_box::RosNode* ros_node_ptr_;
+      //tool_box::RosNode* ros_node_ptr_;
 	  
 	  // States
 	  double phase_;

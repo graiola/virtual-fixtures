@@ -1,7 +1,7 @@
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 
 using namespace std;
-using namespace ros;
+//using namespace ros;
 using namespace Eigen;
 using namespace tool_box;
 using namespace virtual_mechanism_interface;

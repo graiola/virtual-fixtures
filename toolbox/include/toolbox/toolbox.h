@@ -6,15 +6,17 @@
 #include <fstream>
 #include <iterator>
 
-////////// ROS
-#include <ros/ros.h>
-#ifdef USE_ROS_RT_PUBLISHER
-  #include <sensor_msgs/JointState.h>
-  #include <geometry_msgs/PoseStamped.h>
-  #include <geometry_msgs/WrenchStamped.h>
-  #include <visualization_msgs/Marker.h>
-  #include <nav_msgs/Path.h>
-  #include <realtime_tools/realtime_publisher.h>
+#ifdef INCLUDE_ROS_CODE
+	////////// ROS
+	#include <ros/ros.h>
+	#ifdef USE_ROS_RT_PUBLISHER
+	  #include <sensor_msgs/JointState.h>
+	  #include <geometry_msgs/PoseStamped.h>
+	  #include <geometry_msgs/WrenchStamped.h>
+	  #include <visualization_msgs/Marker.h>
+	  #include <nav_msgs/Path.h>
+	  #include <realtime_tools/realtime_publisher.h>
+	#endif
 #endif
 
 ////////// Eigen
@@ -123,6 +125,34 @@ class AdaptiveGain
 		double c_;
 };
 
+template<typename value_t>
+void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
+    std::string line;
+    values.clear();
+    std::ifstream myfile (filename);
+    std::istringstream iss;
+    std::size_t i=0;
+    std::size_t nb_vals=0;
+    if (myfile.is_open())
+    {
+        while (getline(myfile,line)) {
+            values.push_back(std::vector<value_t>());;
+            std::vector<value_t>& v = values[i];
+            iss.clear();
+            iss.str(line);
+            std::copy(std::istream_iterator<value_t>(iss),std::istream_iterator<value_t>(), std::back_inserter(v));
+            nb_vals+=v.size();
+            i++;
+        }
+    std::cout << "File ["<<filename<<"] read with success  ["<<nb_vals<<" values, "<<i<<" lines] "<<std::endl;
+    }
+    else{
+     std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
+
+#ifdef INCLUDE_ROS_CODE
 class RosNode
 {
 	public:
@@ -544,37 +574,12 @@ class RealTimePublishers
 		
 		pubs_map_t map_;
 };
-#endif
 
-template<typename value_t>
-void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
-    std::string line;
-    values.clear();
-    std::ifstream myfile (filename);
-    std::istringstream iss;
-    std::size_t i=0;
-    std::size_t nb_vals=0;
-    if (myfile.is_open())
-    {
-        while (getline(myfile,line)) {
-            values.push_back(std::vector<value_t>());;
-            std::vector<value_t>& v = values[i];
-            iss.clear();
-            iss.str(line);
-            std::copy(std::istream_iterator<value_t>(iss),std::istream_iterator<value_t>(), std::back_inserter(v));
-            nb_vals+=v.size();
-            i++;
-        }
-	std::cout << "File ["<<filename<<"] read with success  ["<<nb_vals<<" values, "<<i<<" lines] "<<std::endl;
-    }
-    else{
-	 std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
-    }
-    myfile.close();
-}
-  
-	
-}
 
-#endif
+#endif // RT PUBLISHERS
+#endif // ROS
+
+#endif // TOOLBOX_H
+
+}
 

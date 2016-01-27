@@ -1,133 +1,116 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(virtual_mechanism)
 
-#set(CMAKE_CXX_FLAGS "-Wall -std=c++0x")
 set(CMAKE_CXX_FLAGS "-std=c++0x")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
-  std_msgs
-  toolbox
-)
-
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
-
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+if(NO_ROS_LIBS)
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
- INCLUDE_DIRS include
- LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS roscpp rospy std_msgs toolbox
- DEPENDS system_lib boost dmpbbo
-)
+	###########
+	## Build ##
+	###########
 
-###########
-## Build ##
-###########
+	## Specify additional locations of header files
+	## Your package locations should be listed before other locations
+	include_directories(
+	  include ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
+	)
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
-  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
-)
+	## Declare a cpp library
+	add_library(${PROJECT_NAME} 
+	    include/${PROJECT_NAME}/virtual_mechanism_interface.h
+	    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+	    src/virtual_mechanism_gmr.cpp
+	)
+	
+	## Specify libraries to link a library or executable target against
+	target_link_libraries(${PROJECT_NAME} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
 
-## Declare a cpp library
-add_library(${PROJECT_NAME} 
-    include/${PROJECT_NAME}/virtual_mechanism_interface.h
-    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-    src/virtual_mechanism_gmr.cpp
-)
+	## Mark executables and/or libraries for installation
+	install(TARGETS virtual_mechanism
+	  ARCHIVE DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
+	  LIBRARY DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
+	  RUNTIME DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY}
+	)
 
-## Declare a cpp executable
-# add_executable(virtual_mechanism_node src/virtual_mechanism_node.cpp)
+	## Mark cpp header files for installation
+	install(DIRECTORY include/${PROJECT_NAME}/
+	  DESTINATION ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME}
+	)
 
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(virtual_mechanism_node virtual_mechanism_generate_messages_cpp)
+	#add_dependencies(${PROJECT_NAME} toolbox)
 
-## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
+else()
 
-#############
-## Install ##
-#############
+	add_definitions(-DINCLUDE_ROS_CODE)
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+	## Find catkin macros and libraries
+	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+	## is used, also find other catkin packages
+	find_package(catkin REQUIRED COMPONENTS
+	  toolbox
+	)
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+	###################################
+	## catkin specific configuration ##
+	###################################
+	## The catkin_package macro generates cmake config files for your package
+	## Declare things to be passed to dependent projects
+	## INCLUDE_DIRS: uncomment this if you package contains header files
+	## LIBRARIES: libraries you create in this project that dependent projects also need
+	## CATKIN_DEPENDS: catkin_packages dependent projects also need
+	## DEPENDS: system dependencies of this project that dependent projects also need
+	catkin_package(
+	 INCLUDE_DIRS include
+	 LIBRARIES ${PROJECT_NAME}
+	 CATKIN_DEPENDS toolbox
+	 DEPENDS system_lib boost dmpbbo
+	)
 
-## Mark executables and/or libraries for installation
-install(TARGETS virtual_mechanism
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+	###########
+	## Build ##
+	###########
 
-## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
-)
+	## Specify additional locations of header files
+	## Your package locations should be listed before other locations
+	include_directories(
+	  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
+	)
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+	## Declare a cpp library
+	add_library(${PROJECT_NAME} 
+	    include/${PROJECT_NAME}/virtual_mechanism_interface.h
+	    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+	    src/virtual_mechanism_gmr.cpp
+	)
 
-#############
-## Testing ##
-#############
+	## Specify libraries to link a library or executable target against
+	target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
 
-## Add gtest based cpp test target and link libraries
-#catkin_add_gtest(test_virtual_mechanism_line 
-#  test/test_virtual_mechanism_line.cpp
-#)
-#if(TARGET test_virtual_mechanism_line )
-#  target_link_libraries(test_virtual_mechanism_line  ${PROJECT_NAME})
-#endif()
+	## Mark executables and/or libraries for installation
+	install(TARGETS virtual_mechanism
+	  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+	)
 
-## Add gtest based cpp test target and link libraries
-catkin_add_gtest(test_virtual_mechanism_gmr 
-  test/test_virtual_mechanism_gmr.cpp
-)
-if(TARGET test_virtual_mechanism_gmr)
-  target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
-endif()
+	## Mark cpp header files for installation
+	install(DIRECTORY include/${PROJECT_NAME}/
+	  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	  FILES_MATCHING PATTERN "*.h"
+	  PATTERN ".svn" EXCLUDE
+	)
 
-## Add gtest based cpp test target and link libraries
-#catkin_add_gtest(test_virtual_mechanism_dmp 
-#  test/test_virtual_mechanism_dmp.cpp
-#)
-#if(TARGET test_virtual_mechanism_dmp)
-#  target_link_libraries(test_virtual_mechanism_dmp ${PROJECT_NAME})
-#endif()
+	## Add gtest based cpp test target and link libraries
+	catkin_add_gtest(test_virtual_mechanism_gmr 
+	  test/test_virtual_mechanism_gmr.cpp
+	)
+	if(TARGET test_virtual_mechanism_gmr)
+	  target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
+	endif()
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+endif(NO_ROS_LIBS)

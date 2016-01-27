@@ -31,8 +31,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	
 	main_node["models"] >> model_names;
 
-        main_node["quat_start"] >> quat_start_;
-        main_node["quat_end"] >> quat_end_;
+    main_node["quat_start"] >> quat_start_;
+    main_node["quat_end"] >> quat_end_;
         
 	main_node["prob_mode"] >> prob_mode_string;
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
