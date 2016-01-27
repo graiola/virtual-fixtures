@@ -219,16 +219,16 @@ class VirtualMechanismInterface
 	  double phase_prev_;
 	  double phase_dot_;
 	  int state_dim_;
-          bool update_quaternion_;
+      bool update_quaternion_;
 	  Eigen::VectorXd state_;
 	  Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
 	  Eigen::VectorXd force_;
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
-          boost::shared_ptr<quaternion_t > q_start_;
-          boost::shared_ptr<quaternion_t > q_end_;
-          boost::shared_ptr<quaternion_t > quaternion_;
+      boost::shared_ptr<quaternion_t > q_start_;
+      boost::shared_ptr<quaternion_t > q_end_;
+      boost::shared_ptr<quaternion_t > quaternion_;
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
@@ -254,12 +254,12 @@ class VirtualMechanismInterface
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
-	  //double K = 300, double B = 34.641016,
-	  VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
+      //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 100.0, double B = 10.0, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
-            assert(epsilon > 0.1);
-            epsilon_ = epsilon;
+        assert(epsilon > 0.1);
+        epsilon_ = epsilon;
 	    Bd_ = 0.0;
 	    Bd_max_ = Bd_max;
 	    det_ = 1.0;
@@ -290,11 +290,11 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      else
 		  fade_ = 10 * (-fade_) * dt + fade_;
 
-              // HACK 
-              if(phase_dot_> 0.2)
-                  moveForward();
-              else if(phase_dot_< -0.2)
-                  moveBackward();
+          // HACK
+          if(phase_dot_> 0.2)
+              moveForward();
+          else if(phase_dot_< -0.2)
+              moveBackward();
               
 	      // Compute phase dot
 	      if(move_forward_) // Go forward
@@ -353,7 +353,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      k4_.resize(2);
 	      
 	      k1_.fill(0.0);
-              k2_.fill(0.0);
+          k2_.fill(0.0);
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
               
