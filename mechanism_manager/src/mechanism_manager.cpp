@@ -63,14 +63,21 @@ MechanismManager::MechanismManager()
 {
       position_dim_ = 3; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
+
+#ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
+#else
+      pkg_path_ = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager"; // FIXME
+#endif
 
-      std::string config_file_path(pkg_path_+"/config/cfg.yml"); //FIXME load it from param server
+      std::string config_file_path(pkg_path_+"/config/cfg.yml");
 
-      if(ReadConfig(config_file_path))
+      assert(ReadConfig(config_file_path));
+
+      /*if(ReadConfig(config_file_path))
         ROS_INFO("Loaded config file: %s",config_file_path.c_str());
       else
-        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
+        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());*/
 
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
@@ -122,13 +129,13 @@ MechanismManager::MechanismManager()
       #ifdef USE_ROS_RT_PUBLISHER
       try
       {
-	  ros_node_.Init("mechanism_manager");
-	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
+          ros_node_.Init("mechanism_manager");
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
-	  rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
-	  //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
-	  rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
+          //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
+          rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
 	  for(int i=0; i<vm_nb_;i++)
 	  {
 	    std::string topic_name = "vm_pos_" + std::to_string(i+1);
@@ -140,7 +147,7 @@ MechanismManager::MechanismManager()
       }
       catch(const std::runtime_error& e)
       {
-	   ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+        ROS_ERROR("Failed to create the real time publishers: %s",e.what());
       }
       #endif
       
@@ -319,9 +326,9 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 	//UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER
-    //rt_publishers_values_.PublishAll();
-    //rt_publishers_pose_.PublishAll();
-    //rt_publishers_path_.PublishAll();
+        rt_publishers_values_.PublishAll();
+        rt_publishers_pose_.PublishAll();
+        rt_publishers_path_.PublishAll();
 	#endif
 }
   

@@ -4,11 +4,13 @@
 //#define USE_ROS_RT_PUBLISHER
 
 ////////// Toolbox
-#include <toolbox/toolbox.h>
+#include "toolbox/toolbox.h"
 
-////////// ROS
-#include <ros/ros.h>
-#include <ros/package.h>
+#ifdef INCLUDE_ROS_CODE
+    ////////// ROS
+    #include <ros/ros.h>
+    #include <ros/package.h>
+#endif
 
 ////////// YAML-CPP
 #include <yaml-cpp/yaml.h>
@@ -110,11 +112,13 @@ class MechanismManager
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
 
-#ifdef USE_ROS_RT_PUBLISHER
-    tool_box::RosNode ros_node_;
-    tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
-    tool_box::RealTimePublishers<tool_box::RealTimePublisherPoseStamped> rt_publishers_pose_;
-    tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
+#ifdef INCLUDE_ROS_CODE
+    #ifdef USE_ROS_RT_PUBLISHER
+        tool_box::RosNode ros_node_;
+        tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
+        tool_box::RealTimePublishers<tool_box::RealTimePublisherPoseStamped> rt_publishers_pose_;
+        tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
+    #endif
 #endif
     
 };

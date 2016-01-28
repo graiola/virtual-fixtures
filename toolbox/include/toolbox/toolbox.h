@@ -579,7 +579,8 @@ class RealTimePublishers
 #endif // RT PUBLISHERS
 #endif // ROS
 
+}
+
 #endif // TOOLBOX_H
 
-}
 

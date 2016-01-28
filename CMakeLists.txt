@@ -42,6 +42,7 @@ else()
 	###############################################################################
 	# Set all bunch of usefull variables
 	set(TOOLBOX_INCLUDE_DIR ${PROJECT_ROOT}/toolbox/include)
+	set(VIRTUAL_MECHANISM_INCLUDE_DIR ${PROJECT_ROOT}/virtual_mechanism/include)
 	set(PROJECT_INCLUDE_DIR ${PROJECT_ROOT}/include)
 	set(PROJECT_INSTALL_BIN ${PROJECT_ROOT}/bin)
 	set(PROJECT_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT}/bin)
@@ -62,5 +63,7 @@ else()
 	# Add the main project src dir that contains all the others
 	add_subdirectory(toolbox)
 	add_subdirectory(virtual_mechanism)
+	add_subdirectory(mechanism_manager)
+
 
 endif(catkin_FOUND)

@@ -17,40 +17,6 @@ if(NO_ROS_LIBS)
 	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
 
-	###########
-	## Build ##
-	###########
-
-	## Specify additional locations of header files
-	## Your package locations should be listed before other locations
-	#include_directories(
-	#  include ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
-	#)
-
-	## Declare a cpp library
-	#add_library(${PROJECT_NAME} 
-	#    include/${PROJECT_NAME}/virtual_mechanism_interface.h
-	#    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-	#    src/virtual_mechanism_gmr.cpp
-	#)
-	
-	## Specify libraries to link a library or executable target against
-	#target_link_libraries(${PROJECT_NAME} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
-
-	## Mark executables and/or libraries for installation
-	#install(TARGETS virtual_mechanism
-	#  ARCHIVE DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
-	#  LIBRARY DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
-	#  RUNTIME DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY}
-	#)
-
-	## Mark cpp header files for installation
-	#install(DIRECTORY include/${PROJECT_NAME}/
-	#  DESTINATION ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME}
-	#)
-
-	#add_dependencies(${PROJECT_NAME} toolbox)
-
 else()
 	## Find catkin macros and libraries
 	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -115,7 +81,7 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS virtual_mechanism
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
   LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}
