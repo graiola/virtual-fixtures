@@ -10,44 +10,48 @@ set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 if(NO_ROS_LIBS)
 
+	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
+	set(INCLUDE_PATHS ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
+	set(LINK_LIBS ${DMP_LIBRARIES} ${Boost_LIBRARIES})
+	set(ARCHIVE_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
+	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
+	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
+
 	###########
 	## Build ##
 	###########
 
 	## Specify additional locations of header files
 	## Your package locations should be listed before other locations
-	include_directories(
-	  include ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
-	)
+	#include_directories(
+	#  include ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
+	#)
 
 	## Declare a cpp library
-	add_library(${PROJECT_NAME} 
-	    include/${PROJECT_NAME}/virtual_mechanism_interface.h
-	    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-	    src/virtual_mechanism_gmr.cpp
-	)
+	#add_library(${PROJECT_NAME} 
+	#    include/${PROJECT_NAME}/virtual_mechanism_interface.h
+	#    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+	#    src/virtual_mechanism_gmr.cpp
+	#)
 	
 	## Specify libraries to link a library or executable target against
-	target_link_libraries(${PROJECT_NAME} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
+	#target_link_libraries(${PROJECT_NAME} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
 
 	## Mark executables and/or libraries for installation
-	install(TARGETS virtual_mechanism
-	  ARCHIVE DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
-	  LIBRARY DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
-	  RUNTIME DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY}
-	)
+	#install(TARGETS virtual_mechanism
+	#  ARCHIVE DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
+	#  LIBRARY DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY}
+	#  RUNTIME DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY}
+	#)
 
 	## Mark cpp header files for installation
-	install(DIRECTORY include/${PROJECT_NAME}/
-	  DESTINATION ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME}
-	)
+	#install(DIRECTORY include/${PROJECT_NAME}/
+	#  DESTINATION ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME}
+	#)
 
 	#add_dependencies(${PROJECT_NAME} toolbox)
 
 else()
-
-	add_definitions(-DINCLUDE_ROS_CODE)
-
 	## Find catkin macros and libraries
 	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 	## is used, also find other catkin packages
@@ -71,39 +75,14 @@ else()
 	 DEPENDS system_lib boost dmpbbo
 	)
 
-	###########
-	## Build ##
-	###########
+	set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+	set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
+	set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
+	set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+	set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+	set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-	## Specify additional locations of header files
-	## Your package locations should be listed before other locations
-	include_directories(
-	  include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
-	)
-
-	## Declare a cpp library
-	add_library(${PROJECT_NAME} 
-	    include/${PROJECT_NAME}/virtual_mechanism_interface.h
-	    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-	    src/virtual_mechanism_gmr.cpp
-	)
-
-	## Specify libraries to link a library or executable target against
-	target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
-
-	## Mark executables and/or libraries for installation
-	install(TARGETS virtual_mechanism
-	  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-	  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-	  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-	)
-
-	## Mark cpp header files for installation
-	install(DIRECTORY include/${PROJECT_NAME}/
-	  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-	  FILES_MATCHING PATTERN "*.h"
-	  PATTERN ".svn" EXCLUDE
-	)
+	add_definitions(-DINCLUDE_ROS_CODE)
 
 	## Add gtest based cpp test target and link libraries
 	catkin_add_gtest(test_virtual_mechanism_gmr 
@@ -114,3 +93,38 @@ else()
 	endif()
 
 endif(NO_ROS_LIBS)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+  include ${INCLUDE_PATHS}
+)
+
+## Declare a cpp library
+add_library(${PROJECT_NAME} 
+    include/${PROJECT_NAME}/virtual_mechanism_interface.h
+    include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+    src/virtual_mechanism_gmr.cpp
+)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+
+## Mark executables and/or libraries for installation
+install(TARGETS virtual_mechanism
+  ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
+  LIBRARY DESTINATION ${LIBRARY_DESTINATION}
+  RUNTIME DESTINATION ${RUNTIME_DESTINATION}
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${INCLUDE_INSTALL_DIR}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
+

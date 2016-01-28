@@ -3,16 +3,8 @@ project(toolbox)
 
 if(NO_ROS_LIBS)
 
-	#add_custom_target(${PROJECT_NAME} ALL DEPENDS include/${PROJECT_NAME}/toolbox.h)
-	#add_custom_target(${PROJECT_NAME})
-
-	install(DIRECTORY include/${PROJECT_NAME}/
-	  DESTINATION ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME}
-	)
-
+	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
 else()
-
-	add_definitions(-DINCLUDE_ROS_CODE)
 
 	## Find catkin macros and libraries
 	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -30,17 +22,13 @@ else()
 	 DEPENDS system_lib
 	)
 
-	## Mark cpp header files for installation
-	install(DIRECTORY include/${PROJECT_NAME}/
-	  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-	)
+	set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION}) # Has to be after catkin_package() call
+
+	add_definitions(-DINCLUDE_ROS_CODE)
+
 endif(NO_ROS_LIBS)
 
-
-
-
-
-
-
-
-
+## Mark cpp header files for installation
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${INCLUDE_INSTALL_DIR}
+)
