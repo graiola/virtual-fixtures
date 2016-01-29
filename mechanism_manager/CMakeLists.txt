@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(mechanism_manager)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS ${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
@@ -11,11 +11,22 @@ set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 if(NO_ROS_LIBS)
 	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
 	set(INCLUDE_PATHS ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR} ${VIRTUAL_MECHANISM_INCLUDE_DIR})
-	set(LINK_LIBS ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp)
+        set(LINK_LIBS ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp virtual_mechanism)
 	set(ARCHIVE_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
 
+	add_definitions(-DPATH_TO_PKG="${PROJECT_ROOT}/${PROJECT_NAME}")
+
+        ## Add gtest based cpp test target and link libraries
+        enable_testing()
+        find_package(GTest)
+        if(GTest_FOUND)
+            include_directories(${GTEST_INCLUDE_DIRS})
+            add_executable(test_mechanism_manager
+              test/test_mechanism_manager.cpp)
+            target_link_libraries(test_mechanism_manager ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
+        endif(GTest_FOUND)
 else()
 
 	find_package(catkin 
