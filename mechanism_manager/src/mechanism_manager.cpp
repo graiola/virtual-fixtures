@@ -66,18 +66,17 @@ MechanismManager::MechanismManager()
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
-#else
-      pkg_path_ = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager"; // FIXME
-#endif
-
       std::string config_file_path(pkg_path_+"/config/cfg.yml");
-
-      assert(ReadConfig(config_file_path));
-
-      /*if(ReadConfig(config_file_path))
+      if(ReadConfig(config_file_path))
         ROS_INFO("Loaded config file: %s",config_file_path.c_str());
       else
-        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());*/
+        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
+#else
+      //pkg_path_ = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager"; // FIXME
+      pkg_path_ = PATH_TO_PKG;
+      std::string config_file_path(pkg_path_+"/config/cfg.yml");
+      assert(ReadConfig(config_file_path));
+#endif
 
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
@@ -181,9 +180,9 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
     for(int i=0; i<vm_nb_;i++)
     {
       if(move_forward)
-	vm_vector_[i]->moveForward();
+        vm_vector_[i]->moveForward();
       else
-	vm_vector_[i]->moveBackward();
+        vm_vector_[i]->moveBackward();
     }
     Update(robot_pose,robot_velocity,dt,f_out,force_applied);
 }
