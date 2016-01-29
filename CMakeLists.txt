@@ -15,6 +15,7 @@ if(catkin_FOUND)
 
 	set(ROSPACK_MAKEDIST true)
 
+	###############################################################################
 	# Append to CPACK_SOURCE_IGNORE_FILES a semicolon-separated list of
 	# directories (or patterns, but directories should suffice) that should
 	# be excluded from the distro.  This is not the place to put things that
@@ -54,16 +55,14 @@ else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 
-	#include_directories(
-	#    	${PROJECT_INCLUDE_DIR}
-	#	toolbox/include/toolbox
-	#)
-
 	###############################################################################
 	# Add the main project src dir that contains all the others
 	add_subdirectory(toolbox)
 	add_subdirectory(virtual_mechanism)
 	add_subdirectory(mechanism_manager)
 
+	###############################################################################
+	# Generate the setup.bash
+	configure_file(setup.bash.in ${PROJECT_ROOT}/setup.bash)
 
 endif(catkin_FOUND)
