@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(virtual_mechanism)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS ${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
@@ -16,6 +16,16 @@ if(NO_ROS_LIBS)
 	set(ARCHIVE_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
+
+        ## Add gtest based cpp test target and link libraries
+        enable_testing()
+        find_package(GTest)
+        if(GTEST_FOUND)
+            include_directories(${GTEST_INCLUDE_DIRS})
+            add_executable(test_virtual_mechanism_gmr
+                test/test_virtual_mechanism_gmr.cpp)
+            target_link_libraries(test_virtual_mechanism_gmr ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
+        endif(GTEST_FOUND)
 
 else()
 	## Find catkin macros and libraries
