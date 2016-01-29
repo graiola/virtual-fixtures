@@ -21,12 +21,12 @@ if(NO_ROS_LIBS)
         ## Add gtest based cpp test target and link libraries
         enable_testing()
         find_package(GTest)
-        if(GTest_FOUND)
+        if(GTEST_FOUND)
             include_directories(${GTEST_INCLUDE_DIRS})
             add_executable(test_mechanism_manager
               test/test_mechanism_manager.cpp)
             target_link_libraries(test_mechanism_manager ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
-        endif(GTest_FOUND)
+        endif(GTEST_FOUND)
 else()
 
 	find_package(catkin 
