@@ -76,8 +76,8 @@ else()
 	add_definitions(-DINCLUDE_ROS_CODE)
 
 	## Add gtest based cpp test target and link libraries
-        catkin_add_gtest(test_${PROJECT_NAME}
-          test/test_${PROJECT_NAME}.cpp
+        catkin_add_gtest(test_mechanism_manager
+          test/test_mechanism_manager.cpp
 	)
         if(TARGET test_mechanism_manager)
           target_link_libraries(test_mechanism_manager ${PROJECT_NAME})
