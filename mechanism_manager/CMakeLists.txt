@@ -76,11 +76,11 @@ else()
 	add_definitions(-DINCLUDE_ROS_CODE)
 
 	## Add gtest based cpp test target and link libraries
-	catkin_add_gtest(test_mechanism_manager 
-	  test/test_mechanism_manager.cpp
+        catkin_add_gtest(test_${PROJECT_NAME}
+          test/test_${PROJECT_NAME}.cpp
 	)
-	if(TARGET test_mechanism_manager)
-	  target_link_libraries(test_mechanism_manager ${PROJECT_NAME})
+        if(TARGET test_mechanism_manager)
+          target_link_libraries(test_mechanism_manager ${PROJECT_NAME})
 	endif()
 
 	## Mark other files for installation (e.g. launch and bag files, etc.)
@@ -107,7 +107,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} 
+add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/mechanism_manager.h
     src/mechanism_manager.cpp
 )
@@ -116,7 +116,7 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME} test_mechanism_manager
   ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
   LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(virtual_mechanism)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++0x  ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS ${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 
@@ -61,11 +61,11 @@ else()
 	add_definitions(-DINCLUDE_ROS_CODE)
 
 	## Add gtest based cpp test target and link libraries
-	catkin_add_gtest(test_virtual_mechanism_gmr 
-	  test/test_virtual_mechanism_gmr.cpp
+        catkin_add_gtest(test_virtual_mechanism_gmr
+          test/test_virtual_mechanism_gmr.cpp
 	)
-	if(TARGET test_virtual_mechanism_gmr)
-	  target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
+        if(TARGET test_virtual_mechanism_gmr)
+          target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
 	endif()
 
 endif(NO_ROS_LIBS)
@@ -81,7 +81,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} 
+add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
     src/virtual_mechanism_gmr.cpp
@@ -91,7 +91,7 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME} test_virtual_mechanism_gmr
   ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
   LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}
@@ -103,4 +103,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
-

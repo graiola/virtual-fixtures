@@ -36,6 +36,10 @@ else()
 	message(STATUS "Don't use ROS Libraries")
 	set(NO_ROS_LIBS true)	
 
+        ###############################################################################
+        # Set the type of libs to build
+        set(SHARED_OR_STATIC "SHARED")
+
 	###############################################################################
 	# Set the PROJECT_ROOT variable
 	set(PROJECT_ROOT ${PROJECT_SOURCE_DIR})
@@ -48,12 +52,12 @@ else()
 	set(PROJECT_INSTALL_BIN ${PROJECT_ROOT}/bin)
 	set(PROJECT_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_ROOT}/bin)
 	set(PROJECT_INSTALL_LIB ${PROJECT_ROOT}/lib)
-	set(PROJECT_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT}/lib)
+        set(PROJECT_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_ROOT}/lib)
 
 	###############################################################################
 	# Forcing the generation dirs to be local
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
+        #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
+        #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 
 	###############################################################################
 	# Add the main project src dir that contains all the others
