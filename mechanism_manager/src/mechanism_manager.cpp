@@ -1,12 +1,19 @@
 #include "mechanism_manager/mechanism_manager.h"
 
+////////// Function Approximator
+#include <functionapproximators/FunctionApproximatorGMR.hpp>
+#include <functionapproximators/MetaParametersGMR.hpp>
+#include <functionapproximators/ModelParametersGMR.hpp>
+
 namespace mechanism_manager
 {
-  
+
   using namespace virtual_mechanism_gmr;
   using namespace DmpBbo;
   using namespace tool_box;
   using namespace Eigen;
+
+  typedef FunctionApproximatorGMR fa_t;
   
 
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server

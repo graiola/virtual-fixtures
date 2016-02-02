@@ -22,15 +22,9 @@
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
 
-////////// Function Approximator
-#include <functionapproximators/FunctionApproximatorGMR.hpp>
-#include <functionapproximators/MetaParametersGMR.hpp>
-#include <functionapproximators/ModelParametersGMR.hpp>
-
 namespace mechanism_manager
 {
 
-typedef DmpBbo::FunctionApproximatorGMR fa_t;
 typedef virtual_mechanism_gmr::VirtualMechanismGmr<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder> vm_t;  
 
 template <typename _T >
@@ -76,27 +70,28 @@ class MechanismManager
     //boost::shared_ptr<fa_t> fa_shr_ptr_; // Function Approximator
     //std::vector<boost::shared_ptr<fa_t> > fa_vector_;
     
+
+    bool use_orientation_;
+    std::vector<bool> active_guide_;
+    Eigen::VectorXd scales_;
+    Eigen::VectorXd Kf_;
+    Eigen::VectorXd phase_dot_;
+    Eigen::VectorXd robot_position_;
+    Eigen::VectorXd robot_orientation_;
+    Eigen::VectorXd orientation_error_;
+    Eigen::VectorXd cross_prod_;
+    Eigen::VectorXd prev_orientation_error_;
+    Eigen::VectorXd orientation_integral_;
+    Eigen::VectorXd orientation_derivative_;
+    Eigen::VectorXd f_pos_;
+    Eigen::VectorXd f_ori_;
     int vm_nb_;
     int position_dim_;
     int orientation_dim_;
     double sum_;
     double curr_norm_factor_;
     double scale_threshold_;
-    bool use_orientation_;
-    Eigen::VectorXd scales_;
     Eigen::VectorXd phase_;
-    Eigen::VectorXd Kf_;
-    Eigen::VectorXd phase_dot_;
-    Eigen::VectorXd robot_position_;
-    Eigen::VectorXd robot_orientation_;
-    Eigen::VectorXd cross_prod_;
-    Eigen::VectorXd orientation_error_;
-    Eigen::VectorXd prev_orientation_error_;
-    Eigen::VectorXd orientation_integral_;
-    Eigen::VectorXd orientation_derivative_;
-    Eigen::VectorXd f_pos_;
-    Eigen::VectorXd f_ori_;
-    std::vector<bool> active_guide_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
     std::vector<Eigen::VectorXd> vm_quat_;
