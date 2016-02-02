@@ -100,8 +100,9 @@ template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateJacobian()
 {
   fa_input_(0,0) = VM_t::phase_; // Convert to Eigen Matrix
+
   fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
-  
+
   covariance_ = variance_.row(0).asDiagonal();
   
   VM_t::J_transp_ = fa_output_dot_; // NOTE The output is transposed!

@@ -21,7 +21,7 @@ using namespace DmpBbo;
 
 double dt = 0.001;
 
-TEST(VirtualMechanismGmrTest, InitializesCorrectly)
+TEST(MechanismManagerTest, InitializesCorrectly)
 {
   
   ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
@@ -29,8 +29,8 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   EXPECT_NO_THROW(MechanismManager());
   
 }
-
-TEST(VirtualMechanismGmrTest, UpdateMethodWithOrientation)
+/*
+TEST(MechanismManagerTest, UpdateMethodWithOrientation)
 {
   
   MechanismManager mm = MechanismManager();
@@ -52,8 +52,8 @@ TEST(VirtualMechanismGmrTest, UpdateMethodWithOrientation)
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
 }
-
-TEST(VirtualMechanismGmrTest, UpdateMethodOnlyPosition)
+*/
+TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
   
   MechanismManager mm = MechanismManager();
@@ -74,6 +74,32 @@ TEST(VirtualMechanismGmrTest, UpdateMethodOnlyPosition)
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
+
+  std::cout << f_out[0] <<std::endl;
+  std::cout << f_out[1] <<std::endl;
+  std::cout << f_out[2] <<std::endl;
+
+}
+
+TEST(MechanismManagerTest, UpdateMethodRawVectors)
+{
+
+  MechanismManager mm = MechanismManager();
+
+  // Force input interface
+  std::vector<double> rob_pos(3, 1.0);
+  std::vector<double> rob_vel(3, 1.0);
+  std::vector<double> f_out(3, 0.0);
+
+  START_REAL_TIME_CRITICAL_CODE();
+  EXPECT_NO_THROW(mm.Update(&rob_pos[0],&rob_vel[0],dt,&f_out[0]));
+  END_REAL_TIME_CRITICAL_CODE();
+
+
+  std::cout << f_out[0] <<std::endl;
+  std::cout << f_out[1] <<std::endl;
+  std::cout << f_out[2] <<std::endl;
+
 }
 
 int main(int argc, char** argv)

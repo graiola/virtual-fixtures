@@ -221,13 +221,32 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
     Update(robot_pose,robot_velocity,dt,f_out);
 }
 
+void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
+{
+    //std::vector<double> v(4, 100.0);
+    //double* ptr = &v[0];
+    //Eigen::Map<Eigen::VectorXd> my_vect(ptr, 4);
+
+    VectorXd robot_position = VectorXd::Map(robot_position_ptr, 3);
+    VectorXd robot_velocity = VectorXd::Map(robot_velocity_ptr, 3);
+    VectorXd f_out = VectorXd::Map(f_out_ptr, 3);
+
+    /*Map<VectorXd> robot_position(robot_position_ptr, 3);
+    Map<VectorXd> robot_velocity(robot_velocity_ptr, 3);
+    Map<VectorXd> f_out(f_out_ptr, 3);*/
+
+    Update(robot_position,robot_velocity,dt,f_out);
+
+    VectorXd::Map(f_out_ptr, 3) = f_out;
+}
+
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
 
 	assert(dt > 0.0);
 
     assert(robot_velocity.size() == position_dim_);
-	
+
     if(robot_pose.size() == position_dim_)
     {
         use_orientation_ = false;
