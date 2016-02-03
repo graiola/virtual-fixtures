@@ -285,17 +285,20 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      
 	      torque_.noalias() = J_transp_ * force;
 	      
-	      if(active_)
-              {
-		phase_dot_ = phase_dot_learnt_;
-              }
-              else
-              {
-                phase_dot_ = num_/det_ * torque_(0,0);
-              }
+             if(active_)
+             {
+                fade_ = 10 * (1 - fade_) * dt + fade_;
+             }
+             else
+             {
+                fade_ = 10 * (-fade_) * dt + fade_;
+             }
 
-	      // Compute the new phase
-	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
+             phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * 0.2053 * 0.9;
+
+
+            // Compute the new phase
+            phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
 	  }
 	  
 	protected:
@@ -433,13 +436,13 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
             {
                 //std::cout << "Forward" <<std::endl;
                 Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
+                phase_state_dot_(1) = 10*( (1-fade_) * (- B_ * JxJt_(0,0) * phase_state(1) - input) + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
             }
             else // Go back
             {
                 //std::cout << "Backward" <<std::endl;
                 Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_state(0)));
-                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
+                phase_state_dot_(1) = 10*( (1-fade_) * (- B_ * JxJt_(0,0) * phase_state(1) - input) + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
             }
 
 	     //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
