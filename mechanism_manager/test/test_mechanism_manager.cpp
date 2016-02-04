@@ -29,7 +29,7 @@ TEST(MechanismManagerTest, InitializesCorrectly)
   EXPECT_NO_THROW(MechanismManager());
   
 }
-/*
+
 TEST(MechanismManagerTest, UpdateMethodWithOrientation)
 {
   
@@ -52,7 +52,7 @@ TEST(MechanismManagerTest, UpdateMethodWithOrientation)
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
 }
-*/
+
 TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
   
@@ -75,10 +75,6 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
 
-  std::cout << f_out[0] <<std::endl;
-  std::cout << f_out[1] <<std::endl;
-  std::cout << f_out[2] <<std::endl;
-
 }
 
 TEST(MechanismManagerTest, UpdateMethodRawVectors)
@@ -94,11 +90,6 @@ TEST(MechanismManagerTest, UpdateMethodRawVectors)
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(&rob_pos[0],&rob_vel[0],dt,&f_out[0]));
   END_REAL_TIME_CRITICAL_CODE();
-
-
-  std::cout << f_out[0] <<std::endl;
-  std::cout << f_out[1] <<std::endl;
-  std::cout << f_out[2] <<std::endl;
 
 }
 
