@@ -10,6 +10,8 @@
 	////////// ROS
 	#include <ros/ros.h>
 	#ifdef USE_ROS_RT_PUBLISHER
+	//#ifdef INCLUDE_ROS_RT_PUBLISHER
+          //#define USE_ROS_RT_PUBLISHER
 	  #include <sensor_msgs/JointState.h>
 	  #include <geometry_msgs/PoseStamped.h>
 	  #include <geometry_msgs/WrenchStamped.h>

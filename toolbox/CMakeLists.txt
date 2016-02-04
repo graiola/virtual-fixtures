@@ -13,6 +13,7 @@ else()
 	 roscpp
 	 rospy
 	 std_msgs
+	 realtime_tools
 	)
 
 	catkin_package(
@@ -24,7 +25,14 @@ else()
 
 	set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION}) # Has to be after catkin_package() call
 
-	add_definitions(-DINCLUDE_ROS_CODE)
+        add_definitions(-DINCLUDE_ROS_CODE)
+
+        if(realtime_tools_FOUND)
+            message(STATUS "Use REALTIME TOOLS")
+            #add_definitions(-DINCLUDE_ROS_RT_PUBLISHER)
+        endif(realtime_tools_FOUND)
+        
+	
 
 endif(NO_ROS_LIBS)
 
