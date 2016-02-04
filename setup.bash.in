@@ -1,4 +1,5 @@
 # Add the libs to the library path
 export LIBRARY_PATH=$LIBRARY_PATH:${PROJECT_ROOT}/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PROJECT_ROOT}/lib
 # Add the include to cpath
 export CPATH=$CPATH:${PROJECT_ROOT}/include
