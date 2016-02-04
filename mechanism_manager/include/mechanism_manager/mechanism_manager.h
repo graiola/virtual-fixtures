@@ -56,7 +56,7 @@ class MechanismManager
     
     
   protected:
-    
+    void Update();
     bool ReadConfig(std::string file_path);
    
   private:
@@ -78,6 +78,7 @@ class MechanismManager
     Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd robot_position_;
+    Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd orientation_error_;
     Eigen::VectorXd cross_prod_;
@@ -92,6 +93,7 @@ class MechanismManager
     double sum_;
     double curr_norm_factor_;
     double scale_threshold_;
+    double dt_;
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
