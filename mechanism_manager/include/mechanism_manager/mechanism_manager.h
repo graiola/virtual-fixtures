@@ -46,9 +46,11 @@ class MechanismManager
     ~MechanismManager();
   
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
+    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const bool user_force_applied);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied);
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
+    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool force_applied);
+
+    //void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
     inline double GetPhase(const int idx) {return vm_vector_[idx]->getPhase();}
     inline double GetScale(const int idx) {return scales_(idx);}
     inline int GetNbVms() {return vm_nb_;}
@@ -74,6 +76,7 @@ class MechanismManager
     
     long long loopCnt;
 
+    bool user_force_applied_;
     bool use_orientation_;
     std::vector<bool> active_guide_;
     Eigen::VectorXd scales_;
