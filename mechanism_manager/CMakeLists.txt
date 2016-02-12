@@ -8,10 +8,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
+if(TEST_ENABLED)
+    set(BIN_TEST_NAME test_${PROJECT_NAME})
+endif(TEST_ENABLED)
+
 if(NO_ROS_LIBS)
 	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
 	set(INCLUDE_PATHS ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR} ${VIRTUAL_MECHANISM_INCLUDE_DIR})
-        set(LINK_LIBS ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp virtual_mechanism)
+        set(LINK_LIBS virtual_mechanism ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp)
 	set(ARCHIVE_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
 	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
@@ -21,12 +25,12 @@ if(NO_ROS_LIBS)
         ## Add gtest based cpp test target and link libraries
         enable_testing()
         find_package(GTest)
-        if(GTEST_FOUND)
+        if(GTEST_FOUND AND TEST_ENABLED)
             include_directories(${GTEST_INCLUDE_DIRS})
-            add_executable(test_mechanism_manager
+            add_executable(${BIN_TEST_NAME}
               test/test_mechanism_manager.cpp)
-            target_link_libraries(test_mechanism_manager ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
-        endif(GTEST_FOUND)
+            target_link_libraries(${BIN_TEST_NAME} ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
+        endif(GTEST_FOUND AND TEST_ENABLED)
 else()
 
 	find_package(catkin 
@@ -75,13 +79,15 @@ else()
 
 	add_definitions(-DINCLUDE_ROS_CODE)
 
-	## Add gtest based cpp test target and link libraries
-        catkin_add_gtest(test_mechanism_manager
-          test/test_mechanism_manager.cpp
-	)
-        if(TARGET test_mechanism_manager)
-          target_link_libraries(test_mechanism_manager ${PROJECT_NAME})
-	endif()
+        if(TEST_ENABLED)
+            ## Add gtest based cpp test target and link libraries
+            catkin_add_gtest(${BIN_TEST_NAME}
+              test/test_mechanism_manager.cpp
+            )
+            if(TARGET ${BIN_TEST_NAME})
+              target_link_libraries(${BIN_TEST_NAME} ${PROJECT_NAME})
+            endif()
+        endif(TEST_ENABLED)
 
 	## Mark other files for installation (e.g. launch and bag files, etc.)
 	install(DIRECTORY config/
@@ -116,7 +122,7 @@ add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} test_mechanism_manager
+install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
   ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
   LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}

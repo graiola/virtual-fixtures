@@ -8,6 +8,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
+if(TEST_ENABLED)
+    set(BIN_TEST_NAME test_${PROJECT_NAME})
+endif(TEST_ENABLED)
+
 if(NO_ROS_LIBS)
 
 	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
@@ -20,12 +24,12 @@ if(NO_ROS_LIBS)
         ## Add gtest based cpp test target and link libraries
         enable_testing()
         find_package(GTest)
-        if(GTEST_FOUND)
+        if(GTEST_FOUND AND TEST_ENABLED)
             include_directories(${GTEST_INCLUDE_DIRS})
-            add_executable(test_virtual_mechanism_gmr
+            add_executable(${BIN_TEST_NAME}
                 test/test_virtual_mechanism_gmr.cpp)
-            target_link_libraries(test_virtual_mechanism_gmr ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
-        endif(GTEST_FOUND)
+            target_link_libraries(${BIN_TEST_NAME} ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
+        endif(GTEST_FOUND AND TEST_ENABLED)
 
 else()
 	## Find catkin macros and libraries
@@ -59,14 +63,15 @@ else()
 	set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 	add_definitions(-DINCLUDE_ROS_CODE)
-
-	## Add gtest based cpp test target and link libraries
-        catkin_add_gtest(test_virtual_mechanism_gmr
-          test/test_virtual_mechanism_gmr.cpp
-	)
-        if(TARGET test_virtual_mechanism_gmr)
-          target_link_libraries(test_virtual_mechanism_gmr ${PROJECT_NAME})
-	endif()
+        if(TEST_ENABLED)
+            ## Add gtest based cpp test target and link libraries
+            catkin_add_gtest(${BIN_TEST_NAME}
+              test/test_virtual_mechanism_gmr.cpp
+            )
+            if(TARGET ${BIN_TEST_NAME})
+              target_link_libraries(${BIN_TEST_NAME} ${PROJECT_NAME})
+            endif()
+        endif(TEST_ENABLED)
 
 endif(NO_ROS_LIBS)
 
@@ -91,7 +96,7 @@ add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} test_virtual_mechanism_gmr
+install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
   ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
   LIBRARY DESTINATION ${LIBRARY_DESTINATION}
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}
