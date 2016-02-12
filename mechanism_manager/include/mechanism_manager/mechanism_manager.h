@@ -51,8 +51,8 @@ class MechanismManager
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool force_applied);
 
     //void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
-    inline double GetPhase(const int idx) {return vm_vector_[idx]->getPhase();}
-    inline double GetScale(const int idx) {return scales_(idx);}
+    inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
+    inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
     inline int GetNbVms() {return vm_nb_;}
     //void MoveForward();
     //void MoveBackward();
