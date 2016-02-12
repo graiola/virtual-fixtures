@@ -35,6 +35,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
         //std::vector<std::vector<double> > quat_end;
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
+    int position_dim;
 	
 	main_node["models"] >> model_names;
     main_node["quat_start"] >> quat_start_;
@@ -42,6 +43,10 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	main_node["prob_mode"] >> prob_mode_string;
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
+    main_node["position_dim"] >> position_dim;
+
+    assert(position_dim == 2 || position_dim == 3);
+    position_dim_ = position_dim;
 	
 	if (prob_mode_string == "hard")
 	    prob_mode_ = HARD;
@@ -60,13 +65,13 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
 	    vm_vector_.push_back(new vm_t(position_dim_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-	}
+    }
 	return true;
 }
   
 MechanismManager::MechanismManager()
 {
-      position_dim_ = 3; // NOTE position dimension is fixed, xyz
+      //position_dim_ = 2; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
 
 #ifdef INCLUDE_ROS_CODE
@@ -77,8 +82,8 @@ MechanismManager::MechanismManager()
       else
         ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
 #else
-      //pkg_path_ = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager"; // FIXME
-      pkg_path_ = PATH_TO_PKG;
+      pkg_path_ = "/home/sybot/64bit/virtual-fixtures"; // FIXME
+      //pkg_path_ = PATH_TO_PKG;
       std::string config_file_path(pkg_path_+"/config/cfg.yml");
       assert(ReadConfig(config_file_path));
 #endif
@@ -233,8 +238,8 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
     // FIXME We assume no orientation
     use_orientation_ = false;
 
-    robot_position_ = VectorXd::Map(robot_position_ptr, 3);
-    robot_velocity_ = VectorXd::Map(robot_velocity_ptr, 3);
+    robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
+    robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
     //VectorXd f_out_ = VectorXd::Map(f_out_ptr, 3);
 
     /*Map<VectorXd> robot_position(robot_position_ptr, 3);
@@ -243,7 +248,7 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
 
     Update();
 
-    VectorXd::Map(f_out_ptr, 3) = f_pos_;
+    VectorXd::Map(f_out_ptr, position_dim_) = f_pos_;
 }
 
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
@@ -364,6 +369,14 @@ void MechanismManager::Update()
         //if(use_orientation_)
         //    f_out_ << f_pos_ , f_ori_;
         
+    if(loopCnt%100==0)
+    {
+        std::cout << "******" <<std::endl;
+        std::cout << scales_ <<std::endl;
+    }
+    loopCnt++;
+
+
 	//UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER

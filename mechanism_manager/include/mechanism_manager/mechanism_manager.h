@@ -71,6 +71,7 @@ class MechanismManager
     //boost::shared_ptr<fa_t> fa_shr_ptr_; // Function Approximator
     //std::vector<boost::shared_ptr<fa_t> > fa_vector_;
     
+    long long loopCnt;
 
     bool use_orientation_;
     std::vector<bool> active_guide_;
