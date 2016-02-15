@@ -282,17 +282,19 @@ void MechanismManager::Update()
 	// Update the virtual mechanisms states, compute single probabilities
 	for(int i=0; i<vm_nb_;i++)
 	{
-         // Check if there external forces applied, activate the auto-completion
+         // Check if there are external forces applied, activate the auto-completion
         //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
         if (user_force_applied_ == false && use_active_guide_[i] == true)
         {
             vm_vector_[i]->setActive(true);
-            active_guide_[i] = true;
+            //active_guide_[i] = true;
+            //std::cout << "Active" <<std::endl;
         }
         else
         {
             vm_vector_[i]->setActive(false);
-            active_guide_[i] = false;
+            //active_guide_[i] = false;
+            //std::cout << "Deactive" <<std::endl;
         }
 
       vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
@@ -369,14 +371,24 @@ void MechanismManager::Update()
       }
       else
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
-	}
-	   
-    /*if(loopCnt%100==0)
-    {
-        std::cout << "******" <<std::endl;
-        std::cout << scales_ <<std::endl;
+
+
+      if(loopCnt%100==0)
+      {
+          std::cout << "****" <<std::endl;
+          std::cout << vm_vector_[i]->getFade() <<std::endl;
+
+          //std::cout << "DEACTIVE" <<std::endl;
+          //std::cout << user_force_applied_ <<std::endl;
+      }
+
+
+
+
     }
-    loopCnt++;*/
+	   
+
+    loopCnt++;
 
 
 	//UpdateTrackingReference(robot_position);

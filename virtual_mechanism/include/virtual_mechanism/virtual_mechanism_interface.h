@@ -255,7 +255,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 100.0, double B = 10.0, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 100.0, double B = 40.0, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
         assert(epsilon > 0.1);
@@ -286,31 +286,32 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      torque_.noalias() = J_transp_ * force;
 	      
 	      if(active_)
-		  fade_ = 10 * (1 - fade_) * dt + fade_;
+            fade_ = 20 * (1 - fade_) * dt + fade_;
 	      else
-		  fade_ = 10 * (-fade_) * dt + fade_;
+            fade_ = 20 * (-fade_) * dt + fade_;
 
           // HACK
-          if(phase_dot_> 0.2)
+          /*if(phase_dot_> 0.2)
               moveForward();
           else if(phase_dot_< -0.2)
-              moveBackward();
+              moveBackward();*/
               
 	      // Compute phase dot
-	      if(move_forward_) // Go forward
-	      {
+          //if(move_forward_) // Go forward
+          //{
                   //std::cout << "Forward" <<std::endl;
-		  Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
+          //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
 		  //Kf_ = 1;
-                  phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
-	      }
-	      else // Go back
-	      {
+                  //phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
+          phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * 0.125;
+          //}
+          //else // Go back
+          //{
                   //std::cout << "Backward" <<std::endl;
-		  Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_));
+          //Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_));
                   //Kf_ = 1;
-		  phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (0 - phase_);
-	      }
+          //phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (0 - phase_);
+          //}
 
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
