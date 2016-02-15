@@ -36,6 +36,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
     int position_dim;
+    double K;
+    double B;
 	
 	main_node["models"] >> model_names;
     main_node["quat_start"] >> quat_start_;
@@ -44,9 +46,14 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
 	main_node["use_active_guide"] >> use_active_guide_;
     main_node["position_dim"] >> position_dim;
+    main_node["K"] >> K;
+    main_node["B"] >> B;
 
     assert(position_dim == 2 || position_dim == 3);
     position_dim_ = position_dim;
+
+    assert(K >= 0.0);
+    assert(B >= 0.0);
 	
 	if (prob_mode_string == "hard")
 	    prob_mode_ = HARD;
@@ -64,7 +71,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
 	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-	    vm_vector_.push_back(new vm_t(position_dim_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+        vm_vector_.push_back(new vm_t(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
     }
 	return true;
 }

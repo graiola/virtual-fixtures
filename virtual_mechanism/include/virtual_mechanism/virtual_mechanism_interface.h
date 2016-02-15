@@ -255,7 +255,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K = 100.0, double B = 40.0, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
         assert(epsilon > 0.1);
@@ -333,7 +333,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-	  VirtualMechanismInterfaceSecondOrder(int state_dim, double K = 700, double B = 52.91502622129181, double Kf = 20, double Bf = 8.94427190999916):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916):
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
 	      

@@ -11,7 +11,7 @@ namespace virtual_mechanism_gmr
 {
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim) // FIXME
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim,K,B) // FIXME
 {
   
   assert(fa_ptr);

@@ -63,6 +63,7 @@ else()
 	set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 	add_definitions(-DINCLUDE_ROS_CODE)
+
         if(TEST_ENABLED)
             ## Add gtest based cpp test target and link libraries
             catkin_add_gtest(${BIN_TEST_NAME}

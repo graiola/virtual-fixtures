@@ -22,7 +22,7 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-	  VirtualMechanismGmr(int state_dim, boost::shared_ptr<fa_t> fa_ptr);
+      VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
 	  
 	  double getDistance(const Eigen::VectorXd& pos);
 	  void setWeightedDist(const bool activate);

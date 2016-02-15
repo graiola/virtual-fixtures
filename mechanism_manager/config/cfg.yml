@@ -5,3 +5,5 @@ prob_mode: hard
 use_weighted_dist: [false,false]
 use_active_guide: [true,false]
 position_dim: 2
+K: 100.0
+B: 40.0
