@@ -12,6 +12,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+////////// Toolbox
+#include "toolbox/spline.h"
+
 namespace virtual_mechanism_gmr
 {
   
@@ -61,6 +64,18 @@ class VirtualMechanismGmr: public VM_t
 	  double K_min_;
 	  double std_variance_;
 	  tool_box::MinJerk gain_adapter_;*/
+};
+
+template <typename VM_t>
+class VirtualMechanismGmrSplined: public VirtualMechanismGmr<VM_t>
+{
+    public:
+
+      VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
+
+    protected:
+
+      void InitializeSpline();
 };
 
 }
