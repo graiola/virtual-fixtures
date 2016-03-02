@@ -255,7 +255,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 1, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 1.0, double epsilon = 10)://double Kf = 1.25
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
         assert(epsilon > 0.1);
@@ -282,7 +282,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
 	      
 	      det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
-	      
+
 	      torque_.noalias() = J_transp_ * force;
 	      
 	      if(active_)
