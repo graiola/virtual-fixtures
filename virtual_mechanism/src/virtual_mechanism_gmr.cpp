@@ -10,6 +10,20 @@ using namespace DmpBbo;
 namespace virtual_mechanism_gmr 
 {
 
+template <typename VM_t>
+VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr):
+    VirtualMechanismGmr<VM_t>(state_dim,K,B,fa_ptr)
+{
+
+    Eigen::MatrixXd input_phase;
+    Eigen::MatrixXd output_position;
+
+
+            fa_ptr->predict()
+
+}
+
+
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim,K,B) // FIXME
 {
