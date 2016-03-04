@@ -63,10 +63,11 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    prob_mode_ = SOFT;
 	else
 	    prob_mode_ = POTENTIAL; // Default
-	
+
 	// Create the virtual mechanisms starting from the GMM models
  	for(int i=0;i<model_names.size();i++)
 	{
+
 	    std::vector<std::vector<double> > data;
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
@@ -78,6 +79,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
   
 MechanismManager::MechanismManager()
 {
+
       //position_dim_ = 2; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
       user_force_applied_ = true; // NOTE we assume the guide is passive, so the user is in contact with the robot
@@ -93,13 +95,14 @@ MechanismManager::MechanismManager()
       pkg_path_ = "/home/sybot/64bit/virtual-fixtures"; // FIXME
       //pkg_path_ = PATH_TO_PKG;
       std::string config_file_path(pkg_path_+"/config/cfg.yml");
-      assert(ReadConfig(config_file_path));
+      bool file_read = ReadConfig(config_file_path);
+      assert(file_read);
 #endif
 
       // Number of virtual mechanisms
       vm_nb_ = vm_vector_.size();
       assert(vm_nb_ >= 1);
-      
+
       // Initialize the virtual mechanisms and support vectors
       for(int i=0; i<vm_nb_;i++)
       {
@@ -380,14 +383,14 @@ void MechanismManager::Update()
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
 
 
-      if(loopCnt%100==0)
+      /*if(loopCnt%100==0)
       {
           std::cout << "****" <<std::endl;
-          std::cout << vm_vector_[i]->getFade() <<std::endl;
+          std::cout << vm_vector_[i]->getPhase() <<std::endl;
 
           //std::cout << "DEACTIVE" <<std::endl;
           //std::cout << user_force_applied_ <<std::endl;
-      }
+      }*/
 
 
 
