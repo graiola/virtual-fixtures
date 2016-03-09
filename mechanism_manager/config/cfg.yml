@@ -1,9 +1,10 @@
-models: ['fast_spline.txt']
+models: ['ok_cutted_3.txt']
 quat_start: [[1.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0]]
 quat_end: [[0.5,0.5,-0.5,-0.5],[0.5,0.5,-0.5,-0.5]] #0.70710678,0.0,-0.70710678,0.0
 prob_mode: hard
 use_weighted_dist: [false,false]
 use_active_guide: [true,false]
 position_dim: 2
-K: 300.0
-B: 60.0
+K: 500.0
+B: 50.0
+normalize: true
