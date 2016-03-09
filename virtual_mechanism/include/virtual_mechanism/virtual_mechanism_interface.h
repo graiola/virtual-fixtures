@@ -76,7 +76,7 @@ class VirtualMechanismInterface
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
-	    assert(dt > 0.0);
+        assert(dt > 0.0);
 	    
 	    // Save the previous phase
 	    phase_prev_ = phase_;
@@ -135,6 +135,12 @@ class VirtualMechanismInterface
 	      Update(force_,dt);
 	  }
 	  
+      // TO BE MOVED IN ANOTHER SUBCLASS!
+      virtual double getDistance(const Eigen::VectorXd& pos)=0;
+      virtual void setWeightedDist(const bool activate)=0;
+      virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
+      virtual double getProbability(const Eigen::VectorXd& pos)=0;
+
 	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
 	  
 	  virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;};
@@ -200,16 +206,16 @@ class VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
-	  
+
 	  inline void UpdateStateDot()
 	  {
 	      state_dot_ = J_ * phase_dot_;
 	  }
 	  
 	  inline void UpdateQuaternion()
-          {
-              *quaternion_ = q_start_->slerp(phase_,*q_end_);
-          }
+      {
+          *quaternion_ = q_start_->slerp(phase_,*q_end_);
+      }
 	  
 	  // Ros node
       //tool_box::RosNode* ros_node_ptr_;
@@ -255,7 +261,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 1.0, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
         assert(epsilon > 0.1);
@@ -286,9 +292,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      torque_.noalias() = J_transp_ * force;
 	      
 	      if(active_)
-            fade_ = 20 * (1 - fade_) * dt + fade_;
+            fade_ = 10 * (1 - fade_) * dt + fade_;
 	      else
-            fade_ = 20 * (-fade_) * dt + fade_;
+            fade_ = 10 * (-fade_) * dt + fade_;
 
           // HACK
           /*if(phase_dot_> 0.2)
@@ -303,7 +309,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
           //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
 		  //Kf_ = 1;
                   //phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
-          phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * 0.125;
+          phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * 0.4;
           //}
           //else // Go back
           //{
@@ -315,6 +321,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
+
 	  }
 	  
 	protected:
