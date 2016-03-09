@@ -15,6 +15,9 @@
 ////////// Toolbox
 #include "toolbox/spline.h"
 
+////////// ALGLIB
+#include <spline3.h>
+
 namespace virtual_mechanism_gmr
 {
   
@@ -27,10 +30,11 @@ class VirtualMechanismGmr: public VM_t
 
       VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
 	  
-	  double getDistance(const Eigen::VectorXd& pos);
-	  void setWeightedDist(const bool activate);
-	  void getLocalKernel(Eigen::VectorXd& mean_variance) const;
-	  double getProbability(const Eigen::VectorXd& pos);
+      virtual double getDistance(const Eigen::VectorXd& pos);
+      virtual void setWeightedDist(const bool activate);
+      virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const;
+      virtual double getProbability(const Eigen::VectorXd& pos);
+      void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
 	  
 	protected:
 	  
@@ -39,7 +43,6 @@ class VirtualMechanismGmr: public VM_t
 	  virtual void ComputeInitialState();
 	  virtual void ComputeFinalState();
 	  void UpdateInvCov();
-	  void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
 
 	  boost::shared_ptr<fa_t> fa_ptr_;
 
@@ -55,7 +58,7 @@ class VirtualMechanismGmr: public VM_t
 	  double determinant_cov_;
 	  double prob_;
 	  bool use_weighted_dist_;
-	  
+
 	  /*virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt);
 	  Eigen::VectorXd normal_vector_;
 	  Eigen::VectorXd prev_normal_vector_;
@@ -72,10 +75,17 @@ class VirtualMechanismGmrSplined: public VirtualMechanismGmr<VM_t>
     public:
 
       VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
+      void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 
     protected:
 
-      void InitializeSpline();
+      virtual void UpdateJacobian();
+      virtual void UpdateState();
+      tk::spline spline_phase_;
+      std::vector<tk::spline > splines_xyz_;
+      bool use_spline_jac_;
+
+      long long loopCnt;
 };
 
 }
