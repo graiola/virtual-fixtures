@@ -25,7 +25,8 @@
 namespace mechanism_manager
 {
 
-typedef virtual_mechanism_gmr::VirtualMechanismGmr<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder> vm_t;  
+//typedef virtual_mechanism_gmr::VirtualMechanismGmrSplined<virtual_mechanism_interface::VirtualMechanismInterfaceFirstOrder> vm_t;
+typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
 
 template <typename _T >
 void operator >>(const YAML::Node& input, _T& value) {
