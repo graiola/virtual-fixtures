@@ -154,6 +154,25 @@ void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values
     myfile.close();
 }
 
+template<typename value_t>
+void WriteTxtFile(const char* filename, std::vector<value_t>& values) {
+    std::ofstream myfile (filename);
+    std::size_t row = 0;
+    std::size_t nb_rows = values.size();
+    if (myfile.is_open())
+    {
+        while(row < nb_rows) {
+        myfile << values[row] << "\n";
+            row++;
+        }
+    std::cout << "File ["<<filename<<"] write with success  ["<<nb_rows<<" rows ] "<<std::endl;
+    }
+    else{
+     std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
+
 #ifdef INCLUDE_ROS_CODE
 class RosNode
 {
