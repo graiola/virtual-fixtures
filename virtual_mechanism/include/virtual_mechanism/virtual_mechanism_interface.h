@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-	  phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true)
+          phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -78,6 +78,8 @@ class VirtualMechanismInterface
 	  {
         assert(dt > 0.0);
 	    
+        dt_ = dt;
+
 	    // Save the previous phase
 	    phase_prev_ = phase_;
   
@@ -97,9 +99,9 @@ class VirtualMechanismInterface
 	    // Compute the new state dot
 	    UpdateStateDot();
             
-            // Compute the new quaternion reference
-            if (update_quaternion_)
-                UpdateQuaternion();
+        // Compute the new quaternion reference
+        if (update_quaternion_)
+            UpdateQuaternion();
             
 	  }
 	  
@@ -126,7 +128,7 @@ class VirtualMechanismInterface
 	      assert(vel.size() == state_dim_);
 	    
 	      if(adapt_gains_) //FIXME
-		AdaptGains(pos,dt);
+            AdaptGains(pos,dt);
 	      
 	      force_ = K_ * (state_ - pos);
 	      force_ = force_ - B_ * vel;
@@ -207,7 +209,7 @@ class VirtualMechanismInterface
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
 
-	  inline void UpdateStateDot()
+      virtual inline void UpdateStateDot()
 	  {
 	      state_dot_ = J_ * phase_dot_;
 	  }
@@ -255,6 +257,9 @@ class VirtualMechanismInterface
 	  bool active_;
 	  bool move_forward_;
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
+
+      double dt_;
+
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -287,7 +292,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
 	      
-	      det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
+          det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
 
 	      torque_.noalias() = J_transp_ * force;
 	      
@@ -296,28 +301,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      else
             fade_ = 10 * (-fade_) * dt + fade_;
 
-          // HACK
-          /*if(phase_dot_> 0.2)
-              moveForward();
-          else if(phase_dot_< -0.2)
-              moveBackward();*/
-              
-	      // Compute phase dot
-          //if(move_forward_) // Go forward
-          //{
-                  //std::cout << "Forward" <<std::endl;
-          //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_));
-		  //Kf_ = 1;
-                  //phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (1 - phase_);
-          phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * 0.4;
-          //}
-          //else // Go back
-          //{
-                  //std::cout << "Backward" <<std::endl;
-          //Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_));
-                  //Kf_ = 1;
-          //phase_dot_ = (1-fade_) * num_/det_ * torque_(0,0) + fade_ * Kf_ * (0 - phase_);
-          //}
+          phase_dot_ = num_/det_ * torque_(0,0);
 
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible

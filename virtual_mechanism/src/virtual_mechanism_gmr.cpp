@@ -15,11 +15,10 @@ template <typename VM_t>
 VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,fa_ptr)
 {
-
-
     use_spline_jac_ = true;
 
-    int n_points = 1000;
+    int n_points = 5;
+    J_no_norm_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
     std::vector<std::vector<double> > xyz(VM_t::state_dim_, std::vector<double>(n_points));
@@ -65,23 +64,8 @@ VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, doub
     }
 
     loopCnt = 0;
-
-    /*std::cout << "SPLINE x" << std::endl;
-    for(int i=0;i<n_points;i++)
-    {
-        std::cout << splines_xyz_[0](phase_for_spline[i]) <<std::endl;
-    }
-    std::cout << "GMR x" << std::endl;
-    std::cout << output_position.col(0) <<std::endl;
-*/
-    /*std::cout << "SPLINE dot x" << std::endl;
-    for(int i=10;i<20;i++)
-    {
-        std::cout << splines_xyz_[0].compute_derivate(phase_for_spline[i]) <<std::endl;
-    }
-    std::cout << "GMR dot x" << std::endl;
-    std::cout << output_position_dot.col(0).segment<10>(10) <<std::endl;
-    getchar();*/
+    z_ = 0.0;
+    z_dot_ = 0.0;
 
 }
 
@@ -89,34 +73,65 @@ template <typename VM_t>
 void VirtualMechanismGmrSplined<VM_t>::UpdateJacobian()
 {
 
+  if(VM_t::active_)
+  {
+      z_dot_ = VM_t::fade_ *  0.15 + (1-VM_t::fade_) * z_dot_;
+      z_ = z_dot_ * VM_t::dt_ + z_;
+
+
+      // NORMALIZE ONLY IF NOT ACTIVE!!!!!!!!!!!!!!!!!!
+      // NOW IS NORMALIZING ALWAYS
+  }
+  else
+  {
+      z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
+      z_ = spline_phase_(VM_t::phase_);
+  }
+
+  // Saturate z
+  if(z_ > 1.0)
+  {
+    z_ = 1;
+  }
+  else if (z_ < 0.0)
+  {
+    z_ = 0;
+  }
+
+  this->fa_input_(0,0) = z_;
+
   // this->fa_input_(0,0) is the phase
   // VM_t::phase_ is the abscisse
-  this->fa_input_(0,0) = spline_phase_(VM_t::phase_); // abscisse -> phase
+  //this->fa_input_(0,0) = spline_phase_(VM_t::phase_); // abscisse -> phase
 
   this->fa_ptr_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_);
 
   this->covariance_ = this->variance_.row(0).asDiagonal();
 
+
+
   if(!use_spline_jac_)
   {
-      VM_t::J_transp_ = this->fa_output_dot_ * spline_phase_.compute_derivate(VM_t::phase_); // J(phase) * d(phase)/d(abscisse)
+      J_no_norm_ = this->fa_output_dot_.transpose();
+      VM_t::J_transp_ =  this->fa_output_dot_ * spline_phase_.compute_derivate(VM_t::phase_); // J(phase) * d(phase)/d(abscisse)
   }
   else
   {
       for(int i=0;i<VM_t::state_dim_;i++)
       {
           //this->fa_output_(0,i) = splines_xyz_[i](this->fa_input_(0,0));
+          J_no_norm_(i,0) = splines_xyz_[i].compute_derivate(this->fa_input_(0,0));
           VM_t::J_transp_(0,i) = splines_xyz_[i].compute_derivate(this->fa_input_(0,0)) * spline_phase_.compute_derivate(VM_t::phase_);
       }
   }
   VM_t::J_ = VM_t::J_transp_.transpose();
 
-  if(loopCnt%100==0)
+  /*if(loopCnt%100==0)
   {
       std::cout << "****************" << std::endl;
-      std::cout << "z_dot" << std::endl;
-      std::cout << spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_<< std::endl;
-  }
+      std::cout << "z_dot_" << std::endl;
+      std::cout << z_dot_<< std::endl;
+  }*/
 
   loopCnt++;
 }
@@ -171,7 +186,6 @@ void VirtualMechanismGmrSplined<VM_t>::UpdateState()
           VM_t::state_(i) = splines_xyz_[i](this->fa_input_(0,0));
         }
 
-
         /*if(loopCnt%100==0)
         {
             std::cout << "****************" << std::endl;
@@ -180,6 +194,33 @@ void VirtualMechanismGmrSplined<VM_t>::UpdateState()
         }*/
 
     }
+}
+
+template<typename VM_t>
+void VirtualMechanismGmrSplined<VM_t>::UpdateStateDot()
+{
+
+    /*if(loopCnt%100==0)
+    {
+        std::cout << "****************" << std::endl;
+        std::cout << "this->z_dot_" << std::endl;
+        std::cout << this->z_dot_<< std::endl;
+    }*/
+
+    VM_t::state_dot_ = this->J_no_norm_ * this->z_dot_; // Keep the velocities of the demonstrations
+
+    //VM_t::state_dot_ = VM_t::J_ * VM_t::phase_dot_;
+
+
+    /*if(loopCnt%100==0)
+    {
+        std::cout << "****************" << std::endl;
+        std::cout << "VM_t::state_dot_ = VM_t::J_ * VM_t::phase_dot_;" << std::endl;
+        std::cout << VM_t::J_ * VM_t::phase_dot_ << std::endl;
+        std::cout << "VM_t::state_dot_ = this->J_no_norm_ * this->z_dot_;" << std::endl;
+        std::cout << this->J_no_norm_ * this->z_dot_<< std::endl;
+    }*/
+
 
 
 }

@@ -16,7 +16,7 @@
 #include "toolbox/spline.h"
 
 ////////// ALGLIB
-#include <spline3.h>
+//#include <spline3.h>
 
 namespace virtual_mechanism_gmr
 {
@@ -81,9 +81,16 @@ class VirtualMechanismGmrSplined: public VirtualMechanismGmr<VM_t>
 
       virtual void UpdateJacobian();
       virtual void UpdateState();
+      virtual void UpdateStateDot();
       tk::spline spline_phase_;
       std::vector<tk::spline > splines_xyz_;
       bool use_spline_jac_;
+
+
+      double z_;
+      double z_dot_;
+
+      Eigen::MatrixXd J_no_norm_;
 
       long long loopCnt;
 };
