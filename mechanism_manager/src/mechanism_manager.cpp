@@ -78,7 +78,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 
         if(normalize)
         {
-            vm_vector_.push_back(new VirtualMechanismGmrSplined<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
         }
         else
         {

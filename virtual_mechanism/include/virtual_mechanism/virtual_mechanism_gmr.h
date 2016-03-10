@@ -70,11 +70,11 @@ class VirtualMechanismGmr: public VM_t
 };
 
 template <typename VM_t>
-class VirtualMechanismGmrSplined: public VirtualMechanismGmr<VM_t>
+class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
-      VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
+      VirtualMechanismGmrNormalized(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 
     protected:
@@ -84,13 +84,13 @@ class VirtualMechanismGmrSplined: public VirtualMechanismGmr<VM_t>
       virtual void UpdateStateDot();
       tk::spline spline_phase_;
       std::vector<tk::spline > splines_xyz_;
-      bool use_spline_jac_;
+      bool use_spline_xyz_;
 
 
       double z_;
       double z_dot_;
 
-      Eigen::MatrixXd J_no_norm_;
+      Eigen::MatrixXd Jz_;
 
       long long loopCnt;
 };

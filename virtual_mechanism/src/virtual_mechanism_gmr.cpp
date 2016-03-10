@@ -12,28 +12,28 @@ namespace virtual_mechanism_gmr
 {
 
 template <typename VM_t>
-VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr):
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,fa_ptr)
 {
-    use_spline_jac_ = true;
+    use_spline_xyz_ = true; // FIXME
 
-    int n_points = 5;
-    J_no_norm_.resize(VM_t::state_dim_,1);
+    int n_points = 1000;
+    Jz_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
     std::vector<std::vector<double> > xyz(VM_t::state_dim_, std::vector<double>(n_points));
     Eigen::MatrixXd input_phase(n_points,1);
     Eigen::MatrixXd output_position(n_points,VM_t::state_dim_);
-    Eigen::MatrixXd output_position_dot(n_points,VM_t::state_dim_);
-    Eigen::MatrixXd position_diff(n_points,VM_t::state_dim_);
+    //Eigen::MatrixXd output_position_dot(n_points,VM_t::state_dim_);
+    Eigen::MatrixXd position_diff(n_points-1,VM_t::state_dim_);
     input_phase.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+    // Get xyz from GMR using a linspaced phase [0,1], preserve the rhythme
     fa_ptr->predict(input_phase,output_position);
-
     //fa_ptr->predictDot(input_phase,output_position,output_position_dot);
 
     splines_xyz_.resize(VM_t::state_dim_);
 
-    // Copy to std vector
+    // Copy to std vectors
     for(int i=0;i<n_points;i++)
     {
         phase_for_spline[i] = input_phase(i);
@@ -43,15 +43,15 @@ VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, doub
 
     // Compute the abscisse curviligne
     abscisse_for_spline[0] = 0.0;
-    position_diff.row(0) = output_position.row(0);
-    for(int i=1;i<n_points;i++)
-    {   position_diff.row(i) = output_position.row(i) - output_position.row(i-1);
-        abscisse_for_spline[i] = position_diff.row(i).norm() + abscisse_for_spline[i-1];
+    //position_diff.row(0) = output_position.row(0);
+    for(int i=0;i<position_diff.rows();i++)
+    {   position_diff.row(i) = output_position.row(i+1) - output_position.row(i);
+        abscisse_for_spline[i+1] = position_diff.row(i).norm() + abscisse_for_spline[i];
     }
     // Normalize
-    for(int i=0;i<n_points;i++)
+    for(int i=0;i<abscisse_for_spline.size();i++)
     {
-        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[n_points-1];
+        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[abscisse_for_spline.size()];
     }
 
     //tool_box::WriteTxtFile("abscisse.txt",abscisse_for_spline);
@@ -70,58 +70,45 @@ VirtualMechanismGmrSplined<VM_t>::VirtualMechanismGmrSplined(int state_dim, doub
 }
 
 template <typename VM_t>
-void VirtualMechanismGmrSplined<VM_t>::UpdateJacobian()
+void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
 
   if(VM_t::active_)
   {
-      z_dot_ = VM_t::fade_ *  0.15 + (1-VM_t::fade_) * z_dot_;
+      z_dot_ = VM_t::fade_ *  0.15 + (1-VM_t::fade_) * z_dot_; // FIXME constant value arbitrary
       z_ = z_dot_ * VM_t::dt_ + z_;
-
-
       // NORMALIZE ONLY IF NOT ACTIVE!!!!!!!!!!!!!!!!!!
       // NOW IS NORMALIZING ALWAYS
   }
   else
   {
       z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
-      z_ = spline_phase_(VM_t::phase_);
+      z_ = spline_phase_(VM_t::phase_); // abscisse (s) -> phase (z)
   }
 
   // Saturate z
   if(z_ > 1.0)
-  {
     z_ = 1;
-  }
   else if (z_ < 0.0)
-  {
     z_ = 0;
-  }
 
   this->fa_input_(0,0) = z_;
 
-  // this->fa_input_(0,0) is the phase
-  // VM_t::phase_ is the abscisse
-  //this->fa_input_(0,0) = spline_phase_(VM_t::phase_); // abscisse -> phase
-
-  this->fa_ptr_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_);
-
+  this->fa_ptr_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_); // We need this for the covariance
   this->covariance_ = this->variance_.row(0).asDiagonal();
 
-
-
-  if(!use_spline_jac_)
+  if(!use_spline_xyz_) // Compute xyz and J(z) using GMR
   {
-      J_no_norm_ = this->fa_output_dot_.transpose();
-      VM_t::J_transp_ =  this->fa_output_dot_ * spline_phase_.compute_derivate(VM_t::phase_); // J(phase) * d(phase)/d(abscisse)
+      Jz_ = this->fa_output_dot_.transpose(); // J(z)
+      VM_t::J_transp_ =  this->fa_output_dot_ * spline_phase_.compute_derivate(VM_t::phase_); // J(z) * d(z)/d(s) = J(s)
   }
-  else
+  else // Compute xyz and J(z) using the spline
   {
       for(int i=0;i<VM_t::state_dim_;i++)
       {
-          //this->fa_output_(0,i) = splines_xyz_[i](this->fa_input_(0,0));
-          J_no_norm_(i,0) = splines_xyz_[i].compute_derivate(this->fa_input_(0,0));
-          VM_t::J_transp_(0,i) = splines_xyz_[i].compute_derivate(this->fa_input_(0,0)) * spline_phase_.compute_derivate(VM_t::phase_);
+          this->fa_output_(0,i) = splines_xyz_[i](this->fa_input_(0,0));
+          Jz_(i,0) = splines_xyz_[i].compute_derivate(this->fa_input_(0,0));
+          VM_t::J_transp_(0,i) = Jz_(i,0) * spline_phase_.compute_derivate(VM_t::phase_);
       }
   }
   VM_t::J_ = VM_t::J_transp_.transpose();
@@ -137,7 +124,7 @@ void VirtualMechanismGmrSplined<VM_t>::UpdateJacobian()
 }
 
 template <typename VM_t>
-void VirtualMechanismGmrSplined<VM_t>::ComputeStateGivenPhase(const double abscisse_in, VectorXd& state_out, VectorXd& state_out_dot, double& phase_out, double& phase_out_dot) // Not for rt
+void VirtualMechanismGmrNormalized<VM_t>::ComputeStateGivenPhase(const double abscisse_in, VectorXd& state_out, VectorXd& state_out_dot, double& phase_out, double& phase_out_dot) // Not for rt
 {
   assert(abscisse_in <= 1.0);
   assert(abscisse_in >= 0.0);
@@ -149,21 +136,18 @@ void VirtualMechanismGmrSplined<VM_t>::ComputeStateGivenPhase(const double absci
   fa_output_dot.resize(1,VM_t::state_dim_);
 
   fa_input(0,0) = spline_phase_(abscisse_in);
-
-  this->fa_ptr_->predictDot(fa_input,fa_output,fa_output_dot);
-  state_out = fa_output.transpose();
-
   phase_out_dot = spline_phase_.compute_derivate(abscisse_in);
 
-  if(!use_spline_jac_)
+  if(!use_spline_xyz_)
   {
-      //state_out_dot = fa_output_dot.transpose() * spline_phase_.compute_derivate(abscisse_in);
+      this->fa_ptr_->predictDot(fa_input,fa_output,fa_output_dot);
+      state_out = fa_output.transpose();
       state_out_dot = fa_output_dot.transpose() * phase_out_dot;
   }
   else
       for(int i=0;i<VM_t::state_dim_;i++)
       {
-          //state_out_dot(i) = splines_xyz_[i].compute_derivate(fa_input(0,0)); // This seems ok
+        state_out(i) =  splines_xyz_[i](fa_input(0,0));
         state_out_dot(i) = splines_xyz_[i].compute_derivate(fa_input(0,0)) * phase_out_dot;
       }
 
@@ -172,32 +156,13 @@ void VirtualMechanismGmrSplined<VM_t>::ComputeStateGivenPhase(const double absci
 }
 
 template<typename VM_t>
-void VirtualMechanismGmrSplined<VM_t>::UpdateState()
+void VirtualMechanismGmrNormalized<VM_t>::UpdateState()
 {
-    if(!use_spline_jac_)
-    {
-        VM_t::state_ = this->fa_output_.transpose();
-    }
-    else
-    {
-        for(int i=0;i<VM_t::state_dim_;i++)
-        {
-            //state_out_dot(i) = splines_xyz_[i].compute_derivate(fa_input(0,0)); // This seems ok
-          VM_t::state_(i) = splines_xyz_[i](this->fa_input_(0,0));
-        }
-
-        /*if(loopCnt%100==0)
-        {
-            std::cout << "****************" << std::endl;
-            std::cout << "VM_t::state_" << std::endl;
-            std::cout << VM_t::state_ << std::endl;
-        }*/
-
-    }
+    VM_t::state_ = this->fa_output_.transpose();
 }
 
 template<typename VM_t>
-void VirtualMechanismGmrSplined<VM_t>::UpdateStateDot()
+void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
 {
 
     /*if(loopCnt%100==0)
@@ -207,7 +172,7 @@ void VirtualMechanismGmrSplined<VM_t>::UpdateStateDot()
         std::cout << this->z_dot_<< std::endl;
     }*/
 
-    VM_t::state_dot_ = this->J_no_norm_ * this->z_dot_; // Keep the velocities of the demonstrations
+    VM_t::state_dot_ = this->Jz_ * this->z_dot_; // Keep the velocities of the demonstrations
 
     //VM_t::state_dot_ = VM_t::J_ * VM_t::phase_dot_;
 
@@ -457,6 +422,6 @@ double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 // Explicitly instantiate the templates, and its member definitions
 template class VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>;
 template class VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>;
-template class VirtualMechanismGmrSplined<VirtualMechanismInterfaceFirstOrder>;
-template class VirtualMechanismGmrSplined<VirtualMechanismInterfaceSecondOrder>;
+template class VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>;
+template class VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>;
 }
