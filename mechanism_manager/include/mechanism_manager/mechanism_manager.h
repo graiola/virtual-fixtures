@@ -54,6 +54,10 @@ class MechanismManager
     //void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
     inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
     inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
+    inline void GetVmPosition(const int idx, Eigen::VectorXd& position) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getState(position);}
+    inline void GetVmVelocity(const int idx, Eigen::VectorXd& velocity) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getStateDot(velocity);}
+    void GetVmPosition(const int idx, const double* position_ptr);
+    void GetVmVelocity(const int idx, const double* velocity_ptr);
     inline int GetNbVms() {return vm_nb_;}
     //void MoveForward();
     //void MoveBackward();
@@ -80,6 +84,7 @@ class MechanismManager
     bool user_force_applied_;
     bool use_orientation_;
     std::vector<bool> active_guide_;
+    Eigen::VectorXd tmp_eigen_vector_;
     Eigen::VectorXd scales_;
     Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;

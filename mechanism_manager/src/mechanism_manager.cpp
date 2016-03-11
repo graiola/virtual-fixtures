@@ -126,6 +126,7 @@ MechanismManager::MechanismManager()
       }
 
       // Some Initializations
+      tmp_eigen_vector_.resize(position_dim_);
       use_orientation_ = false;
       active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
@@ -144,6 +145,7 @@ MechanismManager::MechanismManager()
       f_ori_.resize(position_dim_); // NOTE The dimension is the same as for the position 
       
       // Clear
+      tmp_eigen_vector_.fill(0.0);
       scales_.fill(0.0);
       phase_.fill(0.0);
       Kf_.fill(0.0);
@@ -241,6 +243,20 @@ void MechanismManager::MoveBackward()
     }
     Update(robot_pose,robot_velocity,dt,f_out);
 }*/
+
+void MechanismManager::GetVmPosition(const int idx, const double* position_ptr)
+{
+    assert(idx <= vm_vector_.size());
+    tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
+    vm_vector_[idx]->getState(tmp_eigen_vector_);
+}
+void MechanismManager::GetVmVelocity(const int idx, const double* velocity_ptr)
+{
+    assert(idx <= vm_vector_.size());
+    tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
+    vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
+}
+
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
 {
     user_force_applied_ = user_force_applied;
