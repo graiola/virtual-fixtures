@@ -45,13 +45,14 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     abscisse_for_spline[0] = 0.0;
     //position_diff.row(0) = output_position.row(0);
     for(int i=0;i<position_diff.rows();i++)
-    {   position_diff.row(i) = output_position.row(i+1) - output_position.row(i);
+    {
+        position_diff.row(i) = output_position.row(i+1) - output_position.row(i);
         abscisse_for_spline[i+1] = position_diff.row(i).norm() + abscisse_for_spline[i];
     }
     // Normalize
     for(int i=0;i<abscisse_for_spline.size();i++)
     {
-        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[abscisse_for_spline.size()];
+        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[n_points-1];
     }
 
     //tool_box::WriteTxtFile("abscisse.txt",abscisse_for_spline);
