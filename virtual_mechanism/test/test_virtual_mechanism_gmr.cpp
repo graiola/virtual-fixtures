@@ -30,7 +30,7 @@ typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/vssr_3d_1.txt"; // FIXME
+  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/shelf_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
