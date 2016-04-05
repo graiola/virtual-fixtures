@@ -13,7 +13,7 @@
 #include <boost/make_shared.hpp>
 
 ////////// Toolbox
-#include "toolbox/spline.h"
+#include "toolbox/spline/spline.h"
 
 ////////// ALGLIB
 //#include <spline3.h>
