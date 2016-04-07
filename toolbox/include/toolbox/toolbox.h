@@ -379,10 +379,13 @@ class RealTimePublisherPath
 			
 			topic_name_ = topic_name;
 			
-			assert(init_cond.size() >= 3);
+            assert(init_cond.size() >= 2);
 			prev_pose_.pose.position.x = init_cond[0];
 			prev_pose_.pose.position.y = init_cond[1];
-			prev_pose_.pose.position.z = init_cond[2];
+            if(init_cond.size() > 2)
+                prev_pose_.pose.position.z = init_cond[2];
+            else
+                prev_pose_.pose.position.z = 0.0;
 			
 			//msg_size_ = 2; // NOTE msg_size_ is usless...
 			//geometry_msgs::PoseStamped empty_pose;
@@ -405,7 +408,10 @@ class RealTimePublisherPath
 				
 				pub_ptr_->msg_.poses[1].pose.position.x = in[0];
 				pub_ptr_->msg_.poses[1].pose.position.y = in[1];
-				pub_ptr_->msg_.poses[1].pose.position.z = in[2];
+                if(in.size() > 2)
+                    pub_ptr_->msg_.poses[1].pose.position.z = in[2];
+                else
+                    pub_ptr_->msg_.poses[1].pose.position.z = 0.0;
 				
 				prev_pose_ = pub_ptr_->msg_.poses[1];
 				
