@@ -99,9 +99,13 @@ MechanismManager::MechanismManager()
       pkg_path_ = ros::package::getPath("mechanism_manager");
       std::string config_file_path(pkg_path_+"/config/cfg.yml");
       if(ReadConfig(config_file_path))
+      {
         ROS_INFO("Loaded config file: %s",config_file_path.c_str());
+      }
       else
+      {
         ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
+      }
 #else
       pkg_path_ = "/home/sybot/workspace/virtual-fixtures/mechanism_manager"; // FIXME
       //pkg_path_ = PATH_TO_PKG;
@@ -143,7 +147,7 @@ MechanismManager::MechanismManager()
       orientation_derivative_.resize(3);
       f_pos_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
-      
+
       // Clear
       tmp_eigen_vector_.fill(0.0);
       scales_.fill(0.0);
@@ -160,7 +164,7 @@ MechanismManager::MechanismManager()
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
       f_ori_.fill(0.0);
-      
+
       #ifdef USE_ROS_RT_PUBLISHER
       try
       {
@@ -171,21 +175,21 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
-	  for(int i=0; i<vm_nb_;i++)
-	  {
-	    std::string topic_name = "vm_pos_" + std::to_string(i+1);
-	    rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_state_[i].size(),&vm_state_[i]);
-	    //topic_name = "vm_ker_" + std::to_string(i+1);
-	    //boost::shared_ptr<RealTimePublisherMarkers> tmp_ptr = boost::make_shared<RealTimePublisherMarkers>(ros_node_.GetNode(),topic_name,root_name_);
-	    //rt_publishers_markers_.AddPublisher(tmp_ptr,&vm_kernel_[i]);
-	  } 
+          for(int i=0; i<vm_nb_;i++)
+          {
+            std::string topic_name = "vm_pos_" + std::to_string(i+1);
+            rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_state_[i].size(),&vm_state_[i]);
+            //topic_name = "vm_ker_" + std::to_string(i+1);
+            //boost::shared_ptr<RealTimePublisherMarkers> tmp_ptr = boost::make_shared<RealTimePublisherMarkers>(ros_node_.GetNode(),topic_name,root_name_);
+            //rt_publishers_markers_.AddPublisher(tmp_ptr,&vm_kernel_[i]);
+          }
       }
       catch(const std::runtime_error& e)
       {
         ROS_ERROR("Failed to create the real time publishers: %s",e.what());
       }
       #endif
-      
+
       // Define the scale threshold to check when a guide is more "probable"
       scale_threshold_ = 1.0/static_cast<double>(vm_nb_);
       
@@ -196,7 +200,7 @@ MechanismManager::MechanismManager()
 MechanismManager::~MechanismManager()
 {
       for(int i=0;i<vm_vector_.size();i++)
-	  delete vm_vector_[i];
+        delete vm_vector_[i];
 }
 
 /*void MechanismManager::MoveForward()
@@ -264,7 +268,7 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
-{  
+{
     assert(dt > 0.0);
     dt_ = dt;
 
@@ -412,27 +416,24 @@ void MechanismManager::Update()
 
       /*if(loopCnt%100==0)
       {
-          std::cout << "****" <<std::endl;
-          std::cout << vm_vector_[i]->getB() <<std::endl;
+          //std::cout << "** MV POS **" <<std::endl;
+          //std::cout << vm_state_[i] <<std::endl;
+          std::cout << "** MV VEL **" <<std::endl;
+          std::cout << vm_state_dot_[i] <<std::endl;
 
           //std::cout << "DEACTIVE" <<std::endl;
           //std::cout << user_force_applied_ <<std::endl;
       }*/
 
+    }	   
 
-
-
-    }
-	   
-
-    loopCnt++;
-
+    //loopCnt++;
 
 	//UpdateTrackingReference(robot_position);
 	
 	#ifdef USE_ROS_RT_PUBLISHER
         rt_publishers_values_.PublishAll();
-        rt_publishers_pose_.PublishAll();
+        //rt_publishers_pose_.PublishAll();
         rt_publishers_path_.PublishAll();
 	#endif
 }
