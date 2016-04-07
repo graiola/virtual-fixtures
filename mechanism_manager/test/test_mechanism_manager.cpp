@@ -35,14 +35,16 @@ TEST(MechanismManagerTest, UpdateMethodWithOrientation)
   
   MechanismManager mm = MechanismManager();
   
+  int pos_dim = mm.GetPositionDim();
+
   // Force input interface
   Eigen::VectorXd rob_pos;
   Eigen::VectorXd rob_vel;
   Eigen::VectorXd f_out;
   
-  rob_pos.resize(7);
-  rob_vel.resize(3);
-  f_out.resize(6);
+  rob_pos.resize(pos_dim+4); // position dim + orientation dim
+  rob_vel.resize(pos_dim);
+  f_out.resize(pos_dim+3); // position dim  + rpy
   
   rob_pos.fill(1.0);
   rob_vel.fill(1.0);
@@ -57,15 +59,17 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
   
   MechanismManager mm = MechanismManager();
+
+  int pos_dim = mm.GetPositionDim();
   
   // Force input interface
   Eigen::VectorXd rob_pos;
   Eigen::VectorXd rob_vel;
   Eigen::VectorXd f_out;
   
-  rob_pos.resize(3);
-  rob_vel.resize(3);
-  f_out.resize(3);
+  rob_pos.resize(pos_dim);
+  rob_vel.resize(pos_dim);
+  f_out.resize(pos_dim);
   
   rob_pos.fill(1.0);
   rob_vel.fill(1.0);
@@ -82,10 +86,12 @@ TEST(MechanismManagerTest, UpdateMethodRawVectors)
 
   MechanismManager mm = MechanismManager();
 
+  int pos_dim = mm.GetPositionDim();
+
   // Force input interface
-  std::vector<double> rob_pos(3, 1.0);
-  std::vector<double> rob_vel(3, 1.0);
-  std::vector<double> f_out(3, 0.0);
+  std::vector<double> rob_pos(pos_dim, 1.0);
+  std::vector<double> rob_vel(pos_dim, 1.0);
+  std::vector<double> f_out(pos_dim, 0.0);
 
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(&rob_pos[0],&rob_vel[0],dt,&f_out[0]));

@@ -58,6 +58,7 @@ class MechanismManager
     inline void GetVmVelocity(const int idx, Eigen::VectorXd& velocity) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getStateDot(velocity);}
     void GetVmPosition(const int idx, const double* position_ptr);
     void GetVmVelocity(const int idx, const double* velocity_ptr);
+    int GetPositionDim() const {return position_dim_;}
     inline int GetNbVms() {return vm_nb_;}
     //void MoveForward();
     //void MoveBackward();

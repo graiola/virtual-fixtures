@@ -103,7 +103,7 @@ MechanismManager::MechanismManager()
       else
         ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
 #else
-      pkg_path_ = "/home/sybot/64bit/virtual-fixtures"; // FIXME
+      pkg_path_ = "/home/sybot/workspace/virtual-fixtures/mechanism_manager"; // FIXME
       //pkg_path_ = PATH_TO_PKG;
       std::string config_file_path(pkg_path_+"/config/cfg.yml");
       bool file_read = ReadConfig(config_file_path);
@@ -136,13 +136,13 @@ MechanismManager::MechanismManager()
       robot_position_.resize(position_dim_);
       robot_velocity_.resize(position_dim_);
       robot_orientation_.resize(orientation_dim_);
-      orientation_error_.resize(position_dim_);
-      cross_prod_.resize(position_dim_);
-      prev_orientation_error_.resize(position_dim_);
-      orientation_integral_.resize(position_dim_);
-      orientation_derivative_.resize(position_dim_);
+      orientation_error_.resize(3); // rpy
+      cross_prod_.resize(3);
+      prev_orientation_error_.resize(3);
+      orientation_integral_.resize(3);
+      orientation_derivative_.resize(3);
       f_pos_.resize(position_dim_);
-      f_ori_.resize(position_dim_); // NOTE The dimension is the same as for the position 
+      f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
       
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -301,10 +301,10 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
     }
     else if(robot_pose.size() == position_dim_ + orientation_dim_)
     {
-        assert(f_out.size() == 2*position_dim_);
+        assert(f_out.size() == position_dim_ + 3);
         use_orientation_ = true;
-        robot_position_ = robot_pose.segment<3>(0);
-        robot_orientation_ = robot_pose.segment<4>(3);
+        robot_position_ = robot_pose.segment(0,position_dim_);
+        robot_orientation_ = robot_pose.segment(position_dim_,4);
     }
 
     Update();
@@ -388,6 +388,7 @@ void MechanismManager::Update()
 	  
       if(use_orientation_)
       {
+
         cross_prod_.noalias() = vm_quat_[i].segment<3>(1).cross(robot_orientation_.segment<3>(1));
 
         orientation_error_(0) = robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1) - cross_prod_(0);
@@ -409,11 +410,10 @@ void MechanismManager::Update()
       else
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
 
-
       /*if(loopCnt%100==0)
       {
           std::cout << "****" <<std::endl;
-          std::cout << vm_vector_[i]->getPhase() <<std::endl;
+          std::cout << vm_vector_[i]->getB() <<std::endl;
 
           //std::cout << "DEACTIVE" <<std::endl;
           //std::cout << user_force_applied_ <<std::endl;
