@@ -51,6 +51,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["K"] >> K;
     main_node["B"] >> B;
     main_node["normalize"] >> normalize;
+    main_node["escape_factor"] >> escape_factor_;
 
     assert(position_dim == 2 || position_dim == 3);
     position_dim_ = position_dim;
@@ -170,11 +171,20 @@ MechanismManager::MechanismManager()
       {
           ros_node_.Init("mechanism_manager");
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_velocity_vect",robot_velocity_.size(),&robot_velocity_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_pos",f_pos_.size(),&f_pos_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
+          //rt_publishers_wrench_.AddPublisher(ros_node_.GetNode(),"f_rob",f_pos_.size(),&f_pos_);
+
+          //std::string topic_name = "f_rob";
+          //std::string root_name = "map";
+          //boost::shared_ptr<RealTimePublisherWrench> tmp_ptr = boost::make_shared<RealTimePublisherWrench>(ros_node_.GetNode(),topic_name,root_name);
+          //rt_publishers_wrench_.AddPublisher(tmp_ptr,&f_pos_);
           for(int i=0; i<vm_nb_;i++)
           {
             std::string topic_name = "vm_pos_" + std::to_string(i+1);
@@ -376,7 +386,7 @@ void MechanismManager::Update()
 	      scales_(i) = scales_(i);
 	      break;
 	    case SOFT:
-	      scales_(i) = std::exp(-10*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum_;
+          scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum_;
 	      break;
 	    default:
 	      break;
@@ -433,7 +443,7 @@ void MechanismManager::Update()
 	
 	#ifdef USE_ROS_RT_PUBLISHER
         rt_publishers_values_.PublishAll();
-        //rt_publishers_pose_.PublishAll();
+        //rt_publishers_wrench_.PublishAll();
         rt_publishers_path_.PublishAll();
 	#endif
 }

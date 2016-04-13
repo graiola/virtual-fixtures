@@ -106,6 +106,7 @@ class MechanismManager
     double curr_norm_factor_;
     double scale_threshold_;
     double dt_;
+    double escape_factor_;
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
@@ -126,7 +127,7 @@ class MechanismManager
     #ifdef USE_ROS_RT_PUBLISHER
         tool_box::RosNode ros_node_;
         tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
-        //tool_box::RealTimePublishers<tool_box::RealTimePublisherPoseStamped> rt_publishers_pose_;
+        //tool_box::RealTimePublishers<tool_box::RealTimePublisherWrench> rt_publishers_wrench_;
         tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
     #endif
 #endif
