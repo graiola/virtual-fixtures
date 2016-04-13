@@ -117,11 +117,13 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
   /*if(loopCnt%100==0)
   {
       std::cout << "****************" << std::endl;
-      std::cout << "z_dot_" << std::endl;
-      std::cout << z_dot_<< std::endl;
-  }*/
+      std::cout << "this->fa_output_" << std::endl;
+      std::cout << this->fa_output_<< std::endl;
+      std::cout << "this->fa_output_" << std::endl;
+      std::cout << this->fa_output_dot_<< std::endl;
+  }
 
-  loopCnt++;
+  loopCnt++;*/
 }
 
 template <typename VM_t>
@@ -351,8 +353,15 @@ void VirtualMechanismGmr<VM_t>::getLocalKernel(VectorXd& mean_variance) const
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 {
+
   for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
-    covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); 
+      if(use_weighted_dist_)
+        covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); //0.001
+      else
+      {
+        covariance_inv_(i,i) = 1.0;
+      }
+
 }
 
 template<class VM_t>

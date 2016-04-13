@@ -89,6 +89,7 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;
+    Eigen::VectorXd phase_ddot_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
@@ -99,6 +100,10 @@ class MechanismManager
     Eigen::VectorXd orientation_derivative_;
     Eigen::VectorXd f_pos_;
     Eigen::VectorXd f_ori_;
+    Eigen::VectorXd f_rob_;
+    Eigen::VectorXd t_versor_;
+    Eigen::VectorXd f_rob_t_;
+    Eigen::VectorXd f_rob_n_;
     int vm_nb_;
     int position_dim_;
     int orientation_dim_;
@@ -110,6 +115,7 @@ class MechanismManager
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
+    std::vector<Eigen::VectorXd> vm_jacobian_;
     std::vector<Eigen::VectorXd> vm_quat_;
     std::vector<std::vector<double> > quat_start_;
     std::vector<std::vector<double> > quat_end_;

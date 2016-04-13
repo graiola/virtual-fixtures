@@ -29,13 +29,13 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
 	      assert(B_ > 0.0);
 	      assert(Kf_ > 0.0);
-	      
+
 	      // Initialize the ros node
           /*try
 	      {
@@ -82,6 +82,9 @@ class VirtualMechanismInterface
 
 	    // Save the previous phase
 	    phase_prev_ = phase_;
+
+        // Save the previous phase_dot
+        phase_dot_prev_ = phase_dot_;
   
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
@@ -112,17 +115,17 @@ class VirtualMechanismInterface
 	      {
 		//LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
 		phase_ = 1;
-		//phase_dot_ = 0;
+        phase_dot_ = 0;
 	      }
 	      else if (phase_ < 0.0)
 	      {
 		//LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 		phase_ = 0;
-		//phase_dot_ = 0;
+        phase_dot_ = 0;
 	      }
 	  }
 	  
-	  inline void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt, const double scale = 1.0)
+      inline void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt, const double scale = 1.0)
 	  {
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
@@ -157,10 +160,12 @@ class VirtualMechanismInterface
 	  inline double getTorque() const {return torque_(0,0);} // For test purpose
 	  inline double getFade() const {return fade_;} // For test purpose
 	  
+      inline double getPhaseDotDot() const {return phase_ddot_;}
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
+      inline void getJacobian(Eigen::VectorXd& jacobian) const {jacobian = J_;}
 	  inline void getQuaternion(Eigen::VectorXd& q) const 
 	  {
               assert(q.size() == 4); 
@@ -226,6 +231,9 @@ class VirtualMechanismInterface
 	  double phase_;
 	  double phase_prev_;
 	  double phase_dot_;
+      double phase_dot_prev_;
+      double phase_ddot_;
+
 	  int state_dim_;
       bool update_quaternion_;
 	  Eigen::VectorXd state_;
@@ -240,6 +248,8 @@ class VirtualMechanismInterface
 	  Eigen::MatrixXd JxJt_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
+      //Eigen::VectorXd J_vector_;
+
 
 	  // Gains
 	  double B_;
@@ -259,6 +269,8 @@ class VirtualMechanismInterface
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 
       double dt_;
+
+
 
 };
   
@@ -306,6 +318,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
 
+           // Compute phase_ddot
+          phase_ddot_ = (phase_dot_ - phase_dot_prev_)/dt;
+
 	  }
 	  
 	protected:
@@ -331,8 +346,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      assert(Bf > 0.0);
 	      
 	      Bf_ = Bf;
-	      phase_dot_prev_ = 0.0;
-	      phase_ddot_ = 0.0;
+          //phase_dot_prev_ = 0.0;
+          //phase_ddot_ = 0.0;
 	      
 	      // Resize the attributes
 	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
@@ -491,8 +506,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      //phase_ = phase_dot_ * dt + phase_prev_;
 	  }
 	  
-	  double phase_dot_prev_;
-	  double phase_ddot_;
+      //double phase_dot_prev_;
+      //double phase_ddot_;
 
 	  Eigen::VectorXd phase_state_;
 	  Eigen::VectorXd phase_state_dot_;
