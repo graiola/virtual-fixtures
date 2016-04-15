@@ -52,6 +52,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["B"] >> B;
     main_node["normalize"] >> normalize;
     main_node["escape_factor"] >> escape_factor_;
+    main_node["f_norm"] >> f_norm_;
 
     assert(position_dim == 2 || position_dim == 3);
     position_dim_ = position_dim;
@@ -65,6 +66,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	    prob_mode_ = POTENTIAL;
 	else if (prob_mode_string == "soft")
 	    prob_mode_ = SOFT;
+    else if (prob_mode_string == "escape")
+        prob_mode_ = ESCAPE;
 	else
 	    prob_mode_ = POTENTIAL; // Default
 
@@ -137,9 +140,10 @@ MechanismManager::MechanismManager()
       active_guide_.resize(vm_nb_,false);
       scales_.resize(vm_nb_);
       phase_.resize(vm_nb_);
-      Kf_.resize(vm_nb_);
+      escape_factors_.resize(vm_nb_);
+      //Kf_.resize(vm_nb_);
       phase_dot_.resize(vm_nb_);
-      phase_ddot_.resize(vm_nb_);
+      //phase_ddot_.resize(vm_nb_);
       f_rob_t_.resize(vm_nb_);
       f_rob_n_.resize(vm_nb_);
       robot_position_.resize(position_dim_);
@@ -154,16 +158,19 @@ MechanismManager::MechanismManager()
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
       f_rob_.resize(position_dim_);
       t_versor_.resize(position_dim_);
+      escape_field_.resize(vm_nb_);
+      escape_field_compare_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
       scales_.fill(0.0);
       phase_.fill(0.0);
+      escape_factors_.fill(escape_factor_);
       f_rob_t_.fill(0.0);
       f_rob_n_.fill(0.0);
-      Kf_.fill(0.0);
+      //Kf_.fill(0.0);
       phase_dot_.fill(0.0);
-      phase_ddot_.fill(0.0);
+      //phase_ddot_.fill(0.0);
       robot_position_.fill(0.0);
       robot_velocity_.fill(0.0);
       orientation_error_.fill(0.0);
@@ -176,6 +183,8 @@ MechanismManager::MechanismManager()
       f_ori_.fill(0.0);
       f_rob_.fill(0.0);
       t_versor_.fill(0.0);
+      escape_field_.fill(0.0);
+      escape_field_compare_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -184,14 +193,17 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot",phase_ddot_.size(),&phase_ddot_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot",phase_ddot_.size(),&phase_ddot_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_velocity_vect",robot_velocity_.size(),&robot_velocity_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_pos",f_pos_.size(),&f_pos_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob",f_rob_.size(),&f_rob_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_factors",escape_factors_.size(),&escape_factors_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field",escape_field_.size(),&escape_field_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
           //rt_publishers_wrench_.AddPublisher(ros_node_.GetNode(),"f_rob",f_pos_.size(),&f_pos_);
@@ -370,11 +382,14 @@ void MechanismManager::Update()
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
 	      break;
 	    case POTENTIAL:
-          scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+          //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
 	      break;
 	    case SOFT:
 	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
 	      break;
+        case ESCAPE:
+          scales_(i) = vm_vector_[i]->getProbability(robot_position_);
+          break;
 	    default:
 	      break;
 	  }
@@ -382,26 +397,30 @@ void MechanismManager::Update()
 	  // Take the phase for each vm (For plots)
 	  phase_(i) = vm_vector_[i]->getPhase();
       phase_dot_(i) = vm_vector_[i]->getPhaseDot();
-      phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
-      Kf_(i)= vm_vector_[i]->getKf();
+      //phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
+      //Kf_(i)= vm_vector_[i]->getKf();
+
+      // Compute the force from the vms
+      vm_vector_[i]->getState(vm_state_[i]);
+      vm_vector_[i]->getStateDot(vm_state_dot_[i]);
+      vm_vector_[i]->getQuaternion(vm_quat_[i]);
+      vm_vector_[i]->getJacobian(vm_jacobian_[i]);
+
+      // Robot force components
+      f_rob_ = vm_vector_[i]->getK() * (robot_position_-vm_state_[i]) + vm_vector_[i]->getB() * robot_velocity_;
+      t_versor_ = vm_jacobian_[i]/vm_jacobian_[i].norm();
+      f_rob_t_(i) = f_rob_.dot(t_versor_); // tangent
+      f_rob_n_(i) = (f_rob_ - f_rob_t_(i) * t_versor_).norm(); // normal
+
+      // compute escape_factor based on the normal force applied by the user/robot
+      escape_factors_(i) = escape_factor_/f_norm_ * std::abs(f_rob_n_(i));
+      if(escape_factors_(i) > escape_factor_)
+          escape_factors_(i) = escape_factor_;
 	}
 
-	sum_ = scales_.sum();
+    sum_ = scales_.sum();
     f_pos_.fill(0.0); // Reset the force
     f_ori_.fill(0.0); // Reset the force
-
-    // Compute the force from the vms
-    vm_vector_[i]->getState(vm_state_[i]);
-    vm_vector_[i]->getStateDot(vm_state_dot_[i]);
-    vm_vector_[i]->getQuaternion(vm_quat_[i]);
-    vm_vector_[i]->getJacobian(vm_jacobian_[i]);
-
-    // Robot force component
-    f_rob_ = vm_vector_[i]->getK() * (robot_position_-vm_state_[i]) + vm_vector_[i]->getB() * robot_velocity_;
-
-    t_versor_ = vm_jacobian_[i]/vm_jacobian_[i].norm();
-    f_rob_t_(i) = f_rob_.dot(t_versor_);
-    f_rob_n_(i) = (f_rob_ - f_rob_t_(i) * t_versor_).norm();
 
 	for(int i=0; i<vm_nb_;i++)
 	{
@@ -409,19 +428,24 @@ void MechanismManager::Update()
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
-	      scales_(i) =  scales_(i)/sum_;
-	      break;
+            scales_(i) =  scales_(i)/sum_;
+            break;
 	    case POTENTIAL:
-	      scales_(i) = scales_(i);
-	      break;
+            scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+            break;
 	    case SOFT:
-          scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum_;
-	      break;
+            escape_field_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+            scales_(i) = escape_field_(i) * scales_(i)/sum_;
+            break;
+        case ESCAPE:
+            escape_field_compare_(i) = escape_factors_(i);
+            escape_field_(i) = std::exp(-escape_factors_(i)*vm_vector_[i]->getDistance(robot_position_));
+            scales_(i) = escape_field_(i) * scales_(i)/sum_;
+            break;
 	    default:
 	      break;
 	  }
 
-          
 	  //vm_vector_[i]->getLocalKernel(vm_kernel_[i]);
 	  //K_ = vm_vector_[i]->getK();
       //B_ = vm_vector_[i]->getB();
@@ -452,18 +476,31 @@ void MechanismManager::Update()
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
       }
 
-      /*if(loopCnt%100==0)
-      {
-          //std::cout << "** MV POS **" <<std::endl;
-          //std::cout << vm_state_[i] <<std::endl;
-          std::cout << "** MV VEL **" <<std::endl;
-          std::cout << vm_state_dot_[i] <<std::endl;
 
-          //std::cout << "DEACTIVE" <<std::endl;
-          //std::cout << user_force_applied_ <<std::endl;
-      }*/
 
     }	   
+
+    /*if(loopCnt%1000==0)
+    {
+        std::cout << "** ****" <<std::endl;
+        std::cout << "** AFTR **" <<std::endl;
+        std::cout << scales_ <<std::endl;
+    }*/
+    //loopCnt++;
+
+    /*if(loopCnt%100==0)
+    {
+        std::cout << "** ****" <<std::endl;
+        //std::cout << vm_state_[i] <<std::endl;
+        std::cout << "** SUM **" <<std::endl;
+        std::cout << sum_ <<std::endl;
+        std::cout << "** scale **" <<std::endl;
+        std::cout << scales_(i) <<std::endl;
+
+        //std::cout << "DEACTIVE" <<std::endl;
+        //std::cout << user_force_applied_ <<std::endl;
+    }*/
+
 
     //loopCnt++;
 

@@ -72,7 +72,7 @@ class MechanismManager
     
     void UpdateTrackingReference(const Eigen::VectorXd& robot_position); // To update the reference for the head tracking
     
-    enum prob_mode_t {HARD,POTENTIAL,SOFT};
+    enum prob_mode_t {HARD,POTENTIAL,SOFT,ESCAPE};
     prob_mode_t prob_mode_;
     
     std::string pkg_path_;
@@ -87,9 +87,12 @@ class MechanismManager
     std::vector<bool> active_guide_;
     Eigen::VectorXd tmp_eigen_vector_;
     Eigen::VectorXd scales_;
-    Eigen::VectorXd Kf_;
+    Eigen::VectorXd escape_factors_;
+    Eigen::VectorXd escape_field_;
+    Eigen::VectorXd escape_field_compare_;
+    //Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;
-    Eigen::VectorXd phase_ddot_;
+    //Eigen::VectorXd phase_ddot_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
@@ -104,6 +107,7 @@ class MechanismManager
     Eigen::VectorXd t_versor_;
     Eigen::VectorXd f_rob_t_;
     Eigen::VectorXd f_rob_n_;
+    //Eigen::VectorXd prob_;
     int vm_nb_;
     int position_dim_;
     int orientation_dim_;
@@ -112,6 +116,7 @@ class MechanismManager
     double scale_threshold_;
     double dt_;
     double escape_factor_;
+    double f_norm_;
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
