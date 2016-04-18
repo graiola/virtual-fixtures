@@ -94,7 +94,6 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
     z_ = 0;
 
   this->fa_input_(0,0) = z_;
-
   this->fa_ptr_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_); // We need this for the covariance
   this->covariance_ = this->variance_.row(0).asDiagonal();
 
@@ -355,12 +354,13 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 {
 
   for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
-      if(use_weighted_dist_)
+      covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); //0.001
+      /*if(use_weighted_dist_)
         covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); //0.001
       else
       {
         covariance_inv_(i,i) = 1.0;
-      }
+      }*/
 
 }
 

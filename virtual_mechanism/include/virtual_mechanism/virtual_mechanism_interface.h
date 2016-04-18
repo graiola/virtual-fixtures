@@ -113,15 +113,15 @@ class VirtualMechanismInterface
 	      // Saturations
 	      if(phase_ > 1.0)
 	      {
-		//LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
-		phase_ = 1;
-        phase_dot_ = 0;
+            //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
+            phase_ = 1;
+            phase_dot_ = 0;
 	      }
 	      else if (phase_ < 0.0)
 	      {
-		//LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
-		phase_ = 0;
-        phase_dot_ = 0;
+            //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
+            phase_ = 0;
+            phase_dot_ = 0;
 	      }
 	  }
 	  
@@ -308,7 +308,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 
 	      torque_.noalias() = J_transp_ * force;
 	      
-	      if(active_)
+          if(active_) // NOTE: fade is used only when normalized... FIXME
             fade_ = 10 * (1 - fade_) * dt + fade_;
 	      else
             fade_ = 10 * (-fade_) * dt + fade_;
@@ -339,13 +339,16 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double inertia = 0.1):
 	  VirtualMechanismInterface(state_dim,K,B,Kf)
 	  {
 	      
 	      assert(Bf > 0.0);
+          assert(inertia > 0.0);
 	      
 	      Bf_ = Bf;
+          inertia_ = inertia;
+
           //phase_dot_prev_ = 0.0;
           //phase_ddot_ = 0.0;
 	      
@@ -381,7 +384,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	  }
 	  
-	  virtual void ApplySaturation()
+      /*virtual void ApplySaturation()
 	  {
 	      // Saturations
 	      if(phase_ > 1.0)
@@ -395,10 +398,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 		//LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
 		phase_ = 0;
 		phase_dot_ = 0;
-	      }
-	  }
+          }
+      }*/
 	  
-	  inline double getPhaseDDot() const {return phase_ddot_;}
+      inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
 
 	protected:
 	    
@@ -435,37 +438,41 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  {
 	     if(active_)
 	     {
-		fade_ = 10 * (1 - fade_) * dt + fade_;
-		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
-		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
+            fade_ = 10 * (1 - fade_) * dt + fade_;
+            //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
+            //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	     }
 	     else
 	     {
-		fade_ = 10 * (-fade_) * dt + fade_;
-		//phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
-		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+            fade_ = 10 * (-fade_) * dt + fade_;
+            //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
+            //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	     }
-	     
+
+
+         //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
+         //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
+         phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator
+
+         /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
             // HACK 
             if(phase_dot_> 0.2)
                 moveForward();
             else if(phase_dot_< -0.2)
                 moveBackward();
-	     
-            
             // Compute phase dot
             if(move_forward_) // Go forward
             {
                 //std::cout << "Forward" <<std::endl;
-                Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
+                //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
+                //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
             }
             else // Go back
             {
                 //std::cout << "Backward" <<std::endl;
-                Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_state(0)));
-                phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
-            }
+                //Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_state(0)));
+                //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
+            }*/
 
 	     //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
 	     //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
@@ -518,6 +525,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	  // Fade system variables
 	  double Bf_;
+      double inertia_;
 
 };
 

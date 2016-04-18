@@ -92,7 +92,7 @@ class MechanismManager
     Eigen::VectorXd escape_field_compare_;
     //Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;
-    //Eigen::VectorXd phase_ddot_;
+    Eigen::VectorXd phase_ddot_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;

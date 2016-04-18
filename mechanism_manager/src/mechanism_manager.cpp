@@ -37,9 +37,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
     int position_dim;
-    double K;
-    double B;
-    bool normalize;
+    double K, B, inertia;
+    bool normalize, second_order;
 	
 	main_node["models"] >> model_names;
     main_node["quat_start"] >> quat_start_;
@@ -53,13 +52,17 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["normalize"] >> normalize;
     main_node["escape_factor"] >> escape_factor_;
     main_node["f_norm"] >> f_norm_;
+    main_node["second_order"] >> second_order;
+    main_node["inertia"] >> inertia;
 
     assert(position_dim == 2 || position_dim == 3);
     position_dim_ = position_dim;
 
     assert(K >= 0.0);
     assert(B >= 0.0);
-	
+    assert(inertia > 0.0);
+
+
 	if (prob_mode_string == "hard")
 	    prob_mode_ = HARD;
 	else if (prob_mode_string == "potential")
@@ -74,7 +77,6 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	// Create the virtual mechanisms starting from the GMM models
  	for(int i=0;i<model_names.size();i++)
 	{
-
 	    std::vector<std::vector<double> > data;
 	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
 	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
@@ -82,11 +84,23 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 
         if(normalize)
         {
-            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+            if(second_order)
+            {
+                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+            }
+            else
+                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
         }
         else
         {
-            vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr));
+            if(second_order)
+            {
+                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,fa_tmp_shr_ptr));
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+            }
+            else
+                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr));
         }
     }
 	return true;
@@ -143,7 +157,7 @@ MechanismManager::MechanismManager()
       escape_factors_.resize(vm_nb_);
       //Kf_.resize(vm_nb_);
       phase_dot_.resize(vm_nb_);
-      //phase_ddot_.resize(vm_nb_);
+      phase_ddot_.resize(vm_nb_);
       f_rob_t_.resize(vm_nb_);
       f_rob_n_.resize(vm_nb_);
       robot_position_.resize(position_dim_);
@@ -170,7 +184,7 @@ MechanismManager::MechanismManager()
       f_rob_n_.fill(0.0);
       //Kf_.fill(0.0);
       phase_dot_.fill(0.0);
-      //phase_ddot_.fill(0.0);
+      phase_ddot_.fill(0.0);
       robot_position_.fill(0.0);
       robot_velocity_.fill(0.0);
       orientation_error_.fill(0.0);
@@ -193,7 +207,7 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot",phase_ddot_.size(),&phase_ddot_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot",phase_ddot_.size(),&phase_ddot_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_velocity_vect",robot_velocity_.size(),&robot_velocity_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
@@ -397,7 +411,7 @@ void MechanismManager::Update()
 	  // Take the phase for each vm (For plots)
 	  phase_(i) = vm_vector_[i]->getPhase();
       phase_dot_(i) = vm_vector_[i]->getPhaseDot();
-      //phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
+      phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
       //Kf_(i)= vm_vector_[i]->getKf();
 
       // Compute the force from the vms
