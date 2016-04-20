@@ -83,12 +83,14 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       virtual void UpdateState();
       virtual void UpdateStateDot();
       tk::spline spline_phase_;
+      tk::spline spline_phase_inv_;
       std::vector<tk::spline > splines_xyz_;
       bool use_spline_xyz_;
 
 
       double z_;
       double z_dot_;
+      double z_dot_ref_;
 
       Eigen::MatrixXd Jz_;
 

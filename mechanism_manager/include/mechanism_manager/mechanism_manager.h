@@ -5,6 +5,7 @@
 
 ////////// Toolbox
 #include "toolbox/toolbox.h"
+#include <toolbox/filters/filters.h>
 
 #ifdef INCLUDE_ROS_CODE
     ////////// ROS
@@ -21,6 +22,8 @@
 ////////// VIRTUAL_MECHANISM
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
+
+//#include <iostream>
 
 namespace mechanism_manager
 {
@@ -89,7 +92,7 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd escape_factors_;
     Eigen::VectorXd escape_field_;
-    Eigen::VectorXd escape_field_compare_;
+    //Eigen::VectorXd escape_field_compare_;
     //Eigen::VectorXd Kf_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd phase_ddot_;
@@ -98,15 +101,17 @@ class MechanismManager
     Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd orientation_error_;
     Eigen::VectorXd cross_prod_;
-    Eigen::VectorXd prev_orientation_error_;
+    /*Eigen::VectorXd prev_orientation_error_;
     Eigen::VectorXd orientation_integral_;
-    Eigen::VectorXd orientation_derivative_;
+    Eigen::VectorXd orientation_derivative_;*/
     Eigen::VectorXd f_pos_;
     Eigen::VectorXd f_ori_;
     Eigen::VectorXd f_rob_;
     Eigen::VectorXd t_versor_;
     Eigen::VectorXd f_rob_t_;
     Eigen::VectorXd f_rob_n_;
+    Eigen::VectorXd phase_dot_filt_;
+    Eigen::VectorXd phase_dot_ref_;
     //Eigen::VectorXd prob_;
     int vm_nb_;
     int position_dim_;
@@ -133,6 +138,9 @@ class MechanismManager
     //std::vector<Eigen::VectorXd> vm_state_;
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
+
+    filters::M3DFilter* filter_;
+
 
 #ifdef INCLUDE_ROS_CODE
     #ifdef USE_ROS_RT_PUBLISHER

@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -163,6 +163,7 @@ class VirtualMechanismInterface
       inline double getPhaseDotDot() const {return phase_ddot_;}
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
+      inline double getPhaseDotRef() const {return phase_dot_ref_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::VectorXd& jacobian) const {jacobian = J_;}
@@ -231,6 +232,7 @@ class VirtualMechanismInterface
 	  double phase_;
 	  double phase_prev_;
 	  double phase_dot_;
+      double phase_dot_ref_;
       double phase_dot_prev_;
       double phase_ddot_;
 
@@ -314,6 +316,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
             fade_ = 10 * (-fade_) * dt + fade_;
 
           phase_dot_ = num_/det_ * torque_(0,0);
+
+          // Smooth
+          phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_; // FIXME does it make sense to have it here?
 
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
@@ -476,7 +481,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	     //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
 	     //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
-	     phase_state_dot_(0) = phase_state(1);
+
+
+         //phase_state_dot_(0) = phase_state(1);
+         phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)

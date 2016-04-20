@@ -165,15 +165,17 @@ MechanismManager::MechanismManager()
       robot_orientation_.resize(orientation_dim_);
       orientation_error_.resize(3); // rpy
       cross_prod_.resize(3);
-      prev_orientation_error_.resize(3);
+      /*prev_orientation_error_.resize(3);
       orientation_integral_.resize(3);
-      orientation_derivative_.resize(3);
+      orientation_derivative_.resize(3);*/
       f_pos_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
       f_rob_.resize(position_dim_);
       t_versor_.resize(position_dim_);
       escape_field_.resize(vm_nb_);
-      escape_field_compare_.resize(vm_nb_);
+      //escape_field_compare_.resize(vm_nb_);
+      phase_dot_filt_.resize(vm_nb_);
+      phase_dot_ref_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -189,16 +191,18 @@ MechanismManager::MechanismManager()
       robot_velocity_.fill(0.0);
       orientation_error_.fill(0.0);
       cross_prod_.fill(0.0);
-      prev_orientation_error_.fill(0.0);
+      /*prev_orientation_error_.fill(0.0);
       orientation_integral_.fill(0.0);
-      orientation_derivative_.fill(0.0);
+      orientation_derivative_.fill(0.0);*/
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
       f_ori_.fill(0.0);
       f_rob_.fill(0.0);
       t_versor_.fill(0.0);
       escape_field_.fill(0.0);
-      escape_field_compare_.fill(0.0);
+      //escape_field_compare_.fill(0.0);
+      phase_dot_filt_.fill(0.0);
+      phase_dot_ref_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -213,10 +217,13 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_pos",f_pos_.size(),&f_pos_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_factors",escape_factors_.size(),&escape_factors_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field",escape_field_.size(),&escape_field_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_filt",phase_dot_filt_.size(),&phase_dot_filt_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",phase_dot_ref_.size(),&phase_dot_ref_);
+
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -246,12 +253,17 @@ MechanismManager::MechanismManager()
       
       if(vm_nb_>1)
           scale_threshold_ = scale_threshold_ + 0.2;
+
+      // HACK
+      filter_ = new filters::M3DFilter(3); // Average
 }
   
 MechanismManager::~MechanismManager()
 {
       for(int i=0;i<vm_vector_.size();i++)
         delete vm_vector_[i];
+
+      delete filter_;
 }
 
 /*void MechanismManager::MoveForward()
@@ -312,9 +324,29 @@ void MechanismManager::GetVmVelocity(const int idx, const double* velocity_ptr)
     vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
 }
 
-void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
+/*void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
 {
     user_force_applied_ = user_force_applied;
+    Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
+}*/
+
+void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
+{
+
+    phase_dot_filt_(0) = filter_->Step(phase_dot_(0),1500);
+
+    if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + 0.05)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - 0.05)))
+    {
+        std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
+        user_force_applied_ = false;
+    }
+    else
+        user_force_applied_ = true;
+
+    //if(std::abs(phase_ddot_filt_(0)) > 2.0)
+     //
+
+    //user_force_applied_ = user_force_applied;
     Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
 }
 
@@ -412,6 +444,7 @@ void MechanismManager::Update()
 	  phase_(i) = vm_vector_[i]->getPhase();
       phase_dot_(i) = vm_vector_[i]->getPhaseDot();
       phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
+      phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
       //Kf_(i)= vm_vector_[i]->getKf();
 
       // Compute the force from the vms
@@ -452,7 +485,7 @@ void MechanismManager::Update()
             scales_(i) = escape_field_(i) * scales_(i)/sum_;
             break;
         case ESCAPE:
-            escape_field_compare_(i) = escape_factors_(i);
+            //escape_field_compare_(i) = escape_factors_(i);
             escape_field_(i) = std::exp(-escape_factors_(i)*vm_vector_[i]->getDistance(robot_position_));
             scales_(i) = escape_field_(i) * scales_(i)/sum_;
             break;
@@ -473,12 +506,12 @@ void MechanismManager::Update()
         orientation_error_(1) = robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2) - cross_prod_(1);
         orientation_error_(2) = robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3) - cross_prod_(2);
 
-        orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
-        orientation_derivative_ = (orientation_error_ - prev_orientation_error_)/dt_;
+        //orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
+        //orientation_derivative_ = (orientation_error_ - prev_orientation_error_)/dt_;
 
-        f_ori_ += scales_(i) * (5.0 * orientation_error_ + 0.0 * orientation_integral_ + 0.0 * orientation_derivative_);
+        //f_ori_ += scales_(i) * (5.0 * orientation_error_ + 0.0 * orientation_integral_ + 0.0 * orientation_derivative_);
 
-        prev_orientation_error_ = orientation_error_;
+        //prev_orientation_error_ = orientation_error_;
 
         //f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1));
         //f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2));
