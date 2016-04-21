@@ -42,6 +42,25 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 	      v.push_back(node[i].as<_T>());
 }
   
+
+class VirtualMechanismAutom
+{
+
+public:
+    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
+    //~VirtualMechanismAutom();
+
+    void Step(const double phase_dot, const double phase_dot_ref);
+    bool GetState();
+
+private:
+    enum state_t {MANUAL,PREAUTO,AUTO};
+    double phase_dot_preauto_th_;
+    double phase_dot_th_;
+    state_t state_;
+    long long loopcnt_;
+};
+
 class MechanismManager
 {
   
@@ -111,17 +130,23 @@ class MechanismManager
     Eigen::VectorXd f_rob_t_;
     Eigen::VectorXd f_rob_n_;
     Eigen::VectorXd phase_dot_filt_;
+    Eigen::VectorXd phase_ddot_filt_;
     Eigen::VectorXd phase_dot_ref_;
+    Eigen::VectorXd phase_dot_ref_upper_;
+    Eigen::VectorXd phase_dot_ref_lower_;
     //Eigen::VectorXd prob_;
     int vm_nb_;
     int position_dim_;
     int orientation_dim_;
+    int n_samples_filter_;
     double sum_;
     double curr_norm_factor_;
     double scale_threshold_;
     double dt_;
     double escape_factor_;
     double f_norm_;
+    double range_;
+    double pre_auto_th_;
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
@@ -139,7 +164,9 @@ class MechanismManager
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
 
-    filters::M3DFilter* filter_;
+    filters::M3DFilter* filter_phase_dot_;
+    filters::M3DFilter* filter_phase_ddot_;
+    VirtualMechanismAutom* vm_autom_;
 
 
 #ifdef INCLUDE_ROS_CODE

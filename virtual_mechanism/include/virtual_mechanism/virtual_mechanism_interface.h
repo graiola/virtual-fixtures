@@ -28,13 +28,15 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterface(int state_dim, double K, double B, double Kf):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+      VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
 	      assert(B_ > 0.0);
 	      assert(Kf_ > 0.0);
+          assert(Bf_ > 0.0);
+          assert(fade_gain_ > 0.0);
 
 	      // Initialize the ros node
           /*try
@@ -233,8 +235,10 @@ class VirtualMechanismInterface
 	  double phase_prev_;
 	  double phase_dot_;
       double phase_dot_ref_;
+      double phase_ref_;
       double phase_dot_prev_;
       double phase_ddot_;
+      double fade_gain_;
 
 	  int state_dim_;
       bool update_quaternion_;
@@ -265,6 +269,7 @@ class VirtualMechanismInterface
 	  
 	  // Auto completion
 	  double Kf_;
+      double Bf_;
 	  double fade_;
 	  bool active_;
 	  bool move_forward_;
@@ -280,8 +285,8 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 0.8, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
-	  VirtualMechanismInterface(state_dim,K,B,Kf)
+      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
         assert(epsilon > 0.1);
         epsilon_ = epsilon;
@@ -301,24 +306,26 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
 	      JxJt_.noalias() = J_transp_ * J_;
-	      
+          /*
 	      // Adapt Bf
 	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
-	      
           det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
+          */
+
+          det_ = B_ * JxJt_(0,0) + Bf_;
 
 	      torque_.noalias() = J_transp_ * force;
 	      
           if(active_) // NOTE: fade is used only when normalized... FIXME
-            fade_ = 10 * (1 - fade_) * dt + fade_;
+            fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
 	      else
-            fade_ = 10 * (-fade_) * dt + fade_;
+            fade_ = fade_gain_ * (-fade_) * dt + fade_;
 
-          phase_dot_ = num_/det_ * torque_(0,0);
+          phase_dot_ = num_/det_ * torque_(0,0) + fade_ * (Kf_ * (phase_ref_ - phase_) + Bf_ * phase_dot_ref_);
 
           // Smooth
-          phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_; // FIXME does it make sense to have it here?
+          //phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_; // FIXME does it make sense to have it here?
 
 	      // Compute the new phase
 	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
@@ -344,8 +351,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double inertia = 0.1):
-	  VirtualMechanismInterface(state_dim,K,B,Kf)
+      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1):
+      VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
 	      
 	      assert(Bf > 0.0);
@@ -443,13 +450,13 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  {
 	     if(active_)
 	     {
-            fade_ = 10 * (1 - fade_) * dt + fade_;
+            fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 	     }
 	     else
 	     {
-            fade_ = 10 * (-fade_) * dt + fade_;
+            fade_ = fade_gain_ * (-fade_) * dt + fade_;
             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
 	     }
@@ -457,7 +464,12 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
          //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
-         phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator
+         //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
+
+
+         //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
+         //phase_state_dot_(1) = (1/inertia_)*(-Bf_ * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0))));
+         phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
 
          /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
             // HACK 
@@ -483,8 +495,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	     //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
 
 
-         //phase_state_dot_(0) = phase_state(1);
-         phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
+         phase_state_dot_(0) = phase_state(1); // original
+         //phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)

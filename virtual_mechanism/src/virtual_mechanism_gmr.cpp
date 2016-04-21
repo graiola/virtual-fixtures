@@ -12,8 +12,8 @@ namespace virtual_mechanism_gmr
 {
 
 template <typename VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr):
-    VirtualMechanismGmr<VM_t>(state_dim,K,B,fa_ptr)
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr):
+    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,fa_ptr)
 {
     use_spline_xyz_ = true; // FIXME
 
@@ -57,7 +57,8 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 
     //tool_box::WriteTxtFile("abscisse.txt",abscisse_for_spline);
 
-    spline_phase_.set_points(abscisse_for_spline,phase_for_spline); // set_points(x,y)
+    spline_phase_.set_points(abscisse_for_spline,phase_for_spline); // set_points(x,y) ----> z = f(s)
+    spline_phase_inv_.set_points(phase_for_spline,abscisse_for_spline); // set_points(x,y) ----> s = g(z)
 
     for(int i=0;i<VM_t::state_dim_;i++)
     {
@@ -68,24 +69,35 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     z_ = 0.0;
     z_dot_ = 0.0;
 
+    z_dot_ref_ = 0.15;
+
 }
 
 template <typename VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
 
+  z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
+
   if(VM_t::active_)
   {
-      z_dot_ = VM_t::fade_ *  0.15 + (1-VM_t::fade_) * z_dot_; // FIXME constant value arbitrary
+      //z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1-VM_t::fade_) * z_dot_; // FIXME constant value arbitrary
       z_ = z_dot_ * VM_t::dt_ + z_;
       // NORMALIZE ONLY IF NOT ACTIVE!!!!!!!!!!!!!!!!!!
       // NOW IS NORMALIZING ALWAYS
   }
   else
   {
-      z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
+      //z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
       z_ = spline_phase_(VM_t::phase_); // abscisse (s) -> phase (z)
   }
+
+  // HACKY THING
+  // Compute the phase_dot_ref starting by the constant reference in z_dot
+  // Ignore all the structure
+  // Just out some stuff
+  VM_t::phase_dot_ref_ = spline_phase_inv_.compute_derivate(z_) * z_dot_ref_;
+  VM_t::phase_ref_ = spline_phase_inv_(z_);
 
   // Saturate z
   if(z_ > 1.0)
@@ -193,7 +205,7 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
 }
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim,K,B) // FIXME
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
   
   assert(fa_ptr);

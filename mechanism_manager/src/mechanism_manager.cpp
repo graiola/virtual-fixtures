@@ -17,6 +17,94 @@ namespace mechanism_manager
   typedef FunctionApproximatorGMR fa_t;
   
 
+
+VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th)
+{
+
+    assert(phase_dot_th > 0.0);
+    assert(phase_dot_preauto_th > phase_dot_th);
+
+    phase_dot_preauto_th_ = phase_dot_preauto_th;
+    phase_dot_th_ = phase_dot_th;
+
+    state_ = MANUAL;
+}
+
+void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_ref)
+{
+
+    if(true)
+    {
+    switch(state_)
+    {
+        case MANUAL:
+            if(phase_dot >= phase_dot_preauto_th_)
+                state_ = PREAUTO;
+            break;
+        case PREAUTO:
+            if(phase_dot <= (phase_dot_ref + phase_dot_th_))
+                state_ = AUTO;
+            break;
+        case AUTO:
+            //if(!(phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
+            //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
+            //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
+            if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION
+                state_ = MANUAL;
+            break;
+    }
+    }
+    else // Two states version
+    {
+            if((phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
+                state_ = AUTO;
+            else
+                state_ = MANUAL;
+    }
+}
+
+bool VirtualMechanismAutom::GetState()
+{
+    bool bool_state;
+
+    switch(state_) // FIXME it is using the logic of "user applied force? yes or no"
+    {
+        case MANUAL:
+            bool_state = true;
+
+            break;
+        case PREAUTO:
+            bool_state = true;
+            break;
+        case AUTO:
+            bool_state = false;
+            break;
+    }
+
+
+    if(loopcnt_%100==0)
+    {
+        switch(state_)
+        {
+            case MANUAL:
+                std::cout << "MANUAL" << std::endl;
+                break;
+            case PREAUTO:
+                std::cout << "PREAUTO" << std::endl;
+                break;
+            case AUTO:
+                std::cout << "AUTO" << std::endl;
+                break;
+        }
+    }
+
+
+    loopcnt_++;
+
+
+    return bool_state;
+}
+
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
 {
 	YAML::Node main_node;
@@ -37,7 +125,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
     int position_dim;
-    double K, B, inertia;
+    double K, B, Kf, Bf, inertia, fade_gain;
     bool normalize, second_order;
 	
 	main_node["models"] >> model_names;
@@ -49,11 +137,17 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["position_dim"] >> position_dim;
     main_node["K"] >> K;
     main_node["B"] >> B;
+    main_node["Kf"] >> Kf;
+    main_node["Bf"] >> Bf;
+    main_node["n_samples_filter"] >> n_samples_filter_;
+    main_node["range"] >> range_;
+    main_node["pre_auto_th"] >> pre_auto_th_;
     main_node["normalize"] >> normalize;
     main_node["escape_factor"] >> escape_factor_;
     main_node["f_norm"] >> f_norm_;
     main_node["second_order"] >> second_order;
     main_node["inertia"] >> inertia;
+    main_node["fade_gain"] >> fade_gain;
 
     assert(position_dim == 2 || position_dim == 3);
     position_dim_ = position_dim;
@@ -61,6 +155,9 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     assert(K >= 0.0);
     assert(B >= 0.0);
     assert(inertia > 0.0);
+    assert(n_samples_filter_ > 0);
+    assert(range_ > 0.0);
+    assert(pre_auto_th_ > range_);
 
 
 	if (prob_mode_string == "hard")
@@ -86,21 +183,21 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
         {
             if(second_order)
             {
-                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
             }
             else
-                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
         }
         else
         {
             if(second_order)
             {
-                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,fa_tmp_shr_ptr));
+                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
             }
             else
-                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,fa_tmp_shr_ptr));
+                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
         }
     }
 	return true;
@@ -175,7 +272,10 @@ MechanismManager::MechanismManager()
       escape_field_.resize(vm_nb_);
       //escape_field_compare_.resize(vm_nb_);
       phase_dot_filt_.resize(vm_nb_);
+      phase_ddot_filt_.resize(vm_nb_);
       phase_dot_ref_.resize(vm_nb_);
+      phase_dot_ref_upper_.resize(vm_nb_);
+      phase_dot_ref_lower_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -202,7 +302,10 @@ MechanismManager::MechanismManager()
       escape_field_.fill(0.0);
       //escape_field_compare_.fill(0.0);
       phase_dot_filt_.fill(0.0);
+      phase_ddot_filt_.fill(0.0);
       phase_dot_ref_.fill(0.0);
+      phase_dot_ref_upper_.fill(0.0);
+      phase_dot_ref_lower_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -217,13 +320,15 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_pos",f_pos_.size(),&f_pos_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_factors",escape_factors_.size(),&escape_factors_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field",escape_field_.size(),&escape_field_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_filt",phase_dot_filt_.size(),&phase_dot_filt_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot_filt",phase_ddot_filt_.size(),&phase_ddot_filt_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",phase_dot_ref_.size(),&phase_dot_ref_);
-
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_upper",phase_dot_ref_upper_.size(),&phase_dot_ref_upper_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -255,7 +360,13 @@ MechanismManager::MechanismManager()
           scale_threshold_ = scale_threshold_ + 0.2;
 
       // HACK
-      filter_ = new filters::M3DFilter(3); // Average
+      filter_phase_dot_ = new filters::M3DFilter(3); // Average
+      filter_phase_ddot_ = new filters::M3DFilter(3); // Average
+      filter_phase_dot_->SetN(n_samples_filter_);
+      filter_phase_ddot_->SetN(n_samples_filter_);
+
+      vm_autom_ = new VirtualMechanismAutom(pre_auto_th_,range_); // phase_dot_preauto_th, phase_dot_th
+
 }
   
 MechanismManager::~MechanismManager()
@@ -263,7 +374,9 @@ MechanismManager::~MechanismManager()
       for(int i=0;i<vm_vector_.size();i++)
         delete vm_vector_[i];
 
-      delete filter_;
+      delete filter_phase_dot_;
+      delete filter_phase_ddot_;
+      delete vm_autom_;
 }
 
 /*void MechanismManager::MoveForward()
@@ -333,18 +446,28 @@ void MechanismManager::GetVmVelocity(const int idx, const double* velocity_ptr)
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
 {
 
-    phase_dot_filt_(0) = filter_->Step(phase_dot_(0),1500);
+    phase_dot_filt_(0) = filter_phase_dot_->Step(phase_dot_(0)); // FIXME: change to multi virtual mechanisms
+    phase_ddot_filt_(0) = filter_phase_ddot_->Step(phase_ddot_(0)); // FIXME: change to multi virtual mechanisms
 
-    if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + 0.05)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - 0.05)))
+    vm_autom_->Step(phase_dot_filt_(0),phase_dot_ref_(0)); //phase_dot, phase_dot_ref)
+    user_force_applied_ = vm_autom_->GetState();
+
+    phase_dot_ref_upper_(0) = phase_dot_ref_(0) + range_;
+    phase_dot_ref_lower_(0) = phase_dot_ref_(0) - range_;
+
+/*
+    if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + range_)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - range_)))
     {
-        std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
+        //std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
+
         user_force_applied_ = false;
     }
     else
         user_force_applied_ = true;
+*/
+
 
     //if(std::abs(phase_ddot_filt_(0)) > 2.0)
-     //
 
     //user_force_applied_ = user_force_applied;
     Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);

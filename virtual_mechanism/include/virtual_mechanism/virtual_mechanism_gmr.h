@@ -28,7 +28,7 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-      VirtualMechanismGmr(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
+      VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual void setWeightedDist(const bool activate);
@@ -74,7 +74,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
-      VirtualMechanismGmrNormalized(int state_dim, double K, double B, boost::shared_ptr<fa_t> fa_ptr);
+      VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 
     protected:
