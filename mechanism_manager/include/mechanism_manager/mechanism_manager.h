@@ -69,9 +69,9 @@ class MechanismManager
     ~MechanismManager();
   
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const bool user_force_applied);
+    //void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const bool user_force_applied);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
-    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool force_applied);
+    //void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool force_applied);
 
     //void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, bool force_applied, bool move_forward);
     inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
@@ -104,7 +104,7 @@ class MechanismManager
     
     long long loopCnt;
 
-    bool user_force_applied_;
+    std::vector<bool> activated_;
     bool use_orientation_;
     std::vector<bool> active_guide_;
     Eigen::VectorXd tmp_eigen_vector_;
@@ -134,6 +134,7 @@ class MechanismManager
     Eigen::VectorXd phase_dot_ref_;
     Eigen::VectorXd phase_dot_ref_upper_;
     Eigen::VectorXd phase_dot_ref_lower_;
+    Eigen::VectorXd fade_;
     //Eigen::VectorXd prob_;
     int vm_nb_;
     int position_dim_;
@@ -164,9 +165,9 @@ class MechanismManager
     //std::vector<Eigen::VectorXd> vm_state_dot_;
     //std::vector<Eigen::VectorXd> vm_kernel_;
 
-    filters::M3DFilter* filter_phase_dot_;
-    filters::M3DFilter* filter_phase_ddot_;
-    VirtualMechanismAutom* vm_autom_;
+    std::vector<filters::M3DFilter* > filter_phase_dot_;
+    std::vector<filters::M3DFilter* > filter_phase_ddot_;
+    std::vector<VirtualMechanismAutom* > vm_autom_;
 
 
 #ifdef INCLUDE_ROS_CODE

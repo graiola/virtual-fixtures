@@ -79,6 +79,18 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();
 
+
+  /*Eigen::VectorXd pos(pos_dim);
+  Eigen::VectorXd vel(pos_dim);
+  mm.GetVmPosition(0,pos);
+  mm.GetVmVelocity(0,vel);
+
+  std::cout << "f_out" <<std::endl;
+  std::cout << f_out <<std::endl;
+  std::cout << "pos" <<std::endl;
+  std::cout << pos <<std::endl;
+  std::cout << "vel" <<std::endl;
+  std::cout << vel <<std::endl;*/
 }
 
 TEST(MechanismManagerTest, UpdateMethodRawVectors)

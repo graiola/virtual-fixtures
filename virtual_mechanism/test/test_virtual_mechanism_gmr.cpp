@@ -1,4 +1,5 @@
 #include <toolbox/debug.h>
+//#include <toolbox/filters/filters.h>
 
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
@@ -24,13 +25,16 @@ int test_dim = 3;
 double dt = 0.001;
 double K = 100.0;
 double B = 20.0;
+double Kf = 100.0;
+double Bf = 20.0;
+double fade_gain = 10.0;
 
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/shelf_1.txt"; // FIXME
+  std::string file_name = "/home/sybot/workspace/virtual-fixtures/mechanism_manager/models/shelf_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
@@ -47,16 +51,16 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectly)
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,fa_ptr));
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr));
 }
 
 TEST(VirtualMechanismGmrTest, UpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
   
   Eigen::VectorXd force(test_dim);
   Eigen::VectorXd pos(test_dim);
@@ -81,8 +85,8 @@ TEST(VirtualMechanismGmrTest, GetProbability)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
   
   Eigen::VectorXd pos(test_dim);
   pos.fill(1.0);
@@ -99,8 +103,8 @@ TEST(VirtualMechanismGmrTest, GetDistance)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
   
   Eigen::VectorXd pos(test_dim);
   pos.fill(1.0);
@@ -123,6 +127,35 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   END_REAL_TIME_CRITICAL_CODE();
   
 }
+
+/*TEST(VirtualMechanismGmrTest, TestFilters)
+{
+  filters::M3DFilter filter(1);
+
+  filter.SetCutoff_freq(0.1);
+  filter.SetOrder(2);
+
+  filter.Dump();
+
+  int N = 5;
+  std::vector<double> A(N,1.0);
+  std::vector<double> B(N,1.0);
+  double y;
+  double x = 1.0;
+
+  filter.Coefficients(N,A,B);
+
+  filter.Dump();
+
+  getchar();
+
+  y = filter.Step(x,N);
+
+  //std::cout << y << std::endl;
+
+
+}*/
+
 
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
@@ -179,8 +212,8 @@ TEST(VirtualMechanismGmrTest, GetMethods)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
   
   // State
   Eigen::VectorXd state;

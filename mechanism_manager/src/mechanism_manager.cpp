@@ -49,7 +49,7 @@ void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_
             //if(!(phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
-            if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION
+            if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
                 state_ = MANUAL;
             break;
     }
@@ -65,23 +65,22 @@ void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_
 
 bool VirtualMechanismAutom::GetState()
 {
-    bool bool_state;
+    bool activate_vm;
 
-    switch(state_) // FIXME it is using the logic of "user applied force? yes or no"
+    switch(state_)
     {
         case MANUAL:
-            bool_state = true;
-
+            activate_vm = false;
             break;
         case PREAUTO:
-            bool_state = true;
+            activate_vm = false;
             break;
         case AUTO:
-            bool_state = false;
+            activate_vm = true;
             break;
     }
 
-
+    /*
     if(loopcnt_%100==0)
     {
         switch(state_)
@@ -97,12 +96,10 @@ bool VirtualMechanismAutom::GetState()
                 break;
         }
     }
-
-
     loopcnt_++;
+    */
 
-
-    return bool_state;
+    return activate_vm;
 }
 
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
@@ -208,7 +205,7 @@ MechanismManager::MechanismManager()
 
       //position_dim_ = 2; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
-      user_force_applied_ = true; // NOTE we assume the guide is passive, so the user is in contact with the robot
+
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
@@ -243,6 +240,16 @@ MechanismManager::MechanismManager()
          vm_state_dot_.push_back(VectorXd(position_dim_));
          vm_jacobian_.push_back(VectorXd(position_dim_));
          vm_quat_.push_back(VectorXd(orientation_dim_));
+         // HACK
+         filter_phase_dot_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
+         //filter_phase_ddot_->push_back(new filters::M3DFilter(3));
+         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,range_)); // phase_dot_preauto_th, phase_dot_th
+         activated_.push_back(false); // NOTE we assume the guide not active at the beginning
+      }
+      for(int i=0; i<vm_nb_;i++)
+      {
+        filter_phase_dot_[i]->SetN(n_samples_filter_);
+      //filter_phase_ddot_->SetN(n_samples_filter_);
       }
 
       // Some Initializations
@@ -276,6 +283,7 @@ MechanismManager::MechanismManager()
       phase_dot_ref_.resize(vm_nb_);
       phase_dot_ref_upper_.resize(vm_nb_);
       phase_dot_ref_lower_.resize(vm_nb_);
+      fade_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -306,6 +314,7 @@ MechanismManager::MechanismManager()
       phase_dot_ref_.fill(0.0);
       phase_dot_ref_upper_.fill(0.0);
       phase_dot_ref_lower_.fill(0.0);
+      fade_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -329,6 +338,7 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",phase_dot_ref_.size(),&phase_dot_ref_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_upper",phase_dot_ref_upper_.size(),&phase_dot_ref_upper_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"fade",fade_.size(),&fade_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -359,24 +369,22 @@ MechanismManager::MechanismManager()
       if(vm_nb_>1)
           scale_threshold_ = scale_threshold_ + 0.2;
 
-      // HACK
-      filter_phase_dot_ = new filters::M3DFilter(3); // Average
-      filter_phase_ddot_ = new filters::M3DFilter(3); // Average
-      filter_phase_dot_->SetN(n_samples_filter_);
-      filter_phase_ddot_->SetN(n_samples_filter_);
 
-      vm_autom_ = new VirtualMechanismAutom(pre_auto_th_,range_); // phase_dot_preauto_th, phase_dot_th
 
 }
   
 MechanismManager::~MechanismManager()
 {
-      for(int i=0;i<vm_vector_.size();i++)
-        delete vm_vector_[i];
+      //for(int i=0;i<vm_vector_.size();i++)
 
-      delete filter_phase_dot_;
-      delete filter_phase_ddot_;
-      delete vm_autom_;
+
+      for(int i=0;i<vm_nb_;i++)
+      {
+        delete vm_vector_[i];
+        delete filter_phase_dot_[i];
+        //delete filter_phase_ddot_[i];
+        delete vm_autom_[i];
+      }
 }
 
 /*void MechanismManager::MoveForward()
@@ -443,35 +451,30 @@ void MechanismManager::GetVmVelocity(const int idx, const double* velocity_ptr)
     Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
 }*/
 
-void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
+/*void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
 {
 
-    phase_dot_filt_(0) = filter_phase_dot_->Step(phase_dot_(0)); // FIXME: change to multi virtual mechanisms
-    phase_ddot_filt_(0) = filter_phase_ddot_->Step(phase_ddot_(0)); // FIXME: change to multi virtual mechanisms
 
-    vm_autom_->Step(phase_dot_filt_(0),phase_dot_ref_(0)); //phase_dot, phase_dot_ref)
-    user_force_applied_ = vm_autom_->GetState();
+    //phase_dot_ref_upper_(0) = phase_dot_ref_(0) + range_;
+    //phase_dot_ref_lower_(0) = phase_dot_ref_(0) - range_;
 
-    phase_dot_ref_upper_(0) = phase_dot_ref_(0) + range_;
-    phase_dot_ref_lower_(0) = phase_dot_ref_(0) - range_;
 
-/*
-    if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + range_)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - range_)))
-    {
-        //std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
+    //if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + range_)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - range_)))
+    //{
+    //    //std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
+//
+     //   user_force_applied_ = false;
+    //}
+    //else
+     //   user_force_applied_ = true;
 
-        user_force_applied_ = false;
-    }
-    else
-        user_force_applied_ = true;
-*/
 
 
     //if(std::abs(phase_ddot_filt_(0)) > 2.0)
 
     //user_force_applied_ = user_force_applied;
     Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
-}
+}*/
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
 {
@@ -489,11 +492,11 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
     VectorXd::Map(f_out_ptr, position_dim_) = f_pos_;
 }
 
-void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const bool user_force_applied)
+/*void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const bool user_force_applied)
 {
     user_force_applied_ = user_force_applied;
     Update(robot_pose,robot_velocity,dt,f_out);
-}
+}*/
 
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
@@ -526,12 +529,18 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 }
 void MechanismManager::Update()
 {
+
 	// Update the virtual mechanisms states, compute single probabilities
 	for(int i=0; i<vm_nb_;i++)
 	{
-         // Check if there are external forces applied, activate the auto-completion
+        // Check for activation
+        phase_dot_filt_(i) = filter_phase_dot_[i]->Step(phase_dot_(i)); // FIXME: change to multi virtual mechanisms
+        //phase_ddot_filt_(i) = filter_phase_ddot_[i]->Step(phase_ddot_(i)); // FIXME: change to multi virtual mechanisms
+        vm_autom_[i]->Step(phase_dot_filt_(i),phase_dot_ref_(i)); //phase_dot, phase_dot_ref)
+        activated_[i] = vm_autom_[i]->GetState();
+
         //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
-        if (user_force_applied_ == false && use_active_guide_[i] == true)
+        if (activated_[i] == true && use_active_guide_[i] == true)
         {
             vm_vector_[i]->setActive(true);
             //active_guide_[i] = true;
@@ -544,7 +553,7 @@ void MechanismManager::Update()
             //std::cout << "Deactive" <<std::endl;
         }
 
-      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
+      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i));
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
@@ -568,7 +577,7 @@ void MechanismManager::Update()
       phase_dot_(i) = vm_vector_[i]->getPhaseDot();
       phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
       phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
-      //Kf_(i)= vm_vector_[i]->getKf();
+      fade_(i) = vm_vector_[i]->getFade();
 
       // Compute the force from the vms
       vm_vector_[i]->getState(vm_state_[i]);
