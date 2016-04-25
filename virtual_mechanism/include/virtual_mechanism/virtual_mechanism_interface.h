@@ -448,19 +448,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
 	  inline void DynSystem(const double& dt, const double& input, const Eigen::VectorXd& phase_state)
 	  {
-	     if(active_)
-	     {
-            fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-            //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
-            //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
-	     }
-	     else
-	     {
-            fade_ = fade_gain_ * (-fade_) * dt + fade_;
-            //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
-            //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
-	     }
-
 
          //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
@@ -509,7 +496,20 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	      phase_state_(0) = phase_;
 	      phase_state_(1) = phase_dot_;
-	      
+	        
+          if(active_)
+          {
+             fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
+             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
+             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
+          }
+          else
+          {
+             fade_ = fade_gain_ * (-fade_) * dt + fade_;
+             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
+             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+          }
+
 	      DynSystem(dt,torque_(0),phase_state_);
 	      
 	      IntegrateStepRungeKutta(dt,torque_(0),phase_state_,phase_state_integrated_);
