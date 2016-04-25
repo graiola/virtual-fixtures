@@ -18,19 +18,21 @@ namespace mechanism_manager
   
 
 
-VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th)
+VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th)
 {
 
     assert(phase_dot_th > 0.0);
     assert(phase_dot_preauto_th > phase_dot_th);
+    assert(phase_ddot_th_ > 0.0);
 
     phase_dot_preauto_th_ = phase_dot_preauto_th;
     phase_dot_th_ = phase_dot_th;
+    phase_ddot_th_ = phase_ddot_th;
 
     state_ = MANUAL;
 }
 
-void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_ref)
+void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_ref, const double phase_ddot_ref)
 {
 
     if(true)
@@ -50,6 +52,7 @@ void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
             if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
+
                 state_ = MANUAL;
             break;
     }
@@ -137,7 +140,8 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["Kf"] >> Kf;
     main_node["Bf"] >> Bf;
     main_node["n_samples_filter"] >> n_samples_filter_;
-    main_node["range"] >> range_;
+    main_node["phase_dot_th"] >> phase_dot_th_;
+    main_node["phase_ddot_th"] >> phase_ddot_th_;
     main_node["pre_auto_th"] >> pre_auto_th_;
     main_node["normalize"] >> normalize;
     main_node["escape_factor"] >> escape_factor_;
@@ -153,8 +157,9 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     assert(B >= 0.0);
     assert(inertia > 0.0);
     assert(n_samples_filter_ > 0);
-    assert(range_ > 0.0);
-    assert(pre_auto_th_ > range_);
+    assert(phase_dot_th > 0.0);
+    assert(pre_auto_th_ > phase_dot_th);
+    assert(phase_ddot_th > 0.0);
 
 
 	if (prob_mode_string == "hard")
@@ -243,7 +248,7 @@ MechanismManager::MechanismManager()
          // HACK
          filter_phase_dot_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
          //filter_phase_ddot_->push_back(new filters::M3DFilter(3));
-         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,range_)); // phase_dot_preauto_th, phase_dot_th
+         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,phase_ddot_th_)); // phase_dot_preauto_th, phase_dot_th
          activated_.push_back(false); // NOTE we assume the guide not active at the beginning
       }
       for(int i=0; i<vm_nb_;i++)
@@ -281,6 +286,8 @@ MechanismManager::MechanismManager()
       phase_dot_filt_.resize(vm_nb_);
       phase_ddot_filt_.resize(vm_nb_);
       phase_dot_ref_.resize(vm_nb_);
+      phase_ddot_ref_.resize(vm_nb_);
+      phase_ref_.resize(vm_nb_);
       phase_dot_ref_upper_.resize(vm_nb_);
       phase_dot_ref_lower_.resize(vm_nb_);
       fade_.resize(vm_nb_);
@@ -312,6 +319,8 @@ MechanismManager::MechanismManager()
       phase_dot_filt_.fill(0.0);
       phase_ddot_filt_.fill(0.0);
       phase_dot_ref_.fill(0.0);
+      phase_ddot_ref_.fill(0.0);
+      phase_ref_.fill(0.0);
       phase_dot_ref_upper_.fill(0.0);
       phase_dot_ref_lower_.fill(0.0);
       fade_.fill(0.0);
@@ -335,6 +344,8 @@ MechanismManager::MechanismManager()
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_filt",phase_dot_filt_.size(),&phase_dot_filt_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot_filt",phase_ddot_filt_.size(),&phase_ddot_filt_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot_ref",phase_ddot_ref_.size(),&phase_ddot_ref_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ref",phase_ref_.size(),&phase_ref_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",phase_dot_ref_.size(),&phase_dot_ref_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_upper",phase_dot_ref_upper_.size(),&phase_dot_ref_upper_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
@@ -536,7 +547,7 @@ void MechanismManager::Update()
         // Check for activation
         phase_dot_filt_(i) = filter_phase_dot_[i]->Step(phase_dot_(i)); // FIXME: change to multi virtual mechanisms
         //phase_ddot_filt_(i) = filter_phase_ddot_[i]->Step(phase_ddot_(i)); // FIXME: change to multi virtual mechanisms
-        vm_autom_[i]->Step(phase_dot_filt_(i),phase_dot_ref_(i)); //phase_dot, phase_dot_ref)
+        vm_autom_[i]->Step(phase_dot_filt_(i),phase_dot_ref_(i),phase_ddot_ref_(i)); //phase_dot, phase_dot_ref)
         activated_[i] = vm_autom_[i]->GetState();
 
         //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
@@ -553,7 +564,7 @@ void MechanismManager::Update()
             //std::cout << "Deactive" <<std::endl;
         }
 
-      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i));
+      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_); // Add scales here to scale also on the vm
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
@@ -576,7 +587,9 @@ void MechanismManager::Update()
 	  phase_(i) = vm_vector_[i]->getPhase();
       phase_dot_(i) = vm_vector_[i]->getPhaseDot();
       phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
+      phase_ref_(i) = vm_vector_[i]->getPhaseRef();
       phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
+      phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
       fade_(i) = vm_vector_[i]->getFade();
 
       // Compute the force from the vms

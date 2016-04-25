@@ -97,6 +97,7 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
   // Ignore all the structure
   // Just out some stuff
   VM_t::phase_dot_ref_ = spline_phase_inv_.compute_derivate(z_) * z_dot_ref_;
+  VM_t::phase_ddot_ref_ = spline_phase_inv_.compute_second_derivate(z_) * z_dot_ref_;
   VM_t::phase_ref_ = spline_phase_inv_(z_);
 
   // Saturate z

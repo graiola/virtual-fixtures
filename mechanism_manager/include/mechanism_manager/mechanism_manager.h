@@ -47,16 +47,17 @@ class VirtualMechanismAutom
 {
 
 public:
-    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
+    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th);
     //~VirtualMechanismAutom();
 
-    void Step(const double phase_dot, const double phase_dot_ref);
+    void Step(const double phase_dot, const double phase_dot_ref, const double phase_ddot_ref);
     bool GetState();
 
 private:
     enum state_t {MANUAL,PREAUTO,AUTO};
     double phase_dot_preauto_th_;
     double phase_dot_th_;
+    double phase_ddot_th_;
     state_t state_;
     long long loopcnt_;
 };
@@ -131,7 +132,9 @@ class MechanismManager
     Eigen::VectorXd f_rob_n_;
     Eigen::VectorXd phase_dot_filt_;
     Eigen::VectorXd phase_ddot_filt_;
+    Eigen::VectorXd phase_ref_;
     Eigen::VectorXd phase_dot_ref_;
+    Eigen::VectorXd phase_ddot_ref_;
     Eigen::VectorXd phase_dot_ref_upper_;
     Eigen::VectorXd phase_dot_ref_lower_;
     Eigen::VectorXd fade_;
@@ -146,7 +149,9 @@ class MechanismManager
     double dt_;
     double escape_factor_;
     double f_norm_;
-    double range_;
+    //double range_;
+    double phase_dot_th_;
+    double phase_ddot_th_;
     double pre_auto_th_;
     Eigen::VectorXd phase_;
     std::vector<Eigen::VectorXd> vm_state_;

@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -165,7 +165,9 @@ class VirtualMechanismInterface
       inline double getPhaseDotDot() const {return phase_ddot_;}
 	  inline double getPhaseDot() const {return phase_dot_;}
 	  inline double getPhase() const {return phase_;}
+      inline double getPhaseRef() const {return phase_ref_;}
       inline double getPhaseDotRef() const {return phase_dot_ref_;}
+      inline double getPhaseDotDotRef() const {return phase_ddot_ref_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::VectorXd& jacobian) const {jacobian = J_;}
@@ -235,6 +237,7 @@ class VirtualMechanismInterface
 	  double phase_prev_;
 	  double phase_dot_;
       double phase_dot_ref_;
+      double phase_ddot_ref_;
       double phase_ref_;
       double phase_dot_prev_;
       double phase_ddot_;
@@ -293,7 +296,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	    Bd_ = 0.0;
 	    Bd_max_ = Bd_max;
 	    det_ = 1.0;
-	    num_ = -1.0;
+        num_ = -1.0;
 	  }
 
 	protected:
@@ -339,7 +342,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  
 	  // Tmp variables
 	  double det_;
-	  double num_; 
+      double num_;
 	  
 	  double Bd_; // Damp term
 	  double Bd_max_; // Max damp term
@@ -365,9 +368,13 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           //phase_ddot_ = 0.0;
 	      
 	      // Resize the attributes
-	      phase_state_dot_.resize(2); //phase_dot and phase_ddot
 	      phase_state_.resize(2); //phase_ and phase_dot
-	      phase_state_integrated_.resize(2);
+          phase_state_dot_.resize(2); //phase_dot and phase_ddot
+          phase_state_integrated_.resize(2);
+
+          phase_state_.fill(0.0);
+          phase_state_dot_.fill(0.0);
+          phase_state_integrated_.fill(0.0);
 
 	      k1_.resize(2);
 	      k2_.resize(2);
@@ -383,12 +390,12 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
               
 	  }
 	
-	  virtual ~VirtualMechanismInterfaceSecondOrder()
+      /*virtual ~VirtualMechanismInterfaceSecondOrder()
 	  {
 	    
 	  }
 	  
-	  using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
+      using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
@@ -396,7 +403,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    phase_dot_prev_ = phase_dot_;
 	    VirtualMechanismInterface::Update(force,dt);
 	    
-	  }
+      }*/
 	  
       /*virtual void ApplySaturation()
 	  {
@@ -462,7 +469,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
           phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
 
-
          /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
             // HACK 
             if(phase_dot_> 0.2)
@@ -497,8 +503,13 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	      torque_.noalias() = J_transp_ * force;
 
-	      phase_state_(0) = phase_;
-	      phase_state_(1) = phase_dot_;
+          //phase_state_(0) = phase_prev_;
+          //phase_state_(1) = phase_dot_prev_;
+          phase_state_(0) = phase_;
+          phase_state_(1) = phase_dot_;
+          // For compatibility
+          //phase_prev_ = phase_;
+          //phase_dot_prev_ = phase_dot_;
 	        
           if(active_)
           {
@@ -515,13 +526,16 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
           control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
 
-          //DynSystem(dt,torque_(0),control_,phase_state_); // ?????
+
 	      
           IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
-	      
-	      phase_ = phase_state_integrated_(0);
+
+
+          DynSystem(dt,torque_(0),control_,phase_state_); // ?????
+
+          phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
-	      phase_ddot_ = phase_state_dot_(1);
+          phase_ddot_ = phase_state_dot_(1);
 	      
 	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
 	      
@@ -536,8 +550,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
 	      // Compute the new phase
 	      // FIXME Switch to RungeKutta  
-	      //phase_dot_ = phase_ddot_ * dt + phase_dot_prev_; 
-	      //phase_ = phase_dot_ * dt + phase_prev_;
+
+          /*phase_ddot_ = (1/inertia_)*( - torque_(0) - 0.1 * phase_dot_ + control_ );
+          phase_dot_ = phase_ddot_ * dt + phase_dot_prev_;
+          phase_ = phase_dot_ * dt + phase_prev_;*/
 	  }
 	  
       //double phase_dot_prev_;
