@@ -378,6 +378,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           k2_.fill(0.0);
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
+
+          control_ = 0.0;
               
 	  }
 	
@@ -422,42 +424,43 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
 
-	  void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
+      void IntegrateStepRungeKutta(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
 	  {
 	 
 	    phase_state_integrated = phase_state;
 	    
-	    DynSystem(dt,input,phase_state_integrated);
+        DynSystem(dt,input1,input2,phase_state_integrated);
 	    k1_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + 0.5*dt*k1_;
-	    DynSystem(dt,input,phase_state_integrated);
+        DynSystem(dt,input1,input2,phase_state_integrated);
 	    k2_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + 0.5*dt*k2_;
-	    DynSystem(dt,input,phase_state_integrated);
+        DynSystem(dt,input1,input2,phase_state_integrated);
 	    k3_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + dt*k3_;
-	    DynSystem(dt,input,phase_state_integrated);
+        DynSystem(dt,input1,input2,phase_state_integrated);
 	    k4_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + dt*(k1_ + 2.0*(k2_+k3_) + k4_)/6.0;
 	  
 	  }
 	  
-	  inline void DynSystem(const double& dt, const double& input, const Eigen::VectorXd& phase_state)
+      inline void DynSystem(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state)
 	  {
 
          //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
          //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
 
-
          //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
          //phase_state_dot_(1) = (1/inertia_)*(-0.00001 * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0))));
-         phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
+         //phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
          //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
+
+          phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
 
 
          /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
@@ -510,9 +513,11 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
           }
 
-	      DynSystem(dt,torque_(0),phase_state_);
+          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
+
+          //DynSystem(dt,torque_(0),control_,phase_state_); // ?????
 	      
-	      IntegrateStepRungeKutta(dt,torque_(0),phase_state_,phase_state_integrated_);
+          IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
 	      
 	      phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
@@ -548,6 +553,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  // Fade system variables
 	  double Bf_;
       double inertia_;
+      double control_;
 
 };
 
