@@ -117,15 +117,15 @@ class VirtualMechanismInterface
 	      {
             //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
             phase_ = 1.0;
-            //phase_dot_ = 0.0;
-            //phase_ddot_ = 0.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
 	      }
 	      else if (phase_ < 0.0)
 	      {
             //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
             phase_ = 0.0;
-            //phase_dot_ = 0.0;
-            //phase_ddot_ = 0.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
 	      }
 	  }
 	  
@@ -364,17 +364,19 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0, double Kfi = 0.01):
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
 	      
 	      assert(Bf > 0.0);
           assert(inertia > 0.0);
           assert(Kr > 0.0);
+          assert(Kfi > 0.0);
 	      
 	      Bf_ = Bf;
           inertia_ = inertia;
           Kr_ = Kr;
+          Kfi_ = Kfi;
 
           //phase_dot_prev_ = 0.0;
           //phase_ddot_ = 0.0;
@@ -437,6 +439,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
       inline void setKr(const double Kr) {assert(Kr > 0.0); Kr_ = Kr;}
+      inline void setKfi(const double Kfi) {assert(Kfi > 0.0); Kfi_ = Kfi;}
 
 	protected:
 	    
@@ -534,7 +537,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt; // with tau
              //p_dot_integrated_ = p_dot_integrated_ + (- 0.1 * phase_dot_ + control_) * dt; // without tau
 
-             error_integrated_ = 0.01 * (error_integrated_ + (phase_ref_ - phase_) * dt);
+             error_integrated_ = Kfi_ * (error_integrated_ + (phase_ref_ - phase_) * dt);
           }
           else
           {
@@ -601,6 +604,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
       double control_;
       double error_integrated_;
       double Kr_;
+      double Kfi_;
 
 };
 

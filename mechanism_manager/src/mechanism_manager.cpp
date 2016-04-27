@@ -125,7 +125,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
     int position_dim;
-    double K, B, Kf, Bf, inertia, fade_gain, Kr;
+    double K, B, Kf, Bf, inertia, fade_gain, Kr, Kfi;
     bool normalize, second_order;
 	
 	main_node["models"] >> model_names;
@@ -149,6 +149,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["second_order"] >> second_order;
     main_node["inertia"] >> inertia;
     main_node["Kr"] >> Kr;
+    main_node["Kfi"] >> Kfi;
     main_node["fade_gain"] >> fade_gain;
 
     assert(position_dim == 2 || position_dim == 3);
@@ -190,6 +191,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
                 vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
             }
             else
                 vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
@@ -199,7 +201,9 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
             if(second_order)
             {
                 vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
             }
             else
                 vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
