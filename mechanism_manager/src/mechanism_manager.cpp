@@ -32,7 +32,7 @@ VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, 
     state_ = MANUAL;
 }
 
-void VirtualMechanismAutom::Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref)
+void VirtualMechanismAutom::Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref,const double r)
 {
 
     if(true)
@@ -51,7 +51,8 @@ void VirtualMechanismAutom::Step(const double phase, const double phase_dot, con
             //if(!(phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
-            if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
+            //if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
+            if((std::abs(r) > (phase_dot_th_)))
                 state_ = MANUAL;
             break;
     }
@@ -124,7 +125,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	std::string models_path(pkg_path_+"/models/");
 	std::string prob_mode_string;
     int position_dim;
-    double K, B, Kf, Bf, inertia, fade_gain;
+    double K, B, Kf, Bf, inertia, fade_gain, Kr;
     bool normalize, second_order;
 	
 	main_node["models"] >> model_names;
@@ -147,6 +148,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["f_norm"] >> f_norm_;
     main_node["second_order"] >> second_order;
     main_node["inertia"] >> inertia;
+    main_node["Kr"] >> Kr;
     main_node["fade_gain"] >> fade_gain;
 
     assert(position_dim == 2 || position_dim == 3);
@@ -155,6 +157,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     assert(K >= 0.0);
     assert(B >= 0.0);
     assert(inertia > 0.0);
+    assert(Kr > 0.0);
     assert(n_samples_filter_ > 0);
     assert(phase_dot_th > 0.0);
     assert(pre_auto_th_ > phase_dot_th);
@@ -186,6 +189,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
             {
                 vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
                 dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
             }
             else
                 vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
@@ -195,7 +199,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
             if(second_order)
             {
                 vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
             }
             else
                 vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
@@ -291,7 +295,8 @@ MechanismManager::MechanismManager()
       phase_dot_ref_lower_.resize(vm_nb_);
       fade_.resize(vm_nb_);
       r_.resize(vm_nb_);
-      p_dot_integrated_.resize(vm_nb_);
+      //p_dot_integrated_.resize(vm_nb_);
+      torque_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -326,7 +331,8 @@ MechanismManager::MechanismManager()
       phase_dot_ref_lower_.fill(0.0);
       fade_.fill(0.0);
       r_.fill(0.0);
-      p_dot_integrated_.fill(0.0);
+      //p_dot_integrated_.fill(0.0);
+      torque_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -354,7 +360,8 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"fade",fade_.size(),&fade_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"r",r_.size(),&r_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"p_dot_integrated",p_dot_integrated_.size(),&p_dot_integrated_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"torque",torque_.size(),&torque_);
+          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"p_dot_integrated",p_dot_integrated_.size(),&p_dot_integrated_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -448,17 +455,19 @@ void MechanismManager::MoveBackward()
     Update(robot_pose,robot_velocity,dt,f_out);
 }*/
 
-void MechanismManager::GetVmPosition(const int idx, const double* position_ptr)
+void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
 {
     assert(idx <= vm_vector_.size());
     tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
     vm_vector_[idx]->getState(tmp_eigen_vector_);
+    VectorXd::Map(position_ptr, position_dim_) = tmp_eigen_vector_;
 }
-void MechanismManager::GetVmVelocity(const int idx, const double* velocity_ptr)
+void MechanismManager::GetVmVelocity(const int idx, double* const velocity_ptr)
 {
     assert(idx <= vm_vector_.size());
     tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
     vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
+    VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
 }
 
 /*void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
@@ -552,7 +561,11 @@ void MechanismManager::Update()
         // Check for activation
         phase_dot_filt_(i) = filter_phase_dot_[i]->Step(phase_dot_(i)); // FIXME: change to multi virtual mechanisms
         phase_ddot_filt_(i) = filter_phase_ddot_[i]->Step(phase_ddot_(i)); // FIXME: change to multi virtual mechanisms
-        vm_autom_[i]->Step(phase_(i),phase_dot_filt_(i),phase_ddot_filt_(i),phase_ref_(i),phase_dot_ref_(i),phase_ddot_ref_(i)); //phase_dot, phase_dot_ref)
+
+        r_(i) = vm_vector_[i]->getR();
+        torque_(i) = vm_vector_[i]->getTorque();
+
+        vm_autom_[i]->Step(phase_(i),phase_dot_filt_(i),phase_ddot_filt_(i),phase_ref_(i),phase_dot_ref_(i),phase_ddot_ref_(i),r_(i));
         activated_[i] = vm_autom_[i]->GetState();
 
 
@@ -600,8 +613,7 @@ void MechanismManager::Update()
       phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
       phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
       fade_(i) = vm_vector_[i]->getFade();
-      r_(i) = vm_vector_[i]->getR();
-      p_dot_integrated_(i) = vm_vector_[i]->getPDotIntegrated();
+      //p_dot_integrated_(i) = vm_vector_[i]->getPDotIntegrated();
 
       // Compute the force from the vms
       vm_vector_[i]->getState(vm_state_[i]);

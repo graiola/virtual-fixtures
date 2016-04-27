@@ -50,7 +50,7 @@ public:
     VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th);
     //~VirtualMechanismAutom();
 
-    void Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref);
+    void Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref,const double r);
     bool GetState();
 
 private:
@@ -79,8 +79,8 @@ class MechanismManager
     inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
     inline void GetVmPosition(const int idx, Eigen::VectorXd& position) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getState(position);}
     inline void GetVmVelocity(const int idx, Eigen::VectorXd& velocity) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getStateDot(velocity);}
-    void GetVmPosition(const int idx, const double* position_ptr);
-    void GetVmVelocity(const int idx, const double* velocity_ptr);
+    void GetVmPosition(const int idx, double* const position_ptr);
+    void GetVmVelocity(const int idx, double* const velocity_ptr);
     int GetPositionDim() const {return position_dim_;}
     inline int GetNbVms() {return vm_nb_;}
     //void MoveForward();
@@ -139,8 +139,9 @@ class MechanismManager
     Eigen::VectorXd phase_dot_ref_lower_;
     Eigen::VectorXd fade_;
     Eigen::VectorXd r_;
-    Eigen::VectorXd p_dot_integrated_;
+    //Eigen::VectorXd p_dot_integrated_;
     //Eigen::VectorXd prob_;
+    Eigen::VectorXd torque_;
     int vm_nb_;
     int position_dim_;
     int orientation_dim_;

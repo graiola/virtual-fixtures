@@ -65,7 +65,7 @@ class VirtualMechanismInterface
               //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
               //quaternion_ << 1.0,0.0,0.0,0.0;
               
-	      adaptive_gain_ptr_ = new tool_box::AdaptiveGain(Kf_,Kf_/1.5,0.8); //double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0
+          adaptive_gain_ptr_ = new tool_box::AdaptiveGain(K_,K_/100,0.01); //double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -117,15 +117,15 @@ class VirtualMechanismInterface
 	      {
             //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
             phase_ = 1.0;
-            phase_dot_ = 0.0;
-            phase_ddot_ = 0.0;
+            //phase_dot_ = 0.0;
+            //phase_ddot_ = 0.0;
 	      }
 	      else if (phase_ < 0.0)
 	      {
             //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
             phase_ = 0.0;
-            phase_dot_ = 0.0;
-            phase_ddot_ = 0.0;
+            //phase_dot_ = 0.0;
+            //phase_ddot_ = 0.0;
 	      }
 	  }
 	  
@@ -137,6 +137,9 @@ class VirtualMechanismInterface
 	      if(adapt_gains_) //FIXME
             AdaptGains(pos,dt);
 	      
+
+          //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
+
 	      force_ = K_ * (state_ - pos);
 	      force_ = force_ - B_ * vel;
 	      force_ = scale * force_;
@@ -361,15 +364,17 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0):
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
 	      
 	      assert(Bf > 0.0);
           assert(inertia > 0.0);
+          assert(Kr > 0.0);
 	      
 	      Bf_ = Bf;
           inertia_ = inertia;
+          Kr_ = Kr;
 
           //phase_dot_prev_ = 0.0;
           //phase_ddot_ = 0.0;
@@ -431,6 +436,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
       }*/
 	  
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
+      inline void setKr(const double Kr) {assert(Kr > 0.0); Kr_ = Kr;}
 
 	protected:
 	    
@@ -524,10 +530,11 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
              //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
-             p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt;
+
+             p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt; // with tau
+             //p_dot_integrated_ = p_dot_integrated_ + (- 0.1 * phase_dot_ + control_) * dt; // without tau
 
              error_integrated_ = 0.01 * (error_integrated_ + (phase_ref_ - phase_) * dt);
-
           }
           else
           {
@@ -543,6 +550,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           //orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
 
 
+          //control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
+
           control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_) + error_integrated_);
 	      
           IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
@@ -555,7 +564,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      
           p_ = inertia_ * phase_dot_;
 
-          r_ = 100 * (p_ - p_dot_integrated_);
+          r_ = Kr_ * (p_ - p_dot_integrated_);
 
 	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
 	      
@@ -591,6 +600,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
       double inertia_;
       double control_;
       double error_integrated_;
+      double Kr_;
 
 };
 
