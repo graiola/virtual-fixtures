@@ -32,7 +32,7 @@ VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, 
     state_ = MANUAL;
 }
 
-void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_ref, const double phase_ddot_ref)
+void VirtualMechanismAutom::Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref)
 {
 
     if(true)
@@ -52,7 +52,6 @@ void VirtualMechanismAutom::Step(const double phase_dot, const double phase_dot_
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
             //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
             if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
-
                 state_ = MANUAL;
             break;
     }
@@ -247,14 +246,14 @@ MechanismManager::MechanismManager()
          vm_quat_.push_back(VectorXd(orientation_dim_));
          // HACK
          filter_phase_dot_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
-         //filter_phase_ddot_->push_back(new filters::M3DFilter(3));
+         filter_phase_ddot_.push_back(new filters::M3DFilter(3));
          vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,phase_ddot_th_)); // phase_dot_preauto_th, phase_dot_th
          activated_.push_back(false); // NOTE we assume the guide not active at the beginning
       }
       for(int i=0; i<vm_nb_;i++)
       {
         filter_phase_dot_[i]->SetN(n_samples_filter_);
-      //filter_phase_ddot_->SetN(n_samples_filter_);
+        filter_phase_ddot_[i]->SetN(n_samples_filter_);
       }
 
       // Some Initializations
@@ -393,7 +392,7 @@ MechanismManager::~MechanismManager()
       {
         delete vm_vector_[i];
         delete filter_phase_dot_[i];
-        //delete filter_phase_ddot_[i];
+        delete filter_phase_ddot_[i];
         delete vm_autom_[i];
       }
 }
@@ -546,9 +545,13 @@ void MechanismManager::Update()
 	{
         // Check for activation
         phase_dot_filt_(i) = filter_phase_dot_[i]->Step(phase_dot_(i)); // FIXME: change to multi virtual mechanisms
-        //phase_ddot_filt_(i) = filter_phase_ddot_[i]->Step(phase_ddot_(i)); // FIXME: change to multi virtual mechanisms
-        vm_autom_[i]->Step(phase_dot_filt_(i),phase_dot_ref_(i),phase_ddot_ref_(i)); //phase_dot, phase_dot_ref)
+        phase_ddot_filt_(i) = filter_phase_ddot_[i]->Step(phase_ddot_(i)); // FIXME: change to multi virtual mechanisms
+        vm_autom_[i]->Step(phase_(i),phase_dot_filt_(i),phase_ddot_filt_(i),phase_ref_(i),phase_dot_ref_(i),phase_ddot_ref_(i)); //phase_dot, phase_dot_ref)
         activated_[i] = vm_autom_[i]->GetState();
+
+
+        phase_dot_ref_upper_(i) = phase_dot_ref_(i) + phase_dot_th_;
+        phase_dot_ref_lower_(i) = phase_dot_ref_(i) - phase_dot_th_;
 
         //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
         if (activated_[i] == true && use_active_guide_[i] == true)

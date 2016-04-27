@@ -50,7 +50,7 @@ public:
     VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th);
     //~VirtualMechanismAutom();
 
-    void Step(const double phase_dot, const double phase_dot_ref, const double phase_ddot_ref);
+    void Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref);
     bool GetState();
 
 private:
