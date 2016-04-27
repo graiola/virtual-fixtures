@@ -394,6 +394,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      k4_.fill(0.0);
 
           control_ = 0.0;
+          error_integrated_ = 0.0;
               
 	  }
 	
@@ -524,6 +525,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
              p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt;
+
+             error_integrated_ = 0.01 * (error_integrated_ + (phase_ref_ - phase_) * dt);
+
           }
           else
           {
@@ -532,9 +536,14 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
              p_dot_integrated_ = p_;
 
+             error_integrated_ = 0.0;
+
           }
 
-          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
+          //orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
+
+
+          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_) + error_integrated_);
 	      
           IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
 
@@ -546,8 +555,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      
           p_ = inertia_ * phase_dot_;
 
-          r_ = 0.01 * (p_ - p_dot_integrated_);
-
+          r_ = 100 * (p_ - p_dot_integrated_);
 
 	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
 	      
@@ -582,6 +590,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  double Bf_;
       double inertia_;
       double control_;
+      double error_integrated_;
 
 };
 
