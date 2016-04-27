@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -116,14 +116,16 @@ class VirtualMechanismInterface
 	      if(phase_ > 1.0)
 	      {
             //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
-            phase_ = 1;
-            phase_dot_ = 0;
+            phase_ = 1.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
 	      }
 	      else if (phase_ < 0.0)
 	      {
             //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
-            phase_ = 0;
-            phase_dot_ = 0;
+            phase_ = 0.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
 	      }
 	  }
 	  
@@ -168,6 +170,8 @@ class VirtualMechanismInterface
       inline double getPhaseRef() const {return phase_ref_;}
       inline double getPhaseDotRef() const {return phase_dot_ref_;}
       inline double getPhaseDotDotRef() const {return phase_ddot_ref_;}
+      inline double getR()const {return r_;}
+      inline double getPDotIntegrated() const {return p_dot_integrated_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::VectorXd& jacobian) const {jacobian = J_;}
@@ -279,6 +283,9 @@ class VirtualMechanismInterface
 	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
 
       double dt_;
+      double r_;
+      double p_;
+      double p_dot_integrated_;
 
 
 
@@ -516,27 +523,32 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
              //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
+             p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt;
           }
           else
           {
              fade_ = fade_gain_ * (-fade_) * dt + fade_;
              //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
+             p_dot_integrated_ = p_;
+
           }
 
           control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
-
-
 	      
           IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
 
-
-          DynSystem(dt,torque_(0),control_,phase_state_); // ?????
+          DynSystem(dt,torque_(0),control_,phase_state_); // to compute the dots
 
           phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
           phase_ddot_ = phase_state_dot_(1);
 	      
+          p_ = inertia_ * phase_dot_;
+
+          r_ = 0.01 * (p_ - p_dot_integrated_);
+
+
 	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
 	      
 	      /*if(active_)

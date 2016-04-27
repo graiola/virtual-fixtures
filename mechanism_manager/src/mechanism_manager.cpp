@@ -290,6 +290,8 @@ MechanismManager::MechanismManager()
       phase_dot_ref_upper_.resize(vm_nb_);
       phase_dot_ref_lower_.resize(vm_nb_);
       fade_.resize(vm_nb_);
+      r_.resize(vm_nb_);
+      p_dot_integrated_.resize(vm_nb_);
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -323,6 +325,8 @@ MechanismManager::MechanismManager()
       phase_dot_ref_upper_.fill(0.0);
       phase_dot_ref_lower_.fill(0.0);
       fade_.fill(0.0);
+      r_.fill(0.0);
+      p_dot_integrated_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
       try
@@ -349,6 +353,8 @@ MechanismManager::MechanismManager()
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_upper",phase_dot_ref_upper_.size(),&phase_dot_ref_upper_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
           rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"fade",fade_.size(),&fade_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"r",r_.size(),&r_);
+          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"p_dot_integrated",p_dot_integrated_.size(),&p_dot_integrated_);
           //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
           //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
           rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
@@ -594,6 +600,8 @@ void MechanismManager::Update()
       phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
       phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
       fade_(i) = vm_vector_[i]->getFade();
+      r_(i) = vm_vector_[i]->getR();
+      p_dot_integrated_(i) = vm_vector_[i]->getPDotIntegrated();
 
       // Compute the force from the vms
       vm_vector_[i]->getState(vm_state_[i]);

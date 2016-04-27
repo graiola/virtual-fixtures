@@ -138,6 +138,8 @@ class MechanismManager
     Eigen::VectorXd phase_dot_ref_upper_;
     Eigen::VectorXd phase_dot_ref_lower_;
     Eigen::VectorXd fade_;
+    Eigen::VectorXd r_;
+    Eigen::VectorXd p_dot_integrated_;
     //Eigen::VectorXd prob_;
     int vm_nb_;
     int position_dim_;
