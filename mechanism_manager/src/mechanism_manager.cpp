@@ -590,7 +590,7 @@ void MechanismManager::Update()
             //std::cout << "Deactive" <<std::endl;
         }
 
-      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_); // Add scales here to scale also on the vm
+      vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
