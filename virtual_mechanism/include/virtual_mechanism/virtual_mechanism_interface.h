@@ -129,6 +129,12 @@ class VirtualMechanismInterface
 	      }
 	  }
 	  
+      virtual void Stop()
+      {
+          phase_dot_ = 0.0;
+          phase_ddot_ = 0.0;
+      }
+
       inline void Update(const Eigen::VectorXd& pos, const Eigen::VectorXd& vel , const double dt, const double scale = 1.0)
 	  {
 	      assert(pos.size() == state_dim_);

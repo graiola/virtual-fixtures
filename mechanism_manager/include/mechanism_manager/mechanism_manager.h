@@ -83,6 +83,7 @@ class MechanismManager
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     int GetPositionDim() const {return position_dim_;}
     inline int GetNbVms() {return vm_nb_;}
+    void Stop();
     //void MoveForward();
     //void MoveBackward();
     

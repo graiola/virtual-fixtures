@@ -105,6 +105,15 @@ bool VirtualMechanismAutom::GetState()
     return activate_vm;
 }
 
+void MechanismManager::Stop()
+{
+    for(int i=0;i<vm_nb_;i++)
+    {
+      vm_vector_[i]->Stop();
+    }
+
+}
+
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
 {
 	YAML::Node main_node;
