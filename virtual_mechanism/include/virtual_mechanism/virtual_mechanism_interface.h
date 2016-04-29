@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -134,6 +134,8 @@ class VirtualMechanismInterface
 	      assert(pos.size() == state_dim_);
 	      assert(vel.size() == state_dim_);
 	    
+          scale_ = scale;
+
 	      if(adapt_gains_) //FIXME
             AdaptGains(pos,dt);
 	      
@@ -142,7 +144,7 @@ class VirtualMechanismInterface
 
 	      force_ = K_ * (state_ - pos);
 	      force_ = force_ - B_ * vel;
-	      force_ = scale * force_;
+          force_ = scale_ * force_;
 	      //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
 	      Update(force_,dt);
 	  }
@@ -249,6 +251,7 @@ class VirtualMechanismInterface
       double phase_dot_prev_;
       double phase_ddot_;
       double fade_gain_;
+      double scale_;
 
 	  int state_dim_;
       bool update_quaternion_;
@@ -484,7 +487,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
          //phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
          //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
 
-          phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
+          //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
+
+          phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
 
          /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
             // HACK 
