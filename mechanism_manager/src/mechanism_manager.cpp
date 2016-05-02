@@ -18,21 +18,21 @@ namespace mechanism_manager
   
 
 
-VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th)
+VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th)
 {
 
     assert(phase_dot_th > 0.0);
     assert(phase_dot_preauto_th > phase_dot_th);
-    assert(phase_ddot_th_ > 0.0);
+    assert(r_th > 0.0);
 
     phase_dot_preauto_th_ = phase_dot_preauto_th;
     phase_dot_th_ = phase_dot_th;
-    phase_ddot_th_ = phase_ddot_th;
+    r_th_ = r_th;
 
     state_ = MANUAL;
 }
 
-void VirtualMechanismAutom::Step(const double phase, const double phase_dot, const double phase_ddot, const double phase_ref, const double phase_dot_ref, const double phase_ddot_ref,const double r)
+void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, const double r)
 {
 
     if(true)
@@ -48,11 +48,8 @@ void VirtualMechanismAutom::Step(const double phase, const double phase_dot, con
                 state_ = AUTO;
             break;
         case AUTO:
-            //if(!(phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
-            //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_))) //NOTE to use with inertia!
-            //if((phase_dot >= (phase_dot_ref + phase_dot_th_)) || (phase_dot <= (phase_dot_ref - phase_dot_th_)))
             //if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
-            if((std::abs(r) > (phase_dot_th_)))
+            if((std::abs(r) > (r_th_)))
                 state_ = MANUAL;
             break;
     }
@@ -148,9 +145,10 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["B"] >> B;
     main_node["Kf"] >> Kf;
     main_node["Bf"] >> Bf;
+    main_node["Kfi"] >> Kfi;
     main_node["n_samples_filter"] >> n_samples_filter_;
     main_node["phase_dot_th"] >> phase_dot_th_;
-    main_node["phase_ddot_th"] >> phase_ddot_th_;
+    main_node["r_th"] >> r_th_;
     main_node["pre_auto_th"] >> pre_auto_th_;
     main_node["normalize"] >> normalize;
     main_node["escape_factor"] >> escape_factor_;
@@ -158,7 +156,6 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["second_order"] >> second_order;
     main_node["inertia"] >> inertia;
     main_node["Kr"] >> Kr;
-    main_node["Kfi"] >> Kfi;
     main_node["fade_gain"] >> fade_gain;
 
     assert(position_dim == 2 || position_dim == 3);
@@ -169,9 +166,9 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     assert(inertia > 0.0);
     assert(Kr > 0.0);
     assert(n_samples_filter_ > 0);
-    assert(phase_dot_th > 0.0);
-    assert(pre_auto_th_ > phase_dot_th);
-    assert(phase_ddot_th > 0.0);
+    assert(phase_dot_th_ > 0.0);
+    assert(pre_auto_th_ > phase_dot_th_);
+    assert(r_th_ > 0.0);
 
 
 	if (prob_mode_string == "hard")
@@ -264,7 +261,7 @@ MechanismManager::MechanismManager()
          // HACK
          filter_phase_dot_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
          filter_phase_ddot_.push_back(new filters::M3DFilter(3));
-         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,phase_ddot_th_)); // phase_dot_preauto_th, phase_dot_th
+         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,r_th_)); // phase_dot_preauto_th, phase_dot_th
          activated_.push_back(false); // NOTE we assume the guide not active at the beginning
       }
       for(int i=0; i<vm_nb_;i++)
@@ -578,7 +575,7 @@ void MechanismManager::Update()
         r_(i) = vm_vector_[i]->getR();
         torque_(i) = vm_vector_[i]->getTorque();
 
-        vm_autom_[i]->Step(phase_(i),phase_dot_filt_(i),phase_ddot_filt_(i),phase_ref_(i),phase_dot_ref_(i),phase_ddot_ref_(i),r_(i));
+        vm_autom_[i]->Step(phase_dot_filt_(i),phase_dot_ref_(i),r_(i));
         activated_[i] = vm_autom_[i]->GetState();
 
 
