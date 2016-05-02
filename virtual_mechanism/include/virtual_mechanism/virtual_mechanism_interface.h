@@ -29,7 +29,7 @@ class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),exec_time_(10.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
 	      assert(state_dim_ == 2 || state_dim_ == 3); 
 	      assert(K_ > 0.0);
@@ -168,7 +168,8 @@ class VirtualMechanismInterface
 	  
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  inline void setActive(const bool active) {active_ = active;}
-	  
+      inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
+
 	  inline void moveBackward() {move_forward_ = false;}
 	  inline void moveForward() {move_forward_ = true;}
 	  
@@ -298,6 +299,7 @@ class VirtualMechanismInterface
       double r_;
       double p_;
       double p_dot_integrated_;
+      double exec_time_;
 
 
 

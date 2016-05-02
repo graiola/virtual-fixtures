@@ -168,6 +168,7 @@ class MechanismManager
     // FIXME Put them in a struct...?
     std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
     std::vector<bool> use_weighted_dist_;
+    std::vector<double> execution_time_;
     std::vector<bool> use_active_guide_;
     //std::vector<boost::circular_buffer<double> > activation_values_;
     //std::vector<Eigen::VectorXd> vm_state_;

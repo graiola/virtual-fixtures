@@ -139,6 +139,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["quat_end"] >> quat_end_;   
 	main_node["prob_mode"] >> prob_mode_string;
 	main_node["use_weighted_dist"] >> use_weighted_dist_;
+    main_node["execution_time"] >> execution_time_;
 	main_node["use_active_guide"] >> use_active_guide_;
     main_node["position_dim"] >> position_dim;
     main_node["K"] >> K;
@@ -254,6 +255,7 @@ MechanismManager::MechanismManager()
          //vm_vector_[i]->Init();
          vm_vector_[i]->Init(quat_start_[i],quat_end_[i]);
          vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
+         vm_vector_[i]->setExecutionTime(execution_time_[i]);
          vm_state_.push_back(VectorXd(position_dim_));
          vm_state_dot_.push_back(VectorXd(position_dim_));
          vm_jacobian_.push_back(VectorXd(position_dim_));

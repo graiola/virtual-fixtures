@@ -69,13 +69,15 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     z_ = 0.0;
     z_dot_ = 0.0;
 
-    z_dot_ref_ = 0.15;
+    z_dot_ref_ = 0.1;
 
 }
 
 template <typename VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
+
+  z_dot_ref_ = 1.0/VM_t::exec_time_;
 
   z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
 
@@ -129,10 +131,7 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
   /*if(loopCnt%100==0)
   {
       std::cout << "****************" << std::endl;
-      std::cout << "this->fa_output_" << std::endl;
-      std::cout << this->fa_output_<< std::endl;
-      std::cout << "this->fa_output_" << std::endl;
-      std::cout << this->fa_output_dot_<< std::endl;
+      std::cout << ciccio<< std::endl;
   }
 
   loopCnt++;*/
