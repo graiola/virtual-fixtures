@@ -382,7 +382,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      assert(Bf > 0.0);
           assert(inertia > 0.0);
           assert(Kr > 0.0);
-          assert(Kfi > 0.0);
+          assert(Kfi >= 0.0);
 	      
 	      Bf_ = Bf;
           inertia_ = inertia;
