@@ -9,6 +9,7 @@ namespace mechanism_manager
 {
 
   using namespace virtual_mechanism_gmr;
+using namespace virtual_mechanism_spline;
   using namespace virtual_mechanism_interface;
   using namespace DmpBbo;
   using namespace tool_box;
@@ -129,7 +130,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     //std::vector<std::vector<double> > quat_start;
     //std::vector<std::vector<double> > quat_end;
 	std::string models_path(pkg_path_+"/models/");
-	std::string prob_mode_string;
+    std::string prob_mode_string, mechanism_type;
     int position_dim;
     double K, B, Kf, Bf, inertia, fade_gain, Kr, Kfi;
     bool normalize, second_order;
@@ -152,6 +153,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
     main_node["r_th"] >> r_th_;
     main_node["pre_auto_th"] >> pre_auto_th_;
     main_node["normalize"] >> normalize;
+    main_node["mechanism_type"] >> mechanism_type;
     main_node["escape_factor"] >> escape_factor_;
     main_node["f_norm"] >> f_norm_;
     main_node["second_order"] >> second_order;
@@ -183,15 +185,72 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
 	else
 	    prob_mode_ = POTENTIAL; // Default
 
-	// Create the virtual mechanisms starting from the GMM models
+
+    if (mechanism_type == "gmm")
+        mechanism_type_ = GMM;
+    else if (mechanism_type == "spline")
+        mechanism_type_ = SPLINE;
+    else
+        mechanism_type_ = GMM; // Default
+
+
+    // Create the virtual mechanisms starting from the models
  	for(int i=0;i<model_names.size();i++)
 	{
-	    std::vector<std::vector<double> > data;
-	    ReadTxtFile((models_path+model_names[i]).c_str(),data);
-	    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+model_names[i]);
-	    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
 
-        if(normalize)
+        std::vector<std::vector<double> > data;
+
+
+        switch(mechanism_type_)
+        {
+          case GMM:
+           {
+            ReadTxtFile((models_path+"gmm/"+model_names[i]).c_str(),data);
+            ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+"gmm/"+model_names[i]);
+            boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
+            if(normalize)
+            {
+                if(second_order)
+                {
+                    vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
+                }
+                else
+                    vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
+            }
+            else
+            {
+                if(second_order)
+                {
+                    vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
+                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
+                }
+                else
+                    vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
+            }
+            }
+            break;
+          case SPLINE:
+            if(second_order)
+            {
+                vm_vector_.push_back(new VirtualMechanismSpline<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,models_path+"spline/"+model_names[i]));
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
+            }
+            else
+                vm_vector_.push_back(new VirtualMechanismSpline<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,models_path+"spline/"+model_names[i]));
+            break;
+          default:
+            break;
+        }
+
+
+        /*if(normalize)
         {
             if(second_order)
             {
@@ -214,7 +273,7 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
             }
             else
                 vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-        }
+        }*/
     }
 	return true;
 }
@@ -403,8 +462,6 @@ MechanismManager::MechanismManager()
       
       if(vm_nb_>1)
           scale_threshold_ = scale_threshold_ + 0.2;
-
-
 
 }
   
@@ -602,16 +659,16 @@ void MechanismManager::Update()
 	  switch(prob_mode_) 
 	  {
 	    case HARD:
-	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
+          scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
 	      break;
 	    case POTENTIAL:
           //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
 	      break;
 	    case SOFT:
-	      scales_(i) = vm_vector_[i]->getProbability(robot_position_);
+          scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
 	      break;
         case ESCAPE:
-          scales_(i) = vm_vector_[i]->getProbability(robot_position_);
+          scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
           break;
 	    default:
 	      break;

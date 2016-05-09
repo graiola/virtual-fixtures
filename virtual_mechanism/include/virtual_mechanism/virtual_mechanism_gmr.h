@@ -33,7 +33,7 @@ class VirtualMechanismGmr: public VM_t
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual void setWeightedDist(const bool activate);
       virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const;
-      virtual double getProbability(const Eigen::VectorXd& pos);
+      virtual double getGaussian(const Eigen::VectorXd& pos);
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
 	  
 	protected:

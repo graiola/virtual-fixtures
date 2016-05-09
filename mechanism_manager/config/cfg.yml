@@ -1,11 +1,25 @@
-models: ['v3d_multiple_tasks_3k_1.txt','v3d_multiple_tasks_3k_2.txt']
+models: ['v3d_1.txt']
 quat_start: [[1.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0]]
 quat_end: [[0.5,0.5,-0.5,-0.5],[0.5,0.5,-0.5,-0.5]] #0.70710678,0.0,-0.70710678,0.0
-prob_mode: soft
-use_weighted_dist: [true,true]
-use_active_guide: [true,true]
-position_dim: 2
+prob_mode: hard
+use_weighted_dist: [false,false]
+use_active_guide: [true,false]
+execution_time: [10.0,10.0]
+position_dim: 3
 K: 2500.0 #2500.0
 B: 20.0 #20
+Kf: 300.0 # 100
+Bf: 5.0 # 0.1
+Kfi: 0.0
+n_samples_filter: 10 #100
+phase_dot_th: 0.02 #0.05
+r_th: 0.02
+pre_auto_th: 0.3
+mechanism_type: spline
 normalize: true
-escape_factor: 10
+escape_factor: 150.0 #150.0
+f_norm: 6.0
+second_order: true
+inertia: 0.1
+Kr: 100.0
+fade_gain: 10.0 #10.0

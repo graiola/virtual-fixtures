@@ -67,7 +67,7 @@ else()
         if(TEST_ENABLED)
             ## Add gtest based cpp test target and link libraries
             catkin_add_gtest(${BIN_TEST_NAME}
-              test/test_virtual_mechanism_gmr.cpp
+              test/test_virtual_mechanism_gmr.cpp                
             )
             if(TARGET ${BIN_TEST_NAME})
               target_link_libraries(${BIN_TEST_NAME} ${PROJECT_NAME})
@@ -90,7 +90,9 @@ include_directories(
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
+    include/${PROJECT_NAME}/virtual_mechanism_spline.h
     src/virtual_mechanism_gmr.cpp
+    src/virtual_mechanism_spline.cpp
 )
 
 ## Specify libraries to link a library or executable target against

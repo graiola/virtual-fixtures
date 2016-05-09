@@ -22,6 +22,7 @@
 ////////// VIRTUAL_MECHANISM
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
+#include <virtual_mechanism/virtual_mechanism_spline.h>
 
 //#include <iostream>
 
@@ -97,7 +98,9 @@ class MechanismManager
     void UpdateTrackingReference(const Eigen::VectorXd& robot_position); // To update the reference for the head tracking
     
     enum prob_mode_t {HARD,POTENTIAL,SOFT,ESCAPE};
+    enum mechanism_t {GMM,GMM_NORMALIZED,SPLINE};
     prob_mode_t prob_mode_;
+    mechanism_t mechanism_type_;
     
     std::string pkg_path_;
     

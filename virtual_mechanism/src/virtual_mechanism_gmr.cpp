@@ -377,7 +377,7 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 }
 
 template<class VM_t>
-double VirtualMechanismGmr<VM_t>::getProbability(const VectorXd& pos)
+double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos)
 {
   UpdateInvCov();
   

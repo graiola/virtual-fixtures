@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
+#include "virtual_mechanism/virtual_mechanism_spline.h"
 
 ////////// STD
 #include <iostream>
@@ -17,6 +18,7 @@
 
 using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
+using namespace virtual_mechanism_spline;
 using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
@@ -34,12 +36,23 @@ typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 fa_t* generateDemoFa(){
 	
-  std::string file_name = "/home/sybot/workspace/virtual-fixtures/mechanism_manager/models/shelf_1.txt"; // FIXME
+  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/shelf_1.txt"; // FIXME
   
   ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
   FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
   
   return fa_ptr;  
+}
+
+TEST(VirtualMechanismSplineTest, InitializesCorrectly)
+{
+
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
+
+  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/v3d_1.txt"; // FIXME
+
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name));
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name));
 }
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectly)
@@ -81,7 +94,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
   
 }
 
-TEST(VirtualMechanismGmrTest, GetProbability)
+TEST(VirtualMechanismGmrTest, GetGaussian)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
@@ -93,8 +106,8 @@ TEST(VirtualMechanismGmrTest, GetProbability)
   
   START_REAL_TIME_CRITICAL_CODE();
   
-  EXPECT_NO_THROW(vm1.getProbability(pos));
-  EXPECT_NO_THROW(vm2.getProbability(pos));
+  EXPECT_NO_THROW(vm1.getGaussian(pos));
+  EXPECT_NO_THROW(vm2.getGaussian(pos));
   
   END_REAL_TIME_CRITICAL_CODE();
 }
@@ -127,35 +140,6 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   END_REAL_TIME_CRITICAL_CODE();
   
 }
-
-/*TEST(VirtualMechanismGmrTest, TestFilters)
-{
-  filters::M3DFilter filter(1);
-
-  filter.SetCutoff_freq(0.1);
-  filter.SetOrder(2);
-
-  filter.Dump();
-
-  int N = 5;
-  std::vector<double> A(N,1.0);
-  std::vector<double> B(N,1.0);
-  double y;
-  double x = 1.0;
-
-  filter.Coefficients(N,A,B);
-
-  filter.Dump();
-
-  getchar();
-
-  y = filter.Step(x,N);
-
-  //std::cout << y << std::endl;
-
-
-}*/
-
 
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
@@ -227,6 +211,9 @@ TEST(VirtualMechanismGmrTest, GetMethods)
   EXPECT_NO_THROW(vm1.getStateDot(state_dot));
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
+
+
+
 
 int main(int argc, char** argv)
 {
