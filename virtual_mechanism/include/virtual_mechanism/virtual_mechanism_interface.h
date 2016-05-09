@@ -450,7 +450,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
       inline void setKr(const double Kr) {assert(Kr > 0.0); Kr_ = Kr;}
-      inline void setKfi(const double Kfi) {assert(Kfi > 0.0); Kfi_ = Kfi;}
+      inline void setKfi(const double Kfi) {assert(Kfi >= 0.0); Kfi_ = Kfi;}
 
 	protected:
 	    
