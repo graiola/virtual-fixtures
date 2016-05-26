@@ -366,13 +366,13 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 {
 
   for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
-      covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); //0.001
-      /*if(use_weighted_dist_)
-        covariance_inv_(i,i) = 1/(covariance_(i,i)+0.001); //0.001
+      //covariance_inv_(i,i) = 1/(covariance_(i,i)); //0.001
+      if(use_weighted_dist_)
+        covariance_inv_(i,i) = 1/(covariance_(i,i)); //0.001
       else
       {
         covariance_inv_(i,i) = 1.0;
-      }*/
+      }
 
 }
 
@@ -391,7 +391,7 @@ double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos)
   for (int i = 0; i<VM_t::state_dim_; i++)
   {
     prob_ += err_(i)*err_(i)*covariance_inv_(i,i);
-    determinant_cov_ *= covariance_inv_(i,i);
+    determinant_cov_ *= covariance_(i,i);
   }
   
   prob_ = exp(-0.5*prob_);
@@ -428,15 +428,15 @@ template<class VM_t>
 double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 {
   err_ = pos - VM_t::state_;
-  if(use_weighted_dist_)
+  /*if(use_weighted_dist_)
   {
     UpdateInvCov();
     prob_ = 0.0;
     for (int i = 0; i<VM_t::state_dim_; i++)
-      prob_ += err_(i)*err_(i)*covariance_inv_(i,i);
+      prob_ += err_(i)*err_(i)*covariance_(i,i);
     return std::sqrt(prob_);
   }
-  else
+  else*/
     return err_.norm();
 
 }
