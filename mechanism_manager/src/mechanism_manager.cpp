@@ -775,14 +775,7 @@ void MechanismManager::Update()
     /*if(loopCnt%100==0)
     {
         std::cout << "** ****" <<std::endl;
-        //std::cout << vm_state_[i] <<std::endl;
-        std::cout << "** SUM **" <<std::endl;
-        std::cout << sum_ <<std::endl;
-        std::cout << "** scale **" <<std::endl;
-        std::cout << scales_(i) <<std::endl;
 
-        //std::cout << "DEACTIVE" <<std::endl;
-        //std::cout << user_force_applied_ <<std::endl;
     }*/
 
 

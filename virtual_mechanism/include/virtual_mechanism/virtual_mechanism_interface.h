@@ -413,6 +413,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
           control_ = 0.0;
           error_integrated_ = 0.0;
+
+          r_ = 0.0;
               
 	  }
 	
@@ -547,7 +549,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
              //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
              //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
 
-             p_dot_integrated_ = p_dot_integrated_ + inertia_ * phase_ddot_ * dt; // with tau
+             p_dot_integrated_ = p_dot_integrated_ + (inertia_ * phase_ddot_) * dt; // with tau
              //p_dot_integrated_ = p_dot_integrated_ + (- 0.1 * phase_dot_ + control_) * dt; // without tau
 
              error_integrated_ = Kfi_ * (error_integrated_ + (phase_ref_ - phase_) * dt);
