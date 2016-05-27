@@ -1,5 +1,5 @@
 #include <toolbox/debug.h>
-//#include <toolbox/filters/filters.h>
+#include <toolbox/toolbox.h>
 
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
@@ -15,6 +15,7 @@
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
 #include <functionapproximators/MetaParametersGMR.hpp>
 #include <functionapproximators/ModelParametersGMR.hpp>
+
 
 using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
@@ -212,7 +213,61 @@ TEST(VirtualMechanismGmrTest, GetMethods)
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
 
+TEST(VirtualMechanismGmrTest, TestGMR)
+{
+  std::string file_name_input = "/home/sybot/test_data.txt"; // FIXME
+  std::string file_name_output = "/home/sybot/test_data_out.txt"; // FIXME
 
+
+  // Gaussian Mixture Regression (GMR)
+  int dim = 2;
+  int number_of_gaussians = 15;
+  int n_points = 100;
+  //bool overwrite = false;
+  MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(dim,number_of_gaussians);
+  FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(meta_parameters_gmr);
+  std::vector<std::vector<double> > data_vector;
+  std::vector<std::vector<double> > output_vector(n_points,std::vector<double>(dim));
+
+  tool_box::ReadTxtFile(file_name_input.c_str(),data_vector);
+
+  int nbr = data_vector.size();
+  int nbc = data_vector[0].size();
+
+  MatrixXd inputs(nbr,1);
+  MatrixXd targets(nbr,dim);
+  MatrixXd inputs_predict(n_points,1);
+  MatrixXd outputs(n_points,dim);
+
+
+  for (int i=0;i<nbr;i++)
+  {
+        inputs(i,0) = data_vector[i][0];
+        targets(i,0) = data_vector[i][1];
+        targets(i,1) = data_vector[i][2];
+  }
+
+
+  //fa_ptr->train();
+
+  fa_ptr->train(inputs,targets);
+
+  inputs_predict.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  fa_ptr->predict(inputs_predict,outputs);
+
+  for (int i=0;i<n_points;i++)
+    for (int j=0;j<dim;j++)
+        output_vector[i][j] = outputs(i,j);
+
+  tool_box::WriteTxtFile(file_name_output.c_str(),output_vector);
+
+
+  //VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+
+
+}
 
 
 int main(int argc, char** argv)
