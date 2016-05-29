@@ -9,7 +9,7 @@ namespace mechanism_manager
 {
 
   using namespace virtual_mechanism_gmr;
-using namespace virtual_mechanism_spline;
+  using namespace virtual_mechanism_spline;
   using namespace virtual_mechanism_interface;
   using namespace DmpBbo;
   using namespace tool_box;
@@ -759,9 +759,7 @@ void MechanismManager::Update()
       {
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
       }
-
-
-
+      
     }	   
 
     /*if(loopCnt%1000==0)
