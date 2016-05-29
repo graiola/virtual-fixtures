@@ -17,25 +17,19 @@ namespace mechanism_manager
 
   typedef FunctionApproximatorGMR fa_t;
   
-
-
 VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th)
 {
-
     assert(phase_dot_th > 0.0);
     assert(phase_dot_preauto_th > phase_dot_th);
     assert(r_th > 0.0);
-
     phase_dot_preauto_th_ = phase_dot_preauto_th;
     phase_dot_th_ = phase_dot_th;
     r_th_ = r_th;
-
     state_ = MANUAL;
 }
 
 void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, const double r)
 {
-
     if(true)
     {
     switch(state_)
@@ -67,7 +61,6 @@ void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_r
 bool VirtualMechanismAutom::GetState()
 {
     bool activate_vm;
-
     switch(state_)
     {
         case MANUAL:
@@ -80,38 +73,15 @@ bool VirtualMechanismAutom::GetState()
             activate_vm = true;
             break;
     }
-
-    /*
-    if(loopcnt_%100==0)
-    {
-        switch(state_)
-        {
-            case MANUAL:
-                std::cout << "MANUAL" << std::endl;
-                break;
-            case PREAUTO:
-                std::cout << "PREAUTO" << std::endl;
-                break;
-            case AUTO:
-                std::cout << "AUTO" << std::endl;
-                break;
-        }
-    }
-    loopcnt_++;
-    */
-
     return activate_vm;
 }
 
 void MechanismManager::Stop()
 {
     for(int i=0;i<vm_nb_;i++)
-    {
       vm_vector_[i]->Stop();
-    }
-
 }
-
+/*
 bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
 {
 	YAML::Node main_node;
@@ -248,42 +218,15 @@ bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros 
           default:
             break;
         }
-
-
-        /*if(normalize)
-        {
-            if(second_order)
-            {
-                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
-            }
-            else
-                vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-        }
-        else
-        {
-            if(second_order)
-            {
-                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
-            }
-            else
-                vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-        }*/
     }
 	return true;
 }
-  
+ */
+/*
 MechanismManager::MechanismManager()
 {
-
       //position_dim_ = 2; // NOTE position dimension is fixed, xyz
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
-
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
@@ -348,15 +291,11 @@ MechanismManager::MechanismManager()
       robot_orientation_.resize(orientation_dim_);
       orientation_error_.resize(3); // rpy
       cross_prod_.resize(3);
-      /*prev_orientation_error_.resize(3);
-      orientation_integral_.resize(3);
-      orientation_derivative_.resize(3);*/
       f_pos_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
       f_rob_.resize(position_dim_);
       t_versor_.resize(position_dim_);
       escape_field_.resize(vm_nb_);
-      //escape_field_compare_.resize(vm_nb_);
       phase_dot_filt_.resize(vm_nb_);
       phase_ddot_filt_.resize(vm_nb_);
       phase_dot_ref_.resize(vm_nb_);
@@ -366,7 +305,6 @@ MechanismManager::MechanismManager()
       phase_dot_ref_lower_.resize(vm_nb_);
       fade_.resize(vm_nb_);
       r_.resize(vm_nb_);
-      //p_dot_integrated_.resize(vm_nb_);
       torque_.resize(vm_nb_);
 
       // Clear
@@ -376,23 +314,18 @@ MechanismManager::MechanismManager()
       escape_factors_.fill(escape_factor_);
       f_rob_t_.fill(0.0);
       f_rob_n_.fill(0.0);
-      //Kf_.fill(0.0);
       phase_dot_.fill(0.0);
       phase_ddot_.fill(0.0);
       robot_position_.fill(0.0);
       robot_velocity_.fill(0.0);
       orientation_error_.fill(0.0);
       cross_prod_.fill(0.0);
-      /*prev_orientation_error_.fill(0.0);
-      orientation_integral_.fill(0.0);
-      orientation_derivative_.fill(0.0);*/
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
       f_ori_.fill(0.0);
       f_rob_.fill(0.0);
       t_versor_.fill(0.0);
       escape_field_.fill(0.0);
-      //escape_field_compare_.fill(0.0);
       phase_dot_filt_.fill(0.0);
       phase_ddot_filt_.fill(0.0);
       phase_dot_ref_.fill(0.0);
@@ -402,7 +335,6 @@ MechanismManager::MechanismManager()
       phase_dot_ref_lower_.fill(0.0);
       fade_.fill(0.0);
       r_.fill(0.0);
-      //p_dot_integrated_.fill(0.0);
       torque_.fill(0.0);
 
       #ifdef USE_ROS_RT_PUBLISHER
@@ -464,7 +396,8 @@ MechanismManager::MechanismManager()
           scale_threshold_ = scale_threshold_ + 0.2;
 
 }
-  
+  */
+
 MechanismManager::~MechanismManager()
 {
       //for(int i=0;i<vm_vector_.size();i++)
@@ -478,51 +411,6 @@ MechanismManager::~MechanismManager()
         delete vm_autom_[i];
       }
 }
-
-/*void MechanismManager::MoveForward()
-{
-    for(int i=0; i<vm_nb_;i++)
-      vm_vector_[i].move_forward_ = true;
-}
-
-void MechanismManager::MoveBackward()
-{
-    for(int i=0; i<vm_nb_;i++)
-      vm_vector_[i].move_forward_ = false;
-}*/
-
-/*void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied, bool move_forward)
-{
-    for(int i=0; i<vm_nb_;i++)
-    {
-      if(move_forward)
-        vm_vector_[i]->moveForward();
-      else
-        vm_vector_[i]->moveBackward();
-    }
-    Update(robot_pose,robot_velocity,dt,f_out,force_applied);
-}*/
-
-/*void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, bool force_applied)
-{   
-    for(int i=0; i<vm_nb_;i++)
-    {
-      //if (force_applied == false && scales_(i) >= scale_threshold_ && use_active_guide_[i] == true)
-      if (force_applied == false && use_active_guide_[i] == true)
-      {
-	      vm_vector_[i]->setActive(true);
-	      active_guide_[i] = true;
-	      //std::cout << "Active " <<i<< std::endl;
-      }
-      else
-	  {
-	      vm_vector_[i]->setActive(false);
-	      active_guide_[i] = false;
-	      //std::cout << "Deactive "<<i<< std::endl;
-	  }
-    }
-    Update(robot_pose,robot_velocity,dt,f_out);
-}*/
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
 {
@@ -538,37 +426,6 @@ void MechanismManager::GetVmVelocity(const int idx, double* const velocity_ptr)
     vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
     VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
 }
-
-/*void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const bool user_force_applied)
-{
-    user_force_applied_ = user_force_applied;
-    Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
-}*/
-
-/*void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
-{
-
-
-    //phase_dot_ref_upper_(0) = phase_dot_ref_(0) + range_;
-    //phase_dot_ref_lower_(0) = phase_dot_ref_(0) - range_;
-
-
-    //if((phase_dot_filt_(0) <= (phase_dot_ref_(0) + range_)) && (phase_dot_filt_(0) >= (phase_dot_ref_(0) - range_)))
-    //{
-    //    //std::cout << "GOOOOOOOOOOOOOOOOOOOOOOOOO" << std::endl;
-//
-     //   user_force_applied_ = false;
-    //}
-    //else
-     //   user_force_applied_ = true;
-
-
-
-    //if(std::abs(phase_ddot_filt_(0)) > 2.0)
-
-    //user_force_applied_ = user_force_applied;
-    Update(robot_position_ptr,robot_velocity_ptr,dt,f_out_ptr);
-}*/
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
 {
@@ -586,11 +443,6 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
     VectorXd::Map(f_out_ptr, position_dim_) = f_pos_;
 }
 
-/*void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const bool user_force_applied)
-{
-    user_force_applied_ = user_force_applied;
-    Update(robot_pose,robot_velocity,dt,f_out);
-}*/
 
 void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
@@ -730,10 +582,6 @@ void MechanismManager::Update()
 	      break;
 	  }
 
-	  //vm_vector_[i]->getLocalKernel(vm_kernel_[i]);
-	  //K_ = vm_vector_[i]->getK();
-      //B_ = vm_vector_[i]->getB();
-
       if(use_orientation_)
       {
 
@@ -742,17 +590,6 @@ void MechanismManager::Update()
         orientation_error_(0) = robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1) - cross_prod_(0);
         orientation_error_(1) = robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2) - cross_prod_(1);
         orientation_error_(2) = robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3) - cross_prod_(2);
-
-        //orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
-        //orientation_derivative_ = (orientation_error_ - prev_orientation_error_)/dt_;
-
-        //f_ori_ += scales_(i) * (5.0 * orientation_error_ + 0.0 * orientation_integral_ + 0.0 * orientation_derivative_);
-
-        //prev_orientation_error_ = orientation_error_;
-
-        //f_ori_(0)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](1)- vm_quat_[i](0) * robot_orientation_(1));
-        //f_ori_(1)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](2)- vm_quat_[i](0) * robot_orientation_(2));
-        //f_ori_(2)  += scales_(i) * 5.0 * (robot_orientation_(0) * vm_quat_[i](3)- vm_quat_[i](0) * robot_orientation_(3));
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
       }
       else
@@ -762,28 +599,8 @@ void MechanismManager::Update()
       
     }	   
 
-    /*if(loopCnt%1000==0)
-    {
-        std::cout << "** ****" <<std::endl;
-        std::cout << "** AFTR **" <<std::endl;
-        std::cout << scales_ <<std::endl;
-    }*/
-    //loopCnt++;
-
-    /*if(loopCnt%100==0)
-    {
-        std::cout << "** ****" <<std::endl;
-
-    }*/
-
-
-    //loopCnt++;
-
-	//UpdateTrackingReference(robot_position);
-	
 	#ifdef USE_ROS_RT_PUBLISHER
         rt_publishers_values_.PublishAll();
-        //rt_publishers_wrench_.PublishAll();
         rt_publishers_path_.PublishAll();
 	#endif
 }

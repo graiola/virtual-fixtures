@@ -66,10 +66,9 @@ class MechanismManager
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
 
-    // Record
-    //void StartRecording();
-    //void StopRecording();
-
+    // Mechanism Manager interface
+    void InsertVM();
+    void DeleteVM();
 
     inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
     inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
@@ -77,7 +76,7 @@ class MechanismManager
     inline void GetVmVelocity(const int idx, Eigen::VectorXd& velocity) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getStateDot(velocity);}
     void GetVmPosition(const int idx, double* const position_ptr);
     void GetVmVelocity(const int idx, double* const velocity_ptr);
-    int GetPositionDim() const {return position_dim_;}
+    inline int GetPositionDim() const {return position_dim_;}
     inline int GetNbVms() {return vm_nb_;}
     void Stop();
     
@@ -85,8 +84,7 @@ class MechanismManager
     void Update();
     bool ReadConfig(std::string file_path);
    
-  private:
-    
+  private:   
     enum prob_mode_t {HARD,POTENTIAL,SOFT,ESCAPE};
     enum mechanism_t {GMM,GMM_NORMALIZED,SPLINE};
     prob_mode_t prob_mode_;
