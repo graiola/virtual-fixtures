@@ -49,7 +49,7 @@ TEST(MechanismManagerTest, UpdateMethodWithOrientation)
   rob_pos.fill(1.0);
   rob_vel.fill(1.0);
   f_out.fill(0.0);
-  
+
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
   END_REAL_TIME_CRITICAL_CODE();

@@ -67,8 +67,8 @@ class MechanismManager
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
 
     // Mechanism Manager interface
-    void InsertVM();
-    void DeleteVM();
+    void InsertVM(std::string model_name);
+    void DeleteVM(){}
 
     inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
     inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
@@ -77,7 +77,7 @@ class MechanismManager
     void GetVmPosition(const int idx, double* const position_ptr);
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     inline int GetPositionDim() const {return position_dim_;}
-    inline int GetNbVms() {return vm_nb_;}
+    inline int GetNbVms() {return vm_vector_.size();}
     void Stop();
     
   protected:
@@ -85,76 +85,65 @@ class MechanismManager
     bool ReadConfig(std::string file_path);
    
   private:   
-    enum prob_mode_t {HARD,POTENTIAL,SOFT,ESCAPE};
-    enum mechanism_t {GMM,GMM_NORMALIZED,SPLINE};
+    enum prob_mode_t {HARD,POTENTIAL,SOFT};
     prob_mode_t prob_mode_;
-    mechanism_t mechanism_type_;
     
     std::string pkg_path_;
     
     long long loopCnt;
 
-    std::vector<bool> activated_;
-    bool use_orientation_;
-    std::vector<bool> active_guide_;
-    Eigen::VectorXd tmp_eigen_vector_;
-    Eigen::VectorXd scales_;
-    Eigen::VectorXd escape_factors_;
-    Eigen::VectorXd escape_field_;
+    //std::vector<bool> activated_;
+    //std::vector<bool> active_guide_;
 
+    Eigen::VectorXd tmp_eigen_vector_; // Used to convert std to eigen vector
+    Eigen::VectorXd scales_;
+
+    Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd phase_ddot_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
-    Eigen::VectorXd orientation_error_;
-    Eigen::VectorXd cross_prod_;
-    /*Eigen::VectorXd prev_orientation_error_;
-    Eigen::VectorXd orientation_integral_;
-    Eigen::VectorXd orientation_derivative_;*/
+
     Eigen::VectorXd f_pos_;
     Eigen::VectorXd f_ori_;
-    Eigen::VectorXd f_rob_;
-    Eigen::VectorXd t_versor_;
-    Eigen::VectorXd f_rob_t_;
-    Eigen::VectorXd f_rob_n_;
-    Eigen::VectorXd phase_dot_filt_;
-    Eigen::VectorXd phase_ddot_filt_;
+
     Eigen::VectorXd phase_ref_;
     Eigen::VectorXd phase_dot_ref_;
     Eigen::VectorXd phase_ddot_ref_;
-    Eigen::VectorXd phase_dot_ref_upper_;
-    Eigen::VectorXd phase_dot_ref_lower_;
     Eigen::VectorXd fade_;
     Eigen::VectorXd r_;
 
-    Eigen::VectorXd torque_;
-    int vm_nb_;
     int position_dim_;
     int orientation_dim_;
     int n_samples_filter_;
     double sum_;
-    double curr_norm_factor_;
-    double scale_threshold_;
+
     double dt_;
     double escape_factor_;
-    double f_norm_;
+
     double phase_dot_th_;
     double r_th_;
     double pre_auto_th_;
-    Eigen::VectorXd phase_;
+
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
-    std::vector<Eigen::VectorXd> vm_jacobian_;
-    std::vector<Eigen::VectorXd> vm_quat_;
-    std::vector<std::vector<double> > quat_start_;
-    std::vector<std::vector<double> > quat_end_;
-    
-    // FIXME Put them in a struct...?
-    std::vector<vm_t*> vm_vector_; // TODO move chose of template to ReadConfig
-    std::vector<bool> use_weighted_dist_;
-    std::vector<double> execution_time_;
-    std::vector<bool> use_active_guide_;
+
+
+    bool use_orientation_;
+
+    std::vector<vm_t*> vm_vector_;
+    bool second_order_;
+    bool use_weighted_dist_;
+    bool use_active_guide_;
+    double execution_time_;
+    double K_;
+    double B_;
+    double Kf_;
+    double Bf_;
+    double inertia_;
+    double Kr_;
+    double fade_gain_;
 
     std::vector<filters::M3DFilter* > filter_phase_dot_;
     std::vector<filters::M3DFilter* > filter_phase_ddot_;
