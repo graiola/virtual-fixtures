@@ -343,21 +343,38 @@ void MechanismManager::Update()
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
 {
-    assert(idx <= vm_vector_.size());
-    tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
-    vm_vector_[idx]->getState(tmp_eigen_vector_);
-    VectorXd::Map(position_ptr, position_dim_) = tmp_eigen_vector_;
+    if(idx < vm_vector_.size())
+    {
+        tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
+        vm_vector_[idx]->getState(tmp_eigen_vector_);
+        VectorXd::Map(position_ptr, position_dim_) = tmp_eigen_vector_;
+    }
 }
 
 void MechanismManager::GetVmVelocity(const int idx, double* const velocity_ptr)
 {
-    assert(idx <= vm_vector_.size());
-    tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
-    vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
-    VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
+    if(idx < vm_vector_.size())
+    {
+        tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
+        vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
+        VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
+    }
 }
 
+void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
+{
+    if(idx < vm_vector_.size())
+        vm_vector_[idx]->getState(position);
 }
+void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
+{
+    if(idx < vm_vector_.size())
+        vm_vector_[idx]->getStateDot(velocity);
+}
+
+} // namespace
+
+
 
 
 /*

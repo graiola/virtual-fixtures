@@ -111,6 +111,27 @@ TEST(MechanismManagerTest, UpdateMethodRawVectors)
 
 }
 
+TEST(MechanismManagerTest, GetVmPositionVelocity)
+{
+  MechanismManager mm = MechanismManager();
+
+  int pos_dim = mm.GetPositionDim();
+
+  Eigen::VectorXd pos(pos_dim);
+  Eigen::VectorXd vel(pos_dim);
+  START_REAL_TIME_CRITICAL_CODE();
+  EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
+  EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
+  END_REAL_TIME_CRITICAL_CODE();
+
+  /*std::cout << "f_out" <<std::endl;
+  std::cout << f_out <<std::endl;
+  std::cout << "pos" <<std::endl;
+  std::cout << pos <<std::endl;
+  std::cout << "vel" <<std::endl;
+  std::cout << vel <<std::endl;*/
+}
+
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);

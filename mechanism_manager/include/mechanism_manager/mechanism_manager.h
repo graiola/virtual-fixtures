@@ -72,8 +72,8 @@ class MechanismManager
 
     inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
     inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
-    inline void GetVmPosition(const int idx, Eigen::VectorXd& position) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getState(position);}
-    inline void GetVmVelocity(const int idx, Eigen::VectorXd& velocity) {assert(idx <= vm_vector_.size()); vm_vector_[idx]->getStateDot(velocity);}
+    void GetVmPosition(const int idx, Eigen::VectorXd& position);
+    void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     void GetVmPosition(const int idx, double* const position_ptr);
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     inline int GetPositionDim() const {return position_dim_;}
@@ -128,7 +128,6 @@ class MechanismManager
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
-
 
     bool use_orientation_;
 
