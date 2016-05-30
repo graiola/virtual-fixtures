@@ -105,10 +105,24 @@ void MechanismManager::InsertVM(std::string model_name)
     vm_state_.push_back(VectorXd(position_dim_));
     vm_state_dot_.push_back(VectorXd(position_dim_));
 
+    PushBack(0.0,scales_);
+    PushBack(0.0,phase_);
+    PushBack(0.0,phase_dot_);
+    PushBack(0.0,phase_ddot_);
+    PushBack(0.0,phase_ref_);
+    PushBack(0.0,phase_dot_ref_);
+    PushBack(0.0,phase_ddot_ref_);
+    PushBack(0.0,fade_);
+
+#ifdef USE_ROS_RT_PUBLISHER
+    rt_publishers_vector_.PushBackEmptyAll();
+#endif
+
     //vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,r_th_)); // phase_dot_preauto_th, phase_dot_th
     //activated_.push_back(false); // NOTE we assume the guide not active at the beginning
     //active_guide_.resize(vm_vector_.size(),false);
 
+    /*
     // Resize
     scales_.resize(vm_vector_.size());
     phase_.resize(vm_vector_.size());
@@ -128,13 +142,21 @@ void MechanismManager::InsertVM(std::string model_name)
     phase_dot_ref_.fill(0.0);
     phase_ddot_ref_.fill(0.0);
     fade_.fill(0.0);
+    */
 }
 
-void MechanismManager::Resize(const int idx, VectorXd& vect)
+void MechanismManager::Delete(const int idx, VectorXd& vect)
 {
     int n = vect.size()-idx-1;
     vect.segment(idx,n) = vect.tail(n);
     vect.conservativeResize(vect.size()-1);
+}
+
+void MechanismManager::PushBack(const double value, VectorXd& vect)
+{
+    int n = vect.size();
+    vect.conservativeResize(n+1,NoChange);
+    vect(n) = value;
 }
 
 void MechanismManager::DeleteVM(const int idx)
@@ -144,14 +166,18 @@ void MechanismManager::DeleteVM(const int idx)
    vm_state_.erase(vm_state_.begin()+idx);
    vm_state_dot_.erase(vm_state_dot_.begin()+idx);
 
-   Resize(idx,scales_);
-   Resize(idx,phase_);
-   Resize(idx,phase_dot_);
-   Resize(idx,phase_ddot_);
-   Resize(idx,phase_ref_);
-   Resize(idx,phase_dot_ref_);
-   Resize(idx,phase_ddot_ref_);
-   Resize(idx,fade_);
+   Delete(idx,scales_);
+   Delete(idx,phase_);
+   Delete(idx,phase_dot_);
+   Delete(idx,phase_ddot_);
+   Delete(idx,phase_ref_);
+   Delete(idx,phase_dot_ref_);
+   Delete(idx,phase_ddot_ref_);
+   Delete(idx,fade_);
+
+#ifdef USE_ROS_RT_PUBLISHER
+   rt_publishers_vector_.RemoveAll(idx);
+#endif
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -259,6 +285,18 @@ MechanismManager::MechanismManager()
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
       f_ori_.fill(0.0);
+
+#ifdef USE_ROS_RT_PUBLISHER
+    try
+    {
+        ros_node_.Init("mechanism_manager");
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
+    }
+    catch(const std::runtime_error& e)
+    {
+      ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+    }
+#endif
 }
 
 MechanismManager::~MechanismManager()
@@ -362,6 +400,10 @@ void MechanismManager::Update()
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
       //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms
     }
+
+#ifdef USE_ROS_RT_PUBLISHER
+    rt_publishers_vector_.PublishAll();
+#endif
 
 }
 

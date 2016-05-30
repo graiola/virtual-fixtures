@@ -76,6 +76,7 @@ class MechanismManager
     // Mechanism Manager interface
     void InsertVM(std::string model_name);
     void DeleteVM(const int idx);
+
     void Stop();
 
     // Gets
@@ -91,7 +92,8 @@ class MechanismManager
   protected:
     void Update();
     bool ReadConfig(std::string file_path);
-    void Resize(const int idx, Eigen::VectorXd& vect);
+    void Delete(const int idx, Eigen::VectorXd& vect);
+    void PushBack(const double value, Eigen::VectorXd& vect);
    
   private:   
     enum prob_mode_t {HARD,POTENTIAL,SOFT};
@@ -105,18 +107,20 @@ class MechanismManager
     //std::vector<bool> active_guide_;
 
     Eigen::VectorXd tmp_eigen_vector_; // Used to convert std to eigen vector
+
+
+    Eigen::VectorXd f_pos_;
+    Eigen::VectorXd f_ori_;
+    Eigen::VectorXd robot_position_;
+    Eigen::VectorXd robot_velocity_;
+    Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd scales_;
+
+
 
     Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd phase_ddot_;
-    Eigen::VectorXd robot_position_;
-    Eigen::VectorXd robot_velocity_;
-    Eigen::VectorXd robot_orientation_;
-
-    Eigen::VectorXd f_pos_;
-    Eigen::VectorXd f_ori_;
-
     Eigen::VectorXd phase_ref_;
     Eigen::VectorXd phase_dot_ref_;
     Eigen::VectorXd phase_ddot_ref_;
@@ -161,8 +165,8 @@ class MechanismManager
 #ifdef INCLUDE_ROS_CODE
     #ifdef USE_ROS_RT_PUBLISHER
         tool_box::RosNode ros_node_;
-        tool_box::RealTimePublishers<tool_box::RealTimePublisherJoints> rt_publishers_values_;
-        tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
+        tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
+        //tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
     #endif
 #endif
     
