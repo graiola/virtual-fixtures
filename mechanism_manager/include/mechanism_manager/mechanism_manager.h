@@ -62,24 +62,25 @@ class MechanismManager
     MechanismManager();
     ~MechanismManager();
   
-    // Loop Update
+    // Loop Update Interfaces
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
 
     // Mechanism Manager interface
     void InsertVM(std::string model_name);
-    void DeleteVM(){}
+    void DeleteVM(const int idx);
+    void Stop();
 
-    inline double GetPhase(const int idx) {assert(idx <= vm_vector_.size()); return vm_vector_[idx]->getPhase();}
-    inline double GetScale(const int idx) {assert(idx <= scales_.size()); return scales_(idx);}
+    inline int GetPositionDim() const {return position_dim_;}
+    inline int GetNbVms() const {return vm_vector_.size();}
+
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     void GetVmPosition(const int idx, double* const position_ptr);
     void GetVmVelocity(const int idx, double* const velocity_ptr);
-    inline int GetPositionDim() const {return position_dim_;}
-    inline int GetNbVms() {return vm_vector_.size();}
-    void Stop();
-    
+    double GetPhase(const int idx);
+    double GetScale(const int idx);
+
   protected:
     void Update();
     bool ReadConfig(std::string file_path);

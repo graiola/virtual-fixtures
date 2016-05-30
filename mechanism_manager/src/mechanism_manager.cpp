@@ -238,13 +238,11 @@ MechanismManager::MechanismManager()
 
 MechanismManager::~MechanismManager()
 {
-      //for(int i=0;i<vm_vector_.size();i++)
-
       for(int i=0;i<vm_vector_.size();i++)
       {
         delete vm_vector_[i];
-        delete filter_phase_dot_[i];
-        delete filter_phase_ddot_[i];
+        //delete filter_phase_dot_[i];
+        //delete filter_phase_ddot_[i];
         delete vm_autom_[i];
       }
 }
@@ -370,6 +368,21 @@ void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
 {
     if(idx < vm_vector_.size())
         vm_vector_[idx]->getStateDot(velocity);
+}
+
+double MechanismManager::GetPhase(const int idx)
+{
+    if(idx < vm_vector_.size())
+        return vm_vector_[idx]->getPhase();
+    else
+        return 0.0;
+}
+double MechanismManager::GetScale(const int idx)
+{
+    if(idx < vm_vector_.size())
+        return scales_(idx);
+    else
+        return 0.0;
 }
 
 } // namespace
