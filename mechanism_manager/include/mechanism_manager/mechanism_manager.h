@@ -56,6 +56,13 @@ private:
     state_t state_;
 };
 
+/*struct vm_struct
+{
+    Eigen::VectorXd state;
+    Eigen::VectorXd state_dot;
+    vm_t* vm;
+};*/
+
 class MechanismManager
 { 
   public:
@@ -71,9 +78,9 @@ class MechanismManager
     void DeleteVM(const int idx);
     void Stop();
 
+    // Gets
     inline int GetPositionDim() const {return position_dim_;}
     inline int GetNbVms() const {return vm_vector_.size();}
-
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     void GetVmPosition(const int idx, double* const position_ptr);
@@ -84,6 +91,7 @@ class MechanismManager
   protected:
     void Update();
     bool ReadConfig(std::string file_path);
+    void Resize(const int idx, Eigen::VectorXd& vect);
    
   private:   
     enum prob_mode_t {HARD,POTENTIAL,SOFT};
@@ -129,10 +137,9 @@ class MechanismManager
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
-
-    bool use_orientation_;
-
     std::vector<vm_t*> vm_vector_;
+
+    //std::vector<vm_struct> vm_vector_;
     bool second_order_;
     bool use_weighted_dist_;
     bool use_active_guide_;
@@ -144,6 +151,7 @@ class MechanismManager
     double inertia_;
     double Kr_;
     double fade_gain_;
+    bool use_orientation_;
 
     std::vector<filters::M3DFilter* > filter_phase_dot_;
     std::vector<filters::M3DFilter* > filter_phase_ddot_;

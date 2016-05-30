@@ -104,7 +104,8 @@ void MechanismManager::InsertVM(std::string model_name)
 
     vm_state_.push_back(VectorXd(position_dim_));
     vm_state_dot_.push_back(VectorXd(position_dim_));
-    vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,r_th_)); // phase_dot_preauto_th, phase_dot_th
+
+    //vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,r_th_)); // phase_dot_preauto_th, phase_dot_th
     //activated_.push_back(false); // NOTE we assume the guide not active at the beginning
     //active_guide_.resize(vm_vector_.size(),false);
 
@@ -127,6 +128,30 @@ void MechanismManager::InsertVM(std::string model_name)
     phase_dot_ref_.fill(0.0);
     phase_ddot_ref_.fill(0.0);
     fade_.fill(0.0);
+}
+
+void MechanismManager::Resize(const int idx, VectorXd& vect)
+{
+    int n = vect.size()-idx-1;
+    vect.segment(idx,n) = vect.tail(n);
+    vect.conservativeResize(vect.size()-1);
+}
+
+void MechanismManager::DeleteVM(const int idx)
+{
+   assert(idx < vm_vector_.size());
+   vm_vector_.erase(vm_vector_.begin()+idx);
+   vm_state_.erase(vm_state_.begin()+idx);
+   vm_state_dot_.erase(vm_state_dot_.begin()+idx);
+
+   Resize(idx,scales_);
+   Resize(idx,phase_);
+   Resize(idx,phase_dot_);
+   Resize(idx,phase_ddot_);
+   Resize(idx,phase_ref_);
+   Resize(idx,phase_dot_ref_);
+   Resize(idx,phase_ddot_ref_);
+   Resize(idx,fade_);
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -243,7 +268,7 @@ MechanismManager::~MechanismManager()
         delete vm_vector_[i];
         //delete filter_phase_dot_[i];
         //delete filter_phase_ddot_[i];
-        delete vm_autom_[i];
+        //delete vm_autom_[i];
       }
 }
 
@@ -335,6 +360,7 @@ void MechanismManager::Update()
       }
 
         f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
+      //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms
     }
 
 }
@@ -364,6 +390,7 @@ void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
     if(idx < vm_vector_.size())
         vm_vector_[idx]->getState(position);
 }
+
 void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
 {
     if(idx < vm_vector_.size())

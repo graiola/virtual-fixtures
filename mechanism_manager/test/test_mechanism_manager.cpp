@@ -108,10 +108,9 @@ TEST(MechanismManagerTest, UpdateMethodRawVectors)
   START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(mm.Update(&rob_pos[0],&rob_vel[0],dt,&f_out[0]));
   END_REAL_TIME_CRITICAL_CODE();
-
 }
 
-TEST(MechanismManagerTest, GetVmPositionVelocity)
+TEST(MechanismManagerTest, GetVmPositionAndVelocity)
 {
   MechanismManager mm = MechanismManager();
 
@@ -123,13 +122,46 @@ TEST(MechanismManagerTest, GetVmPositionVelocity)
   EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
   EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
   END_REAL_TIME_CRITICAL_CODE();
+}
 
-  /*std::cout << "f_out" <<std::endl;
-  std::cout << f_out <<std::endl;
-  std::cout << "pos" <<std::endl;
-  std::cout << pos <<std::endl;
-  std::cout << "vel" <<std::endl;
-  std::cout << vel <<std::endl;*/
+TEST(MechanismManagerTest, InsertVmMethod)
+{
+  MechanismManager mm = MechanismManager();
+  EXPECT_NO_THROW(mm.InsertVM("test.txt"));
+}
+
+TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
+{
+  MechanismManager mm = MechanismManager();
+  EXPECT_NO_THROW(mm.InsertVM("test.txt"));
+
+  int pos_dim = mm.GetPositionDim();
+
+  // Force input interface
+  Eigen::VectorXd rob_pos;
+  Eigen::VectorXd rob_vel;
+  Eigen::VectorXd f_out;
+
+  rob_pos.resize(pos_dim);
+  rob_vel.resize(pos_dim);
+  f_out.resize(pos_dim);
+
+  rob_pos << 1.0,2.0;
+  rob_vel.fill(1.0);
+  f_out.fill(0.0);
+
+  START_REAL_TIME_CRITICAL_CODE();
+  EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
+  END_REAL_TIME_CRITICAL_CODE();
+
+  Eigen::VectorXd pos(pos_dim);
+  Eigen::VectorXd vel(pos_dim);
+  START_REAL_TIME_CRITICAL_CODE();
+  EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
+  EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
+  END_REAL_TIME_CRITICAL_CODE();
+
+  EXPECT_NO_THROW(mm.DeleteVM(0));
 }
 
 int main(int argc, char** argv)
