@@ -28,6 +28,7 @@ namespace mechanism_manager
 {
 
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
+enum prob_mode_t {HARD,POTENTIAL,SOFT};
 
 template <typename _T >
 void operator >>(const YAML::Node& input, _T& value) {
@@ -70,8 +71,8 @@ class MechanismManager
     ~MechanismManager();
   
     // Loop Update Interfaces
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
-    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
+    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const prob_mode_t prob_mode = SOFT);
+    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode = SOFT);
 
     // Mechanism Manager interface
     void InsertVM(std::string model_name);
@@ -90,14 +91,14 @@ class MechanismManager
     double GetScale(const int idx);
 
   protected:
-    void Update();
+    void Update(const prob_mode_t prob_mode);
     bool ReadConfig(std::string file_path);
     void Delete(const int idx, Eigen::VectorXd& vect);
     void PushBack(const double value, Eigen::VectorXd& vect);
    
   private:   
-    enum prob_mode_t {HARD,POTENTIAL,SOFT};
-    prob_mode_t prob_mode_;
+    //enum prob_mode_t {HARD,POTENTIAL,SOFT};
+    //prob_mode_t prob_mode_;
     
     std::string pkg_path_;
     
@@ -115,8 +116,6 @@ class MechanismManager
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd scales_;
-
-
 
     Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;

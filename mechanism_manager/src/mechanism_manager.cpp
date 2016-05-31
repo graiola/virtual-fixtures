@@ -196,7 +196,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
     std::string prob_mode_tmp;
 
     // Retrain basic parameters for all the virtual mechanisms
-    main_node["prob_mode"] >> prob_mode_tmp;
+    //main_node["prob_mode"] >> prob_mode_tmp;
     main_node["use_weighted_dist"] >> use_weighted_dist_;
     main_node["position_dim"] >> position_dim_;
     main_node["K"] >> K_;
@@ -231,6 +231,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
     assert(pre_auto_th_ > phase_dot_th_);
     assert(r_th_ > 0.0);
 
+    /*
     if (prob_mode_tmp == "hard")
         prob_mode_ = HARD;
     else if (prob_mode_tmp == "potential")
@@ -241,6 +242,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
         prob_mode_ = POTENTIAL; // Default
 
     return true;
+    */
 }
 
 
@@ -310,7 +312,7 @@ MechanismManager::~MechanismManager()
       }
 }
 
-void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
+void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)
 {
     assert(dt > 0.0);
     dt_ = dt;
@@ -321,12 +323,12 @@ void MechanismManager::Update(const double* robot_position_ptr, const double* ro
     robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
     robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
 
-    Update();
+    Update(prob_mode);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_pos_;
 }
 
-void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
+void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const prob_mode_t prob_mode)
 {
     assert(dt > 0.0);
     dt_ = dt;
@@ -348,14 +350,14 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
         robot_orientation_ = robot_pose.segment(position_dim_,4);
     }
 
-    Update();
+    Update(prob_mode);
 
     if(use_orientation_)
         f_out << f_pos_, f_ori_;
     else
         f_out = f_pos_;
 }
-void MechanismManager::Update()
+void MechanismManager::Update(const prob_mode_t prob_mode)
 {
     // Update the virtual mechanisms states, compute single probabilities
     for(int i=0; i<vm_vector_.size();i++)
@@ -382,7 +384,7 @@ void MechanismManager::Update()
     for(int i=0; i<vm_vector_.size();i++)
     {
       // Compute the conditional probabilities
-      switch(prob_mode_)
+      switch(prob_mode)
       {
         case HARD:
             scales_(i) =  scales_(i)/scales_.sum();
