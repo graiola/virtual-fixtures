@@ -288,13 +288,6 @@ class RealTimePublisherVector
                 //pub_ptr_->msg_.header.stamp = ros::Time::now();
                 int data_size = pub_ptr_->msg_.data.size();
                 //assert(data_size >= in.size());
-
-                std::cout << "data_size" <<std::endl;
-                std::cout << data_size <<std::endl;
-
-                std::cout << "in" <<std::endl;
-                std::cout << in.size() <<std::endl;
-
                 for(int i = 0; i < data_size; i++)
                 {
                     pub_ptr_->msg_.data[i] = in(i);
@@ -306,8 +299,9 @@ class RealTimePublisherVector
         /** Remove an element in the vector. */
         inline void Remove(const int idx)
         {
-            if(pub_ptr_ && pub_ptr_->trylock())
+            if(pub_ptr_)
             {
+                pub_ptr_->lock();
                 pub_ptr_->msg_.data.erase(pub_ptr_->msg_.data.begin()+idx);
                 pub_ptr_->unlock();
             }
@@ -316,8 +310,9 @@ class RealTimePublisherVector
         /** Resize the vector. */
         inline void Resize(const int dim)
         {
-            if(pub_ptr_ && pub_ptr_->trylock())
+            if(pub_ptr_)
             {
+                pub_ptr_->lock();
                 pub_ptr_->msg_.data.resize(dim);
                 pub_ptr_->unlock();
             }
@@ -326,8 +321,9 @@ class RealTimePublisherVector
         /** Add a new element at the back. */
         inline void PushBackEmpty()
         {
-            if(pub_ptr_ && pub_ptr_->trylock())
+            if(pub_ptr_)
             {
+                pub_ptr_->lock();
                 pub_ptr_->msg_.data.push_back(0.0);
                 pub_ptr_->unlock();
             }
