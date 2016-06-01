@@ -30,6 +30,7 @@
 namespace mechanism_manager
 {
 
+typedef boost::mutex mutex_t;
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
 enum prob_mode_t {HARD,POTENTIAL,SOFT};
 
@@ -176,7 +177,7 @@ class MechanismManager
     // Thread stuff
     boost::thread thread_insert_;
     boost::thread thread_delete_;
-    boost::mutex guard_;
+    mutex_t mtx_;
 
 
 #ifdef INCLUDE_ROS_CODE
