@@ -24,6 +24,9 @@
 #include <virtual_mechanism/virtual_mechanism_gmr.h>
 #include <virtual_mechanism/virtual_mechanism_spline.h>
 
+////////// BOOST
+#include <boost/thread.hpp>
+
 namespace mechanism_manager
 {
 
@@ -69,15 +72,19 @@ class MechanismManager
   public:
     MechanismManager();
     ~MechanismManager();
+
+    // NOTE: We can not copy mechanism manager because of the internal thread and the mutex
+    // We can explicit that thanks to C++11
+    MechanismManager( const MechanismManager& other ) = delete; // non construction-copyable
+    MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
   
     // Loop Update Interfaces
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const prob_mode_t prob_mode = SOFT);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode = SOFT);
 
-    // Mechanism Manager interface
+    // Mechanism Manager external interface
     void InsertVM(std::string model_name);
     void DeleteVM(const int idx);
-
     void Stop();
 
     // Gets
@@ -95,8 +102,13 @@ class MechanismManager
     bool ReadConfig(std::string file_path);
     void Delete(const int idx, Eigen::VectorXd& vect);
     void PushBack(const double value, Eigen::VectorXd& vect);
-   
+
+
   private:   
+
+    void InsertVM_no_rt(std::string& model_name); // No Real time
+    void DeleteVM_no_rt(const int& idx); // No Real time
+
     //enum prob_mode_t {HARD,POTENTIAL,SOFT};
     //prob_mode_t prob_mode_;
     
@@ -111,6 +123,7 @@ class MechanismManager
 
 
     Eigen::VectorXd f_pos_;
+    Eigen::VectorXd f_pos_prev_;
     Eigen::VectorXd f_ori_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
@@ -159,6 +172,11 @@ class MechanismManager
     std::vector<filters::M3DFilter* > filter_phase_dot_;
     std::vector<filters::M3DFilter* > filter_phase_ddot_;
     std::vector<VirtualMechanismAutom* > vm_autom_;
+
+    // Thread stuff
+    boost::thread thread_insert_;
+    boost::thread thread_delete_;
+    boost::mutex guard_;
 
 
 #ifdef INCLUDE_ROS_CODE
