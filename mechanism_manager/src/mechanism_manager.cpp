@@ -507,6 +507,15 @@ double MechanismManager::GetScale(const int idx)
     }
 }
 
+int MechanismManager::GetNbVms()
+{
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    if(guard.try_lock())
+    {
+        return vm_vector_.size();
+    }
+}
+
 } // namespace
 
 

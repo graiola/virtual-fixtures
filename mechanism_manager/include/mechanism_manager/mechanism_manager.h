@@ -90,7 +90,7 @@ class MechanismManager
 
     // Gets
     inline int GetPositionDim() const {return position_dim_;}
-    inline int GetNbVms() const {return vm_vector_.size();}
+    int GetNbVms();
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     void GetVmPosition(const int idx, double* const position_ptr);
