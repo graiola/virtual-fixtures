@@ -16,7 +16,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 {
     use_spline_xyz_ = true; // FIXME
 
-    int n_points = 1000;
+    const int n_points = 100; // This is causing some troubles with the stack
     Jz_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
@@ -214,6 +214,8 @@ void VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
     fa_ = new fa_t(model_parameters_gmr);
+
+    delete model_parameters_gmr;
 }
 
 template<class VM_t>

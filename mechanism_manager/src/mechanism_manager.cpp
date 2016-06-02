@@ -90,32 +90,46 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
 
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
-    bool on_guide = false;
+    //bool on_guide = false;
 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
 
-    for(int i=0;i<scales_.size();i++)
-        if(scales_(i) > 0.9)
-            on_guide = true;
+    std::cout << "WAIT CREATING GMR NORMALIZED PTR" << std::endl;
 
-    if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
-    {
-        if(second_order_)
+    vm_t* vm_tmp_ptr = NULL;
+    vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+
+    getchar();
+    std::cout << "OK" << std::endl;
+
+    /*for(int i=0;i<scales_.size();i++)
+        if(scales_(i) > 0.9)
+            on_guide = true;*/
+
+    //if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
+    //{
+      /*  if(second_order_)
         {
-            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path)); // NOTE the vm always works in xyz so we use position_dim_
-            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+
+            //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
+            //dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+            //dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
         }
         else
-            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
+        {
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
+            //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
+        }
         vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-        vm_vector_.back()->setExecutionTime(execution_time_);
+        vm_vector_.back()->setExecutionTime(execution_time_);*/
 
         vm_state_.push_back(VectorXd(position_dim_));
         vm_state_dot_.push_back(VectorXd(position_dim_));
-    }
+        vm_vector_.push_back(vm_tmp_ptr);
+    //}
 
     PushBack(0.0,scales_);
     PushBack(0.0,phase_);
@@ -126,11 +140,12 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
 
-    guard.unlock(); // Unlock
-
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
 #endif
+
+    guard.unlock(); // Unlock
+
 }
 
 void MechanismManager::InsertVM(std::string& model_name)
