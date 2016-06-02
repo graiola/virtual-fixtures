@@ -11,12 +11,6 @@
 #include <iterator>
 #include <boost/concept_check.hpp>
 
-////////// Function Approximator
-#include <functionapproximators/FunctionApproximatorGMR.hpp>
-#include <functionapproximators/MetaParametersGMR.hpp>
-#include <functionapproximators/ModelParametersGMR.hpp>
-
-
 using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
 using namespace virtual_mechanism_spline;
@@ -24,7 +18,7 @@ using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
 
-int test_dim = 3;
+int test_dim = 2;
 double dt = 0.001;
 double K = 100.0;
 double B = 20.0;
@@ -35,46 +29,32 @@ double fade_gain = 10.0;
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
-fa_t* generateDemoFa(){
-	
-  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/shelf_1.txt"; // FIXME
-  
-  ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_name);
-  FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(model_parameters_gmr);
-  
-  return fa_ptr;  
-}
+std::string file_name_spline = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/test_spline1.txt"; // FIXME
+std::string file_name_gmr = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test1.txt"; // FIXME
 
-TEST(VirtualMechanismSplineTest, InitializesCorrectly)
+
+TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
 {
 
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
+  //::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
 
-  std::string file_name = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/v3d_1.txt"; // FIXME
-
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name));
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name));
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
 }
 
-TEST(VirtualMechanismGmrTest, InitializesCorrectly)
+TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
 {
-  
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
-  
-  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr));
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
 }
 
-TEST(VirtualMechanismGmrTest, UpdateMethod)
+TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
 {
-  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
-  
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
   
   Eigen::VectorXd force(test_dim);
   Eigen::VectorXd pos(test_dim);
@@ -97,10 +77,8 @@ TEST(VirtualMechanismGmrTest, UpdateMethod)
 
 TEST(VirtualMechanismGmrTest, GetGaussian)
 {
-  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
-  
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
   
   Eigen::VectorXd pos(test_dim);
   pos.fill(1.0);
@@ -115,10 +93,8 @@ TEST(VirtualMechanismGmrTest, GetGaussian)
 
 TEST(VirtualMechanismGmrTest, GetDistance)
 {
-  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
-  
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
   
   Eigen::VectorXd pos(test_dim);
   pos.fill(1.0);
@@ -192,7 +168,7 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   }
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }*/
-
+/*
 TEST(VirtualMechanismGmrTest, GetMethods)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
@@ -268,7 +244,7 @@ TEST(VirtualMechanismGmrTest, TestGMR)
 
 
 }
-
+*/
 
 int main(int argc, char** argv)
 {

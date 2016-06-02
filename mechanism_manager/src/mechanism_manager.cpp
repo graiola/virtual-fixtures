@@ -83,35 +83,39 @@ void MechanismManager::Stop()
     {
         for(int i=0;i<vm_vector_.size();i++)
           vm_vector_[i]->Stop();
-        //guard_.unlock();
     }
 }
 
 void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
-    std::vector<std::vector<double> > data;
-    std::string models_path(pkg_path_+"/models/");
-    ReadTxtFile((models_path+"gmm/"+model_name).c_str(),data);
-    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+"gmm/"+model_name);
-    boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
+
+    std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
+    bool on_guide = false;
 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
-    if(second_order_)
+
+    for(int i=0;i<scales_.size();i++)
+        if(scales_(i) > 0.9)
+            on_guide = true;
+
+    if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
     {
-        vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+        if(second_order_)
+        {
+            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path)); // NOTE the vm always works in xyz so we use position_dim_
+            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+        }
+        else
+            vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
+
+        vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+        vm_vector_.back()->setExecutionTime(execution_time_);
+
+        vm_state_.push_back(VectorXd(position_dim_));
+        vm_state_dot_.push_back(VectorXd(position_dim_));
     }
-    else
-        vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-
-    vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-    vm_vector_.back()->setExecutionTime(execution_time_);
-
-    vm_state_.push_back(VectorXd(position_dim_));
-    vm_state_dot_.push_back(VectorXd(position_dim_));
-    guard.unlock(); // Unlock
 
     PushBack(0.0,scales_);
     PushBack(0.0,phase_);
@@ -122,18 +126,20 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
 
+    guard.unlock(); // Unlock
+
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
 #endif
-
-    //thread_insert_.join();
 }
 
-void MechanismManager::InsertVM(std::string model_name)
+void MechanismManager::InsertVM(std::string& model_name)
 {
+    // Insert only if there are no guides or I am currently on a guide
+
     //MechanismManager::InsertVM_no_rt(model_name);
     thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this, model_name);
-    thread_insert_.join();
+    //thread_insert_.join();
 }
 
 void MechanismManager::Delete(const int idx, VectorXd& vect)
@@ -152,9 +158,11 @@ void MechanismManager::PushBack(const double value, VectorXd& vect)
 
 void MechanismManager::DeleteVM(const int idx)
 {
+    // Delete only if I am not on the guide to erase
+
     //MechanismManager::DeleteVM_no_rt(idx);
     thread_delete_ = boost::thread(&MechanismManager::DeleteVM_no_rt, this, idx);
-    thread_delete_.join();
+    //thread_delete_.join();
 }
 
 void MechanismManager::DeleteVM_no_rt(const int& idx)
@@ -317,8 +325,8 @@ MechanismManager::~MechanismManager()
         //delete vm_autom_[i];
       }
 
-      //thread_insert_.join();
-      //thread_delete_.join();
+      thread_insert_.join();
+      thread_delete_.join();
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)

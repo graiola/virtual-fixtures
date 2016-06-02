@@ -6,7 +6,8 @@
 
 ////////// Function Approximator
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
-#include <functionapproximators/MetaParametersGMR.hpp>
+//#include <functionapproximators/MetaParametersGMR.hpp>
+#include <functionapproximators/ModelParametersGMR.hpp>
 
 ////////// BOOST
 #include <boost/shared_ptr.hpp>
@@ -14,9 +15,6 @@
 
 ////////// Toolbox
 #include "toolbox/spline/spline.h"
-
-////////// ALGLIB
-//#include <spline3.h>
 
 namespace virtual_mechanism_gmr
 {
@@ -28,8 +26,9 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-      VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr);
-	  
+      VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const std::string file_path);
+      ~VirtualMechanismGmr();
+
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual void setWeightedDist(const bool activate);
       virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const;
@@ -38,13 +37,15 @@ class VirtualMechanismGmr: public VM_t
 	  
 	protected:
 	  
+      void CreateGmrFromTxt(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
 	  virtual void ComputeFinalState();
 	  void UpdateInvCov();
 
-	  boost::shared_ptr<fa_t> fa_ptr_;
+      //boost::shared_ptr<fa_t> fa_ptr_;
+      fa_t* fa_; // Function Approximator
 
 	  Eigen::MatrixXd fa_input_;
 	  Eigen::MatrixXd fa_output_;
@@ -74,7 +75,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
-      VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr);
+      VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain,  const std::string file_path);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 
     protected:
@@ -86,7 +87,6 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       tk::spline spline_phase_inv_;
       std::vector<tk::spline > splines_xyz_;
       bool use_spline_xyz_;
-
 
       double z_;
       double z_dot_;

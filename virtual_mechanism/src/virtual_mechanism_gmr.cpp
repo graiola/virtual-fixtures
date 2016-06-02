@@ -1,7 +1,6 @@
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 
 using namespace std;
-//using namespace ros;
 using namespace Eigen;
 using namespace tool_box;
 using namespace virtual_mechanism_interface;
@@ -12,8 +11,8 @@ namespace virtual_mechanism_gmr
 {
 
 template <typename VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr):
-    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,fa_ptr)
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path):
+    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
 {
     use_spline_xyz_ = true; // FIXME
 
@@ -28,8 +27,8 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     Eigen::MatrixXd position_diff(n_points-1,VM_t::state_dim_);
     input_phase.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
     // Get xyz from GMR using a linspaced phase [0,1], preserve the rhythme
-    fa_ptr->predict(input_phase,output_position);
-    //fa_ptr->predictDot(input_phase,output_position,output_position_dot);
+    this->fa_->predict(input_phase,output_position);
+    //fa_->predictDot(input_phase,output_position,output_position_dot);
 
     splines_xyz_.resize(VM_t::state_dim_);
 
@@ -109,7 +108,7 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
     z_ = 0;
 
   this->fa_input_(0,0) = z_;
-  this->fa_ptr_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_); // We need this for the covariance
+  this->fa_->predictDot(this->fa_input_,this->fa_output_,this->fa_output_dot_,this->variance_); // We need this for the covariance
   this->covariance_ = this->variance_.row(0).asDiagonal();
 
   if(!use_spline_xyz_) // Compute xyz and J(z) using GMR
@@ -154,7 +153,7 @@ void VirtualMechanismGmrNormalized<VM_t>::ComputeStateGivenPhase(const double ab
 
   if(!use_spline_xyz_)
   {
-      this->fa_ptr_->predictDot(fa_input,fa_output,fa_output_dot);
+      this->fa_->predictDot(fa_input,fa_output,fa_output_dot);
       state_out = fa_output.transpose();
       state_out_dot = fa_output_dot.transpose() * phase_out_dot;
   }
@@ -204,47 +203,46 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
 
 }
 
+template <typename VM_t>
+VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
+{
+    delete fa_;
+}
+
+template <typename VM_t>
+void VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
+{
+    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
+    fa_ = new fa_t(model_parameters_gmr);
+}
+
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, boost::shared_ptr<fa_t> fa_ptr): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
   
-  assert(fa_ptr);
-  assert(fa_ptr->isTrained());
-  assert(fa_ptr->getExpectedInputDim() == 1);
-  assert(fa_ptr->getExpectedOutputDim() == state_dim);
-  
+  CreateGmrFromTxt(file_path);
+
+  assert(fa_->isTrained());
+  assert(fa_->getExpectedInputDim() == 1);
+  assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
+
   fa_input_.resize(1,1);
   fa_output_.resize(1,VM_t::state_dim_);
   fa_output_dot_.resize(1,VM_t::state_dim_);
   variance_.resize(1,VM_t::state_dim_);
   covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
   covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
-  //normal_vector_.resize(VM_t::state_dim_);
-  //prev_normal_vector_.resize(VM_t::state_dim_);
   err_.resize(VM_t::state_dim_);
 
   variance_.fill(1.0);
   covariance_ = variance_.row(0).asDiagonal();
   covariance_inv_.fill(0.0);
-  //prev_normal_vector_.fill(0.0);
   err_.fill(0.0);
-   
-  fa_ptr_ = fa_ptr;
-  
   prob_ = 0.0;
   determinant_cov_ = 1.0;
-  
-  //std_variance_ = 0.0;
 
-  //max_std_variance_ = 0.04; // HACK
-  //K_max_ = VM_t::K_;
-  //K_min_ = 100;
-  
   // By default don't use the Mahalanobis distance
   use_weighted_dist_ = false;
-  
-  // Create the scale adapter
-  //gain_adapter_.Create(K_min_,0.0,0.0,K_max_,max_std_variance_,0.0);
   
   // Initialize the state of the virtual mechanism
   VM_t::Init();
@@ -260,33 +258,19 @@ void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, Ve
   fa_input.resize(1,1);
   fa_output.resize(1,VM_t::state_dim_);
   fa_input(0,0) = phase_in;
-  fa_ptr_->predict(fa_input,fa_output);
+  fa_->predict(fa_input,fa_output);
   state_out = fa_output.transpose();
 }
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::ComputeInitialState() 
 {
-  /*MatrixXd fa_input, fa_output;
-  fa_input.resize(1,1);
-  fa_output.resize(1,VM_t::state_dim_);
-  fa_input(0,0) = 0.0;
-  fa_ptr_->predict(fa_input,fa_output);
-  initial_state_ = fa_output.transpose();*/
-  
   ComputeStateGivenPhase(0.0,VM_t::initial_state_);
 }
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::ComputeFinalState()
 {
-  /*MatrixXd fa_input, fa_output;
-  fa_input.resize(1,1);
-  fa_output.resize(1,VM_t::state_dim_);
-  fa_input(0,0) = 1.0;
-  fa_ptr_->predict(fa_input,fa_output);
-  final_state_ = fa_output.transpose();*/
-  
   ComputeStateGivenPhase(1.0,VM_t::final_state_);
 }
 
@@ -295,15 +279,13 @@ void VirtualMechanismGmr<VM_t>::UpdateJacobian()
 {
   fa_input_(0,0) = VM_t::phase_; // Convert to Eigen Matrix
 
-  fa_ptr_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
+  fa_->predictDot(fa_input_,fa_output_,fa_output_dot_,variance_);
 
   covariance_ = variance_.row(0).asDiagonal();
   
   VM_t::J_transp_ = fa_output_dot_; // NOTE The output is transposed!
   VM_t::J_ = VM_t::J_transp_.transpose();
 
-   //J_ = fa_output_dot_;
-   //J_transp_ = fa_output_dot_.transpose();
 }
 
 template<class VM_t>
