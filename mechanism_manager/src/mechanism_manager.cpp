@@ -301,6 +301,12 @@ MechanismManager::MechanismManager()
       f_pos_prev_.fill(0.0);
       f_ori_.fill(0.0);
 
+
+      vm_vector_.reserve(6);
+      vm_state_.reserve(6);
+      vm_state_dot_.reserve(6);
+
+
 #ifdef USE_ROS_RT_PUBLISHER
     try
     {
@@ -380,10 +386,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
-    //if(guard_.try_lock())
-    //{
-        //std::cout << "Inside" << std::endl;
-
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
