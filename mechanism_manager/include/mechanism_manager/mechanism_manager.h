@@ -27,6 +27,9 @@
 ////////// BOOST
 #include <boost/thread.hpp>
 
+////////// STD
+//#include <atomic>
+
 namespace mechanism_manager
 {
 
@@ -182,8 +185,8 @@ class MechanismManager
 
     // Cached values
     Eigen::VectorXd f_pos_prev_;
-    bool on_guide_prev_;
-    int nb_vm_prev_;
+    boost::atomic<bool> on_guide_prev_; // atom
+    boost::atomic<int> nb_vm_prev_; // atom
 
 
 

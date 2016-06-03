@@ -235,7 +235,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
         return false;
     }
 
-    std::string prob_mode_tmp;
+    //std::string prob_mode_tmp;
 
     // Retrain basic parameters for all the virtual mechanisms
     //main_node["prob_mode"] >> prob_mode_tmp;
@@ -263,6 +263,12 @@ bool MechanismManager::ReadConfig(std::string file_path)
         second_order_node["Kr"] >> Kr_;
         second_order_ = true;
     }
+    else
+    {
+        inertia_ = 0.1;
+        Kr_ = 0.1;
+        second_order_ = false;
+    }
 
     assert(K_ >= 0.0);
     assert(B_ >= 0.0);
@@ -284,7 +290,6 @@ bool MechanismManager::ReadConfig(std::string file_path)
         prob_mode_ = POTENTIAL; // Default
     */
     return true;
-
 }
 
 
@@ -332,7 +337,6 @@ MechanismManager::MechanismManager()
       f_pos_prev_.fill(0.0);
       f_ori_.fill(0.0);
 
-
       //vm_vector_.reserve(6);
       //vm_state_.reserve(6);
       //vm_state_dot_.reserve(6);
@@ -340,7 +344,6 @@ MechanismManager::MechanismManager()
       // Chached
       on_guide_prev_ = false;
       nb_vm_prev_ = 0;
-
 
 #ifdef USE_ROS_RT_PUBLISHER
     try
@@ -417,7 +420,6 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 }
 void MechanismManager::Update(const prob_mode_t prob_mode)
 {
-
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
