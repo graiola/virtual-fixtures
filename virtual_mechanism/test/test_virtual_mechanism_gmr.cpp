@@ -32,7 +32,7 @@ typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 std::string file_name_spline = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/test_spline1.txt"; // FIXME
 std::string file_name_gmr = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test1.txt"; // FIXME
 
-
+/*
 TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
 {
 
@@ -41,16 +41,20 @@ TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
   EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
   EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
 }
-
+*/
 TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
 {
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
-}
+  //EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+  //EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
 
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+
+}
+/*
 TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
 {
   VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
@@ -116,7 +120,7 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   
   END_REAL_TIME_CRITICAL_CODE();
   
-}
+}*/
 
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {

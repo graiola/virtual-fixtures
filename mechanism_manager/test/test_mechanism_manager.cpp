@@ -20,6 +20,8 @@ using namespace boost;
 using namespace DmpBbo;
 
 double dt = 0.001;
+std::string model_name1 = "test1.txt";
+std::string model_name2 = "test2.txt";
 
 TEST(MechanismManagerTest, InitializesCorrectly)
 {
@@ -122,7 +124,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocity)
 TEST(MechanismManagerTest, InsertVmMethod)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM("test1.txt"));
+  EXPECT_NO_THROW(mm->InsertVM(model_name1));
 
   delete mm;
 }
@@ -130,7 +132,7 @@ TEST(MechanismManagerTest, InsertVmMethod)
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM("test1.txt"));
+  EXPECT_NO_THROW(mm->InsertVM(model_name1));
 
   int pos_dim = mm->GetPositionDim();
 
@@ -165,10 +167,10 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
 
 TEST(MechanismManagerTest, LoopUpdate)
 {
-  MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM("test2.txt"));
+  MechanismManager mm;;
+  //EXPECT_NO_THROW(mm.InsertVM(model_name1));
 
-  int pos_dim = mm->GetPositionDim();
+  int pos_dim = mm.GetPositionDim();
 
   // Force input interface
   Eigen::VectorXd rob_pos;
@@ -181,37 +183,35 @@ TEST(MechanismManagerTest, LoopUpdate)
   rob_vel.resize(pos_dim);
   f_out.resize(pos_dim);
 
-  rob_pos << 1.0,2.0;
+  rob_pos << 0.25,0.25;
   rob_vel.fill(1.0);
   f_out.fill(0.0);
 
-  int n_steps = 20;
+  int n_steps = 100000;
   for (int i=0;i<n_steps;i++)
   {
-      std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
 
-      START_REAL_TIME_CRITICAL_CODE();
-      EXPECT_NO_THROW(mm->Update(rob_pos,rob_vel,dt,f_out));
-      EXPECT_NO_THROW(mm->GetVmPosition(0,pos));
-      EXPECT_NO_THROW(mm->GetVmVelocity(0,vel));
-      END_REAL_TIME_CRITICAL_CODE();
+      //START_REAL_TIME_CRITICAL_CODE();
+      EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
+      EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
+      EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
+      //END_REAL_TIME_CRITICAL_CODE();
 
-      if(i == 7)
+      /*if(i == 7)
       {
         std::cout << "DeleteVM " << std::endl;
-        EXPECT_NO_THROW(mm->DeleteVM(0));
-      }
-      else if (i == 5)
+        EXPECT_NO_THROW(mm.DeleteVM(0));
+      }*/
+      if (i == 50)
       {
-          std::cout << "InsertVM " << std::endl;
-          EXPECT_NO_THROW(mm->InsertVM("test2.txt"));
+          //std::cout << "InsertVM " << std::endl;
+          EXPECT_NO_THROW(mm.InsertVM(model_name2));
       }
 
-      std::cout << "Fx: "<< f_out(0)  << " Fy: " << f_out(1) << std::endl;
-      getchar();
+      //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
+      //getchar();
   }
 
-  delete mm;
 }
 
 int main(int argc, char** argv)
