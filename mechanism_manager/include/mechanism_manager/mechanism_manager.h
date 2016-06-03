@@ -85,8 +85,10 @@ class MechanismManager
 
     // Mechanism Manager external interface
     void InsertVM(std::string& model_name);
+    void InsertVM();
     void DeleteVM(const int idx);
     void Stop();
+    bool OnVm();
 
     // Gets
     inline int GetPositionDim() const {return position_dim_;}
@@ -107,7 +109,8 @@ class MechanismManager
 
   private:   
 
-    void InsertVM_no_rt(std::string& model_name); // No Real time
+    //void InsertVM_no_rt(std::string& model_name); // No Real time
+    void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
 
     //enum prob_mode_t {HARD,POTENTIAL,SOFT};
@@ -122,9 +125,7 @@ class MechanismManager
 
     Eigen::VectorXd tmp_eigen_vector_; // Used to convert std to eigen vector
 
-
     Eigen::VectorXd f_pos_;
-    Eigen::VectorXd f_pos_prev_;
     Eigen::VectorXd f_ori_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
@@ -178,6 +179,12 @@ class MechanismManager
     boost::thread thread_insert_;
     boost::thread thread_delete_;
     mutex_t mtx_;
+
+    // Cached values
+    Eigen::VectorXd f_pos_prev_;
+    bool on_guide_prev_;
+    int nb_vm_prev_;
+
 
 
 #ifdef INCLUDE_ROS_CODE

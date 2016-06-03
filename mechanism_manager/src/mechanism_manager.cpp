@@ -86,50 +86,57 @@ void MechanismManager::Stop()
     }
 }
 
-void MechanismManager::InsertVM_no_rt(std::string& model_name)
+//void MechanismManager::InsertVM_no_rt(std::string& model_name)
+void MechanismManager::InsertVM_no_rt()
 {
 
+    std::string model_name;
+    std::cout << "Insert model name: " << std::endl;
+    std::cin >> model_name;
+
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
-    //bool on_guide = false;
+
+    std::cout << "LOADING..."<< model_complete_path << std::endl;
 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
 
-    std::cout << "WAIT CREATING GMR NORMALIZED PTR" << std::endl;
+    std::cout << "CREATING..."<< model_complete_path << std::endl;
 
     vm_t* vm_tmp_ptr = NULL;
-    vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+    //vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
-    getchar();
-    std::cout << "OK" << std::endl;
-
+    //bool on_guide = false;
     /*for(int i=0;i<scales_.size();i++)
         if(scales_(i) > 0.9)
             on_guide = true;*/
 
     //if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
     //{
-      /*  if(second_order_)
-        {
-            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+    if(second_order_)
+        vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+        //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
+    else
+        vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+        //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
 
-            //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
-            //dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-            //dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
-        }
-        else
-        {
-            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
-            //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
-        }
-        vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-        vm_vector_.back()->setExecutionTime(execution_time_);*/
+    vm_state_.push_back(VectorXd(position_dim_));
+    vm_state_dot_.push_back(VectorXd(position_dim_));
 
-        vm_state_.push_back(VectorXd(position_dim_));
-        vm_state_dot_.push_back(VectorXd(position_dim_));
-        vm_vector_.push_back(vm_tmp_ptr);
-    //}
+    vm_vector_.push_back(vm_tmp_ptr);
+    vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+    vm_vector_.back()->setExecutionTime(execution_time_);
+
+    if(second_order_)
+    {
+        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+    }
+
+
+    //getchar();
+    //std::cout << "OK" << std::endl;
 
     PushBack(0.0,scales_);
     PushBack(0.0,phase_);
@@ -140,22 +147,31 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
 
-#ifdef USE_ROS_RT_PUBLISHER
-    rt_publishers_vector_.PushBackEmptyAll();
-#endif
+
+    /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
+        for(int i=0;i<vm_vector_.size();i++)
+            std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
 
     guard.unlock(); // Unlock
 
+    std::cout << "DONE..."<< model_complete_path << std::endl;
+
+#ifdef USE_ROS_RT_PUBLISHER
+    rt_publishers_vector_.PushBackEmptyAll();
+#endif
 }
 
-void MechanismManager::InsertVM(std::string& model_name)
+void MechanismManager::InsertVM()
 {
     // Insert only if there are no guides or I am currently on a guide
-
-    //MechanismManager::InsertVM_no_rt(model_name);
-    thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this, model_name);
-    //thread_insert_.join();
+    thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this);
 }
+
+/*void MechanismManager::InsertVM(std::string& model_name)
+{
+    // Insert only if there are no guides or I am currently on a guide
+    thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this, model_name);
+}*/
 
 void MechanismManager::Delete(const int idx, VectorXd& vect)
 {
@@ -317,9 +333,13 @@ MechanismManager::MechanismManager()
       f_ori_.fill(0.0);
 
 
-      vm_vector_.reserve(6);
-      vm_state_.reserve(6);
-      vm_state_dot_.reserve(6);
+      //vm_vector_.reserve(6);
+      //vm_state_.reserve(6);
+      //vm_state_dot_.reserve(6);
+
+      // Chached
+      on_guide_prev_ = false;
+      nb_vm_prev_ = 0;
 
 
 #ifdef USE_ROS_RT_PUBLISHER
@@ -422,20 +442,21 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         }
 
         f_pos_.fill(0.0); // Reset the force
+        double sum = scales_.sum();
 
         for(int i=0; i<vm_vector_.size();i++)
         {
-          // Compute the conditional probabilities
+          // Compute the probabilities
           switch(prob_mode)
           {
             case HARD:
-                scales_(i) =  scales_(i)/scales_.sum();
+                scales_(i) =  scales_(i)/sum;
                 break;
             case POTENTIAL:
                 scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 break;
             case SOFT:
-                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/scales_.sum();
+                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum;
                 break;
             default:
               break;
@@ -445,6 +466,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
           //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms           
         }
         f_pos_prev_ = f_pos_;
+        nb_vm_prev_ = vm_vector_.size();
         //guard_.unlock();
     }
     else
@@ -536,9 +558,26 @@ int MechanismManager::GetNbVms()
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
-    {
         return vm_vector_.size();
+    else
+        return nb_vm_prev_;
+}
+
+bool MechanismManager::OnVm()
+{
+    bool on_guide = false;
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    if(guard.try_lock())
+    {
+        for(int i=0;i<scales_.size();i++)
+            if(scales_(i) > 0.9)
+                on_guide = true;
     }
+    else
+        on_guide = on_guide_prev_;
+
+    on_guide_prev_ = on_guide;
+    return on_guide;
 }
 
 } // namespace
