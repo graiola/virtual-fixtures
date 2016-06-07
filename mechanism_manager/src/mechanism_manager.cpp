@@ -426,7 +426,8 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
-            vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
+            //vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
+            vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
 
             scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
 
