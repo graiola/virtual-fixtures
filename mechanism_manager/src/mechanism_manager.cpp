@@ -86,13 +86,8 @@ void MechanismManager::Stop()
     }
 }
 
-//void MechanismManager::InsertVM_no_rt(std::string& model_name)
-void MechanismManager::InsertVM_no_rt()
+void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
-
-    std::string model_name;
-    std::cout << "Insert model name: " << std::endl;
-    std::cin >> model_name;
 
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
 
@@ -159,19 +154,32 @@ void MechanismManager::InsertVM_no_rt()
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
 #endif
+
+
+}
+
+void MechanismManager::InsertVM_no_rt()
+{
+
+    std::string model_name;
+    std::cout << "Insert model name: " << std::endl;
+    std::cin >> model_name;
+
+    InsertVM_no_rt(model_name);
+
 }
 
 void MechanismManager::InsertVM()
 {
     // Insert only if there are no guides or I am currently on a guide
-    thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this);
+    thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this));
 }
 
-/*void MechanismManager::InsertVM(std::string& model_name)
+void MechanismManager::InsertVM(std::string& model_name)
 {
     // Insert only if there are no guides or I am currently on a guide
-    thread_insert_ = boost::thread(&MechanismManager::InsertVM_no_rt, this, model_name);
-}*/
+    thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
+}
 
 void MechanismManager::Delete(const int idx, VectorXd& vect)
 {

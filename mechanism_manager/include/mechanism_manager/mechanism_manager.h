@@ -87,7 +87,7 @@ class MechanismManager
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode = SOFT);
 
     // Mechanism Manager external interface
-    //void InsertVM(std::string& model_name);
+    void InsertVM(std::string& model_name);
     void InsertVM();
     void DeleteVM(const int idx);
     void Stop();
@@ -112,7 +112,7 @@ class MechanismManager
 
   private:   
 
-    //void InsertVM_no_rt(std::string& model_name); // No Real time
+    void InsertVM_no_rt(std::string& model_name); // No Real time
     void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
 
