@@ -14,13 +14,13 @@ template <typename VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
 {
-    use_spline_xyz_ = true; // FIXME
+    use_spline_xyz_ = false; // FIXME
 
-    const int n_points = 100; // This is causing some troubles with the stack
+    const int n_points = 200; // This is causing some troubles with the stack
     Jz_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
-    std::vector<std::vector<double> > xyz(VM_t::state_dim_, std::vector<double>(n_points));
+
     Eigen::MatrixXd input_phase(n_points,1);
     Eigen::MatrixXd output_position(n_points,VM_t::state_dim_);
     //Eigen::MatrixXd output_position_dot(n_points,VM_t::state_dim_);
@@ -30,14 +30,26 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     this->fa_->predict(input_phase,output_position);
     //fa_->predictDot(input_phase,output_position,output_position_dot);
 
-    splines_xyz_.resize(VM_t::state_dim_);
-
-    // Copy to std vectors
-    for(int i=0;i<n_points;i++)
+    if(use_spline_xyz_)
     {
-        phase_for_spline[i] = input_phase(i);
-        for(int j=0;j<VM_t::state_dim_;j++)
-            xyz[j][i] = output_position(i,j);
+        std::vector<std::vector<double> > xyz(VM_t::state_dim_, std::vector<double>(n_points));
+        splines_xyz_.resize(VM_t::state_dim_);
+        // Copy to std vectors
+        for(int i=0;i<n_points;i++)
+        {
+            phase_for_spline[i] = input_phase(i,0);
+            for(int j=0;j<VM_t::state_dim_;j++)
+                xyz[j][i] = output_position(i,j);
+        }
+        for(int i=0;i<VM_t::state_dim_;i++)
+        {
+            splines_xyz_[i].set_points(phase_for_spline,xyz[i]);
+        }
+    }
+    else
+    {
+        for(int i=0;i<n_points;i++)
+            phase_for_spline[i] = input_phase(i,0);
     }
 
     // Compute the abscisse curviligne
@@ -58,11 +70,6 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 
     spline_phase_.set_points(abscisse_for_spline,phase_for_spline); // set_points(x,y) ----> z = f(s)
     spline_phase_inv_.set_points(phase_for_spline,abscisse_for_spline); // set_points(x,y) ----> s = g(z)
-
-    for(int i=0;i<VM_t::state_dim_;i++)
-    {
-        splines_xyz_[i].set_points(phase_for_spline,xyz[i]);
-    }
 
     loopCnt = 0;
     z_ = 0.0;
