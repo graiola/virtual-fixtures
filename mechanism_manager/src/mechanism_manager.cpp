@@ -115,13 +115,18 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
         //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
 
+    VectorXd empty_vect(position_dim_);
 
-    vm_state_.push_back(VectorXd(position_dim_));
-    vm_state_dot_.push_back(VectorXd(position_dim_));
+    vm_state_.push_back(empty_vect);
+    vm_state_dot_.push_back(empty_vect);
+    vm_jacobian_.push_back(empty_vect);
 
     vm_vector_.push_back(vm_tmp_ptr);
     vm_vector_.back()->setWeightedDist(use_weighted_dist_);
     vm_vector_.back()->setExecutionTime(execution_time_);
+
+    //filter_alpha_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
+    //filter_alpha_.back()->SetN(n_samples_filter_);
 
     if(second_order_)
     {
@@ -129,6 +134,7 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
     }
 
+    //delete vm_tmp_ptr;
 
     //getchar();
     //std::cout << "OK" << std::endl;
@@ -141,6 +147,7 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     PushBack(0.0,phase_dot_ref_);
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
+    PushBack(0.0,alpha_);
 
 
     /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
@@ -206,13 +213,19 @@ void MechanismManager::DeleteVM(const int idx)
 
 void MechanismManager::DeleteVM_no_rt(const int& idx)
 {
+
+   std::cout << "DELETE GUIDE N#"<< idx << std::endl;
+
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
    guard.lock();
    if(idx < vm_vector_.size())
    {
+       delete vm_vector_[idx];
        vm_vector_.erase(vm_vector_.begin()+idx);
        vm_state_.erase(vm_state_.begin()+idx);
        vm_state_dot_.erase(vm_state_dot_.begin()+idx);
+       vm_jacobian_.erase(vm_jacobian_.begin()+idx);
+       //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
        Delete(idx,scales_);
        Delete(idx,phase_);
@@ -222,12 +235,16 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        Delete(idx,phase_dot_ref_);
        Delete(idx,phase_ddot_ref_);
        Delete(idx,fade_);
+       Delete(idx,alpha_);
 
 #ifdef USE_ROS_RT_PUBLISHER
        rt_publishers_vector_.RemoveAll(idx);
 #endif
    }
    guard.unlock();
+
+   std::cout << "DELETE COMPLETE"<< idx << std::endl;
+
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -336,6 +353,14 @@ MechanismManager::MechanismManager()
       f_pos_prev_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
 
+
+      f_rob_.resize(position_dim_);
+      t_versor_.resize(position_dim_);
+      f_rob_t_ = 0.0;
+      f_rob_n_ = 0.0;
+      f_rob_norm_ = 1.0;
+
+
       // Clear
       tmp_eigen_vector_.fill(0.0);
       robot_position_.fill(0.0);
@@ -359,6 +384,7 @@ MechanismManager::MechanismManager()
         ros_node_.Init("mechanism_manager");
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"alpha",&alpha_);
     }
     catch(const std::runtime_error& e)
     {
@@ -374,6 +400,7 @@ MechanismManager::~MechanismManager()
         delete vm_vector_[i];
         //delete filter_phase_dot_[i];
         //delete filter_phase_ddot_[i];
+        //delete filter_alpha_[i];
         //delete vm_autom_[i];
       }
 
@@ -427,7 +454,7 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
         f_out = f_pos_;
 }
 void MechanismManager::Update(const prob_mode_t prob_mode)
-{
+{ 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
@@ -436,8 +463,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         {
             //vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
             vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
-
-            scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
 
             // Retrain variables for plots
             phase_(i) = vm_vector_[i]->getPhase();
@@ -448,8 +473,29 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
             fade_(i) = vm_vector_[i]->getFade();
 
+            // Retrain position/velocity and jacobian from the virtual mechanisms
             vm_vector_[i]->getState(vm_state_[i]);
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
+            vm_vector_[i]->getJacobian(vm_jacobian_[i]);
+
+            /////// HACKKKK
+            // Robot force components
+            /*f_rob_ = (robot_position_-vm_state_[i]);
+            f_rob_norm_ = f_rob_.norm();
+            t_versor_ = vm_jacobian_[i]/vm_jacobian_[i].norm();
+            f_rob_t_ = f_rob_.dot(t_versor_); // tangent
+            f_rob_n_ = (f_rob_ - f_rob_t_ * t_versor_).norm(); // normal
+            // compute escape_factor based on the tangentforce applied by the user/robot
+            //alpha_(i) = std::abs(f_rob_t_/f_rob_norm_)*(1.0-escape_factor_)+escape_factor_;
+            alpha_(i) = std::abs(f_rob_n_/f_rob_norm_)*(escape_factor_-1.0)+1.0; // opposte
+            //alpha_(i) = escape_factor_;
+            alpha_(i) = filter_alpha_[i]->Step(alpha_(i));
+            scales_(i) = vm_vector_[i]->getGaussian(robot_position_,alpha_(i));*/
+            /////// END HACKKKK
+
+            // Compute the gaussian activations
+            //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
+            scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
         }
 
         f_pos_.fill(0.0); // Reset the force
@@ -467,12 +513,11 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
                 scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 break;
             case SOFT:
-                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum;
+                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
                 break;
             default:
               break;
           }
-
             f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
           //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms           
         }
@@ -492,13 +537,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
 {
-        /*if(idx < vm_vector_.size())
-        {
-            tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
-            vm_vector_[idx]->getState(tmp_eigen_vector_);
-            VectorXd::Map(position_ptr, position_dim_) = tmp_eigen_vector_;
-        }*/
-
     tmp_eigen_vector_ = VectorXd::Map(position_ptr, position_dim_);
     GetVmPosition(idx,tmp_eigen_vector_);
     VectorXd::Map(position_ptr, position_dim_) = tmp_eigen_vector_;
@@ -506,13 +544,6 @@ void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
 
 void MechanismManager::GetVmVelocity(const int idx, double* const velocity_ptr)
 {
-    /*if(idx < vm_vector_.size())
-    {
-        tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
-        vm_vector_[idx]->getStateDot(tmp_eigen_vector_);
-        VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
-    }*/
-
     tmp_eigen_vector_ = VectorXd::Map(velocity_ptr, position_dim_);
     GetVmVelocity(idx,tmp_eigen_vector_);
     VectorXd::Map(velocity_ptr, position_dim_) = tmp_eigen_vector_;
@@ -592,324 +623,3 @@ bool MechanismManager::OnVm()
 }
 
 } // namespace
-
-
-
-
-/*
-bool MechanismManager::ReadConfig(std::string file_path) // FIXME Switch to ros param server
-{
-	YAML::Node main_node;
-	
-	try
-	{
-	    main_node = YAML::LoadFile(file_path);
-	}
-	catch(...)
-	{
-	    return false;
-	}
-	
-	// Retrain the parameters from yaml file
-	std::vector<std::string> model_names;
-    //std::vector<std::vector<double> > quat_start;
-    //std::vector<std::vector<double> > quat_end;
-	std::string models_path(pkg_path_+"/models/");
-    std::string prob_mode_string, mechanism_type;
-    int position_dim;
-    double K, B, Kf, Bf, inertia, fade_gain, Kr, Kfi;
-    bool normalize, second_order;
-	
-	main_node["models"] >> model_names;
-    main_node["quat_start"] >> quat_start_;
-    main_node["quat_end"] >> quat_end_;   
-	main_node["prob_mode"] >> prob_mode_string;
-	main_node["use_weighted_dist"] >> use_weighted_dist_;
-    main_node["execution_time"] >> execution_time_;
-	main_node["use_active_guide"] >> use_active_guide_;
-    main_node["position_dim"] >> position_dim;
-    main_node["K"] >> K;
-    main_node["B"] >> B;
-    main_node["Kf"] >> Kf;
-    main_node["Bf"] >> Bf;
-    main_node["Kfi"] >> Kfi;
-    main_node["n_samples_filter"] >> n_samples_filter_;
-    main_node["phase_dot_th"] >> phase_dot_th_;
-    main_node["r_th"] >> r_th_;
-    main_node["pre_auto_th"] >> pre_auto_th_;
-    main_node["normalize"] >> normalize;
-    main_node["mechanism_type"] >> mechanism_type;
-    main_node["escape_factor"] >> escape_factor_;
-    main_node["f_norm"] >> f_norm_;
-    main_node["second_order"] >> second_order;
-    main_node["inertia"] >> inertia;
-    main_node["Kr"] >> Kr;
-    main_node["fade_gain"] >> fade_gain;
-
-    assert(position_dim == 2 || position_dim == 3);
-    position_dim_ = position_dim;
-
-    assert(K >= 0.0);
-    assert(B >= 0.0);
-    assert(inertia > 0.0);
-    assert(Kr > 0.0);
-    assert(n_samples_filter_ > 0);
-    assert(phase_dot_th_ > 0.0);
-    assert(pre_auto_th_ > phase_dot_th_);
-    assert(r_th_ > 0.0);
-
-
-	if (prob_mode_string == "hard")
-	    prob_mode_ = HARD;
-	else if (prob_mode_string == "potential")
-	    prob_mode_ = POTENTIAL;
-	else if (prob_mode_string == "soft")
-	    prob_mode_ = SOFT;
-    else if (prob_mode_string == "escape")
-        prob_mode_ = ESCAPE;
-	else
-	    prob_mode_ = POTENTIAL; // Default
-
-
-    if (mechanism_type == "gmm")
-        mechanism_type_ = GMM;
-    else if (mechanism_type == "spline")
-        mechanism_type_ = SPLINE;
-    else
-        mechanism_type_ = GMM; // Default
-
-
-    // Create the virtual mechanisms starting from the models
- 	for(int i=0;i<model_names.size();i++)
-	{
-
-        std::vector<std::vector<double> > data;
-
-
-        switch(mechanism_type_)
-        {
-          case GMM:
-           {
-            ReadTxtFile((models_path+"gmm/"+model_names[i]).c_str(),data);
-            ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(models_path+"gmm/"+model_names[i]);
-            boost::shared_ptr<fa_t> fa_tmp_shr_ptr(new FunctionApproximatorGMR(model_parameters_gmr)); // Convert to shared pointer
-            if(normalize)
-            {
-                if(second_order)
-                {
-                    vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
-                }
-                else
-                    vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr)); // NOTE the vm always works in xyz so we use position_dim_
-            }
-            else
-            {
-                if(second_order)
-                {
-                    vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
-                    dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
-                }
-                else
-                    vm_vector_.push_back(new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,fa_tmp_shr_ptr));
-            }
-            }
-            break;
-          case SPLINE:
-            if(second_order)
-            {
-                vm_vector_.push_back(new VirtualMechanismSpline<VirtualMechanismInterfaceSecondOrder>(position_dim_,K,B,Kf,Bf,fade_gain,models_path+"spline/"+model_names[i]));
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKfi(Kfi);
-            }
-            else
-                vm_vector_.push_back(new VirtualMechanismSpline<VirtualMechanismInterfaceFirstOrder>(position_dim_,K,B,Kf,Bf,fade_gain,models_path+"spline/"+model_names[i]));
-            break;
-          default:
-            break;
-        }
-    }
-	return true;
-}
- */
-/*
-MechanismManager::MechanismManager()
-{
-      //position_dim_ = 2; // NOTE position dimension is fixed, xyz
-      orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
-
-#ifdef INCLUDE_ROS_CODE
-      pkg_path_ = ros::package::getPath("mechanism_manager");
-      std::string config_file_path(pkg_path_+"/config/cfg.yml");
-      if(ReadConfig(config_file_path))
-      {
-        ROS_INFO("Loaded config file: %s",config_file_path.c_str());
-      }
-      else
-      {
-        ROS_ERROR("Can not load config file: %s",config_file_path.c_str());
-      }
-#else
-      pkg_path_ = "/home/sybot/workspace/virtual-fixtures/mechanism_manager"; // FIXME
-      //pkg_path_ = PATH_TO_PKG;
-      std::string config_file_path(pkg_path_+"/config/cfg.yml");
-      bool file_read = ReadConfig(config_file_path);
-      assert(file_read);
-#endif
-
-      // Number of virtual mechanisms
-      vm_vector_.size() = vm_vector_.size();
-      assert(vm_vector_.size() >= 1);
-
-      // Initialize the virtual mechanisms and support vectors
-      for(int i=0; i<vm_vector_.size();i++)
-      {
-         //vm_vector_[i]->Init();
-         vm_vector_[i]->Init(quat_start_[i],quat_end_[i]);
-         vm_vector_[i]->setWeightedDist(use_weighted_dist_[i]);
-         vm_vector_[i]->setExecutionTime(execution_time_[i]);
-         vm_state_.push_back(VectorXd(position_dim_));
-         vm_state_dot_.push_back(VectorXd(position_dim_));
-         vm_jacobian_.push_back(VectorXd(position_dim_));
-         vm_quat_.push_back(VectorXd(orientation_dim_));
-         // HACK
-         filter_phase_dot_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
-         filter_phase_ddot_.push_back(new filters::M3DFilter(3));
-         vm_autom_.push_back(new VirtualMechanismAutom(pre_auto_th_,phase_dot_th_,r_th_)); // phase_dot_preauto_th, phase_dot_th
-         activated_.push_back(false); // NOTE we assume the guide not active at the beginning
-      }
-      for(int i=0; i<vm_vector_.size();i++)
-      {
-        filter_phase_dot_[i]->SetN(n_samples_filter_);
-        filter_phase_ddot_[i]->SetN(n_samples_filter_);
-      }
-
-      // Some Initializations
-      tmp_eigen_vector_.resize(position_dim_);
-      use_orientation_ = false;
-      active_guide_.resize(vm_vector_.size(),false);
-      scales_.resize(vm_vector_.size());
-      phase_.resize(vm_vector_.size());
-      escape_factors_.resize(vm_vector_.size());
-      //Kf_.resize(vm_vector_.size());
-      phase_dot_.resize(vm_vector_.size());
-      phase_ddot_.resize(vm_vector_.size());
-      f_rob_t_.resize(vm_vector_.size());
-      f_rob_n_.resize(vm_vector_.size());
-      robot_position_.resize(position_dim_);
-      robot_velocity_.resize(position_dim_);
-      robot_orientation_.resize(orientation_dim_);
-      orientation_error_.resize(3); // rpy
-      cross_prod_.resize(3);
-      f_pos_.resize(position_dim_);
-      f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
-      f_rob_.resize(position_dim_);
-      t_versor_.resize(position_dim_);
-      escape_field_.resize(vm_vector_.size());
-      phase_dot_filt_.resize(vm_vector_.size());
-      phase_ddot_filt_.resize(vm_vector_.size());
-      phase_dot_ref_.resize(vm_vector_.size());
-      phase_ddot_ref_.resize(vm_vector_.size());
-      phase_ref_.resize(vm_vector_.size());
-      phase_dot_ref_upper_.resize(vm_vector_.size());
-      phase_dot_ref_lower_.resize(vm_vector_.size());
-      fade_.resize(vm_vector_.size());
-      r_.resize(vm_vector_.size());
-      torque_.resize(vm_vector_.size());
-
-      // Clear
-      tmp_eigen_vector_.fill(0.0);
-      scales_.fill(0.0);
-      phase_.fill(0.0);
-      escape_factors_.fill(escape_factor_);
-      f_rob_t_.fill(0.0);
-      f_rob_n_.fill(0.0);
-      phase_dot_.fill(0.0);
-      phase_ddot_.fill(0.0);
-      robot_position_.fill(0.0);
-      robot_velocity_.fill(0.0);
-      orientation_error_.fill(0.0);
-      cross_prod_.fill(0.0);
-      robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
-      f_pos_.fill(0.0);
-      f_ori_.fill(0.0);
-      f_rob_.fill(0.0);
-      t_versor_.fill(0.0);
-      escape_field_.fill(0.0);
-      phase_dot_filt_.fill(0.0);
-      phase_ddot_filt_.fill(0.0);
-      phase_dot_ref_.fill(0.0);
-      phase_ddot_ref_.fill(0.0);
-      phase_ref_.fill(0.0);
-      phase_dot_ref_upper_.fill(0.0);
-      phase_dot_ref_lower_.fill(0.0);
-      fade_.fill(0.0);
-      r_.fill(0.0);
-      torque_.fill(0.0);
-
-      #ifdef USE_ROS_RT_PUBLISHER
-      try
-      {
-          ros_node_.Init("mechanism_manager");
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase",phase_.size(),&phase_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"Kf",Kf_.size(),&Kf_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot",phase_dot_.size(),&phase_dot_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot",phase_ddot_.size(),&phase_ddot_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"scales",scales_.size(),&scales_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_velocity_vect",robot_velocity_.size(),&robot_velocity_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"robot_position_vect",robot_position_.size(),&robot_position_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_pos",f_pos_.size(),&f_pos_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_factors",escape_factors_.size(),&escape_factors_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_n",f_rob_n_.size(),&f_rob_n_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"f_rob_t",f_rob_t_.size(),&f_rob_t_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field",escape_field_.size(),&escape_field_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"escape_field_compare",escape_field_compare_.size(),&escape_field_compare_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_filt",phase_dot_filt_.size(),&phase_dot_filt_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot_filt",phase_ddot_filt_.size(),&phase_ddot_filt_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ddot_ref",phase_ddot_ref_.size(),&phase_ddot_ref_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_ref",phase_ref_.size(),&phase_ref_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",phase_dot_ref_.size(),&phase_dot_ref_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_upper",phase_dot_ref_upper_.size(),&phase_dot_ref_upper_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref_lower",phase_dot_ref_lower_.size(),&phase_dot_ref_lower_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"fade",fade_.size(),&fade_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"r",r_.size(),&r_);
-          rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"torque",torque_.size(),&torque_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"p_dot_integrated",p_dot_integrated_.size(),&p_dot_integrated_);
-          //rt_publishers_values_.AddPublisher(ros_node_.GetNode(),"prob",prob_.size(),&prob_);
-          //rt_publishers_pose_.AddPublisher(ros_node_.GetNode(),"tracking_reference",tracking_reference_.size(),&tracking_reference_);
-          rt_publishers_path_.AddPublisher(ros_node_.GetNode(),"robot_pos",robot_position_.size(),&robot_position_);
-          //rt_publishers_wrench_.AddPublisher(ros_node_.GetNode(),"f_rob",f_pos_.size(),&f_pos_);
-
-          //std::string topic_name = "f_rob";
-          //std::string root_name = "map";
-          //boost::shared_ptr<RealTimePublisherWrench> tmp_ptr = boost::make_shared<RealTimePublisherWrench>(ros_node_.GetNode(),topic_name,root_name);
-          //rt_publishers_wrench_.AddPublisher(tmp_ptr,&f_pos_);
-          for(int i=0; i<vm_vector_.size();i++)
-          {
-            std::string topic_name = "vm_pos_" + std::to_string(i+1);
-            rt_publishers_path_.AddPublisher(ros_node_.GetNode(),topic_name,vm_state_[i].size(),&vm_state_[i]);
-            //topic_name = "vm_ker_" + std::to_string(i+1);
-            //boost::shared_ptr<RealTimePublisherMarkers> tmp_ptr = boost::make_shared<RealTimePublisherMarkers>(ros_node_.GetNode(),topic_name,root_name_);
-            //rt_publishers_markers_.AddPublisher(tmp_ptr,&vm_kernel_[i]);
-          }
-      }
-      catch(const std::runtime_error& e)
-      {
-        ROS_ERROR("Failed to create the real time publishers: %s",e.what());
-      }
-      #endif
-
-      // Define the scale threshold to check when a guide is more "probable"
-      scale_threshold_ = 1.0/static_cast<double>(vm_vector_.size());
-      
-      if(vm_vector_.size()>1)
-          scale_threshold_ = scale_threshold_ + 0.2;
-
-}
-  */
-

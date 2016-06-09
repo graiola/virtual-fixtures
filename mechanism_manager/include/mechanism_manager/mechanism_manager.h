@@ -158,6 +158,7 @@ class MechanismManager
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
+    std::vector<Eigen::VectorXd> vm_jacobian_;
     std::vector<vm_t*> vm_vector_;
 
     //std::vector<vm_struct> vm_vector_;
@@ -174,8 +175,9 @@ class MechanismManager
     double fade_gain_;
     bool use_orientation_;
 
-    std::vector<filters::M3DFilter* > filter_phase_dot_;
-    std::vector<filters::M3DFilter* > filter_phase_ddot_;
+    //std::vector<filters::M3DFilter* > filter_phase_dot_;
+    //std::vector<filters::M3DFilter* > filter_phase_ddot_;
+    //std::vector<filters::M3DFilter* > filter_alpha_;
     std::vector<VirtualMechanismAutom* > vm_autom_;
 
     // Thread stuff
@@ -188,6 +190,13 @@ class MechanismManager
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom
 
+    // Alpha computation
+    Eigen::VectorXd f_rob_;
+    double f_rob_norm_;
+    Eigen::VectorXd t_versor_;
+    double f_rob_t_;
+    double f_rob_n_;
+    Eigen::VectorXd alpha_;
 
 
 #ifdef INCLUDE_ROS_CODE
