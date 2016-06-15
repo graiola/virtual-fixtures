@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <cmath>
+
 
 #ifdef INCLUDE_ROS_CODE
 	////////// ROS
@@ -200,6 +202,18 @@ void WriteTxtFile(const char* filename, std::vector<std::vector<value_t> >& valu
      std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
     }
     myfile.close();
+}
+
+inline double Intersection2Width(double center1, double center2, double ratio)
+{
+    assert(ratio > 0.0 && ratio <= 1);
+    return std::abs(center2-center1)/(2.0*std::sqrt(2.0*std::log(1.0/ratio)));
+}
+
+inline double GaussMf(double x, double c, double sigma)
+{
+    assert(sigma>0);
+    return std::exp(-(x-c)*(x-c)/(2.0*sigma*sigma));
 }
 
 #ifdef INCLUDE_ROS_CODE
