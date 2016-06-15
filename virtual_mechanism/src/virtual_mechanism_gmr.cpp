@@ -16,7 +16,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 {
     use_spline_xyz_ = false; // FIXME
 
-    const int n_points = 200; // This is causing some troubles with the stack
+    const int n_points = 100; // This is causing some troubles with the stack
     Jz_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
@@ -336,7 +336,7 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 }
 
 template<class VM_t>
-double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos)
+double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos, const double scaling_factor)
 {
   UpdateInvCov();
   
@@ -353,7 +353,7 @@ double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos)
     determinant_cov_ *= covariance_(i,i);
   }
   
-  prob_ = exp(-0.5*prob_);
+  prob_ = exp(-0.5*scaling_factor*prob_);
 
   //prob_ = exp(-0.5*err_.transpose()*covariance_inv_*err_);
   //determinant_cov_ = covariance_inv_.determinant();
