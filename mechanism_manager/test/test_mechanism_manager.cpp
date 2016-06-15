@@ -124,7 +124,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocity)
 TEST(MechanismManagerTest, InsertVmMethod)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM());
+  EXPECT_NO_THROW(mm->InsertVM(model_name1));
 
   delete mm;
 }
@@ -132,7 +132,7 @@ TEST(MechanismManagerTest, InsertVmMethod)
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM());
+  EXPECT_NO_THROW(mm->InsertVM(model_name1));
 
   int pos_dim = mm->GetPositionDim();
 
@@ -168,7 +168,7 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
 TEST(MechanismManagerTest, LoopUpdate)
 {
   MechanismManager mm;;
-  //EXPECT_NO_THROW(mm.InsertVM(model_name1));
+  EXPECT_NO_THROW(mm.InsertVM(model_name1));
 
   int pos_dim = mm.GetPositionDim();
 
@@ -205,7 +205,7 @@ TEST(MechanismManagerTest, LoopUpdate)
       if (i == 50)
       {
           //std::cout << "InsertVM " << std::endl;
-          EXPECT_NO_THROW(mm.InsertVM());
+          EXPECT_NO_THROW(mm.InsertVM(model_name2));
       }
 
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
