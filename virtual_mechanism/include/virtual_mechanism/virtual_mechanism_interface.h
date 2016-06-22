@@ -163,8 +163,8 @@ class VirtualMechanismInterface
 
 	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
 	  
-	  virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;};
-	  virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;};
+      virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;}
+      virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
 	  
 	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
 	  inline void setActive(const bool active) {active_ = active;}
