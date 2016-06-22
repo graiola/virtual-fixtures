@@ -6,7 +6,6 @@
 
 ////////// Function Approximator
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
-//#include <functionapproximators/MetaParametersGMR.hpp>
 #include <functionapproximators/ModelParametersGMR.hpp>
 
 ////////// BOOST
@@ -59,15 +58,6 @@ class VirtualMechanismGmr: public VM_t
 	  double determinant_cov_;
 	  double prob_;
 	  bool use_weighted_dist_;
-
-	  /*virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt);
-	  Eigen::VectorXd normal_vector_;
-	  Eigen::VectorXd prev_normal_vector_;
-	  double max_std_variance_;
-	  double K_max_;
-	  double K_min_;
-	  double std_variance_;
-	  tool_box::MinJerk gain_adapter_;*/
 };
 
 template <typename VM_t>
