@@ -74,9 +74,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     loopCnt = 0;
     z_ = 0.0;
     z_dot_ = 0.0;
-
     z_dot_ref_ = 0.1;
-
 }
 
 template <typename VM_t>
@@ -184,30 +182,7 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateState()
 template<typename VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
 {
-
-    /*if(loopCnt%100==0)
-    {
-        std::cout << "****************" << std::endl;
-        std::cout << "this->z_dot_" << std::endl;
-        std::cout << this->z_dot_<< std::endl;
-    }*/
-
     VM_t::state_dot_ = this->Jz_ * this->z_dot_; // Keep the velocities of the demonstrations
-
-    //VM_t::state_dot_ = VM_t::J_ * VM_t::phase_dot_;
-
-
-    /*if(loopCnt%100==0)
-    {
-        std::cout << "****************" << std::endl;
-        std::cout << "VM_t::state_dot_ = VM_t::J_ * VM_t::phase_dot_;" << std::endl;
-        std::cout << VM_t::J_ * VM_t::phase_dot_ << std::endl;
-        std::cout << "VM_t::state_dot_ = this->J_no_norm_ * this->z_dot_;" << std::endl;
-        std::cout << this->J_no_norm_ * this->z_dot_<< std::endl;
-    }*/
-
-
-
 }
 
 template <typename VM_t>
@@ -400,17 +375,7 @@ template<class VM_t>
 double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 {
   err_ = pos - VM_t::state_;
-  /*if(use_weighted_dist_)
-  {
-    UpdateInvCov();
-    prob_ = 0.0;
-    for (int i = 0; i<VM_t::state_dim_; i++)
-      prob_ += err_(i)*err_(i)*covariance_(i,i);
-    return std::sqrt(prob_);
-  }
-  else*/
   return err_.norm();
-
 }
 
 // Explicitly instantiate the templates, and its member definitions
