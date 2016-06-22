@@ -14,9 +14,9 @@ template <typename VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
 {
-    use_spline_xyz_ = false; // FIXME
+    use_spline_xyz_ = true; // FIXME
 
-    const int n_points = 100; // This is causing some troubles with the stack
+    const int n_points = 1000; // This is causing some troubles with the stack
     Jz_.resize(VM_t::state_dim_,1);
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
@@ -217,44 +217,54 @@ VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
 }
 
 template <typename VM_t>
-void VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
+bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
-    fa_ = new fa_t(model_parameters_gmr);
-
-    delete model_parameters_gmr;
+    if(model_parameters_gmr!=NULL)
+    {
+        fa_ = new fa_t(model_parameters_gmr);
+        delete model_parameters_gmr;
+        return true;
+    }
+    else
+        return false;
 }
 
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-  
-  CreateGmrFromTxt(file_path);
 
-  assert(fa_->isTrained());
-  assert(fa_->getExpectedInputDim() == 1);
-  assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
+    if(CreateGmrFromTxt(file_path))
+    {
 
-  fa_input_.resize(1,1);
-  fa_output_.resize(1,VM_t::state_dim_);
-  fa_output_dot_.resize(1,VM_t::state_dim_);
-  variance_.resize(1,VM_t::state_dim_);
-  covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
-  covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
-  err_.resize(VM_t::state_dim_);
+      assert(fa_->isTrained());
+      assert(fa_->getExpectedInputDim() == 1);
+      assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
 
-  variance_.fill(1.0);
-  covariance_ = variance_.row(0).asDiagonal();
-  covariance_inv_.fill(0.0);
-  err_.fill(0.0);
-  prob_ = 0.0;
-  determinant_cov_ = 1.0;
+      fa_input_.resize(1,1);
+      fa_output_.resize(1,VM_t::state_dim_);
+      fa_output_dot_.resize(1,VM_t::state_dim_);
+      variance_.resize(1,VM_t::state_dim_);
+      covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
+      covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
+      err_.resize(VM_t::state_dim_);
 
-  // By default don't use the Mahalanobis distance
-  use_weighted_dist_ = false;
-  
-  // Initialize the state of the virtual mechanism
-  VM_t::Init();
+      variance_.fill(1.0);
+      covariance_ = variance_.row(0).asDiagonal();
+      covariance_inv_.fill(0.0);
+      err_.fill(0.0);
+      prob_ = 0.0;
+      determinant_cov_ = 1.0;
+
+      // By default don't use the Mahalanobis distance
+      use_weighted_dist_ = false;
+
+      // Initialize the state of the virtual mechanism
+      VM_t::Init();
+    }
+    else
+        throw new invalid_argument("The Function Approximator has not been created, NULL Pointer returned");
+
 }
 
 template<class VM_t>

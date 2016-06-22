@@ -37,7 +37,7 @@ class VirtualMechanismGmr: public VM_t
 	  
 	protected:
 	  
-      void CreateGmrFromTxt(const std::string file_path);
+      bool CreateGmrFromTxt(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();

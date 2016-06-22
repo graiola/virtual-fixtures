@@ -108,46 +108,56 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
 
     //if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
     //{
-    if(second_order_)
-        vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-        //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
-    else
-        vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-        //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
-
-    VectorXd empty_vect(position_dim_);
-
-    vm_state_.push_back(empty_vect);
-    vm_state_dot_.push_back(empty_vect);
-    vm_jacobian_.push_back(empty_vect);
-
-    vm_vector_.push_back(vm_tmp_ptr);
-    vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-    vm_vector_.back()->setExecutionTime(execution_time_);
-
-    //filter_alpha_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
-    //filter_alpha_.back()->SetN(n_samples_filter_);
-
-    if(second_order_)
+    try
     {
-        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+        if(second_order_)
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+            //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
+        else
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+            //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
+
+        VectorXd empty_vect(position_dim_);
+
+        vm_state_.push_back(empty_vect);
+        vm_state_dot_.push_back(empty_vect);
+        vm_jacobian_.push_back(empty_vect);
+
+        vm_vector_.push_back(vm_tmp_ptr);
+        vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+        vm_vector_.back()->setExecutionTime(execution_time_);
+
+        //filter_alpha_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
+        //filter_alpha_.back()->SetN(n_samples_filter_);
+
+        if(second_order_)
+        {
+            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+        }
+
+        //delete vm_tmp_ptr;
+
+        //getchar();
+        //std::cout << "OK" << std::endl;
+
+        PushBack(0.0,scales_);
+        PushBack(0.0,phase_);
+        PushBack(0.0,phase_dot_);
+        PushBack(0.0,phase_ddot_);
+        PushBack(0.0,phase_ref_);
+        PushBack(0.0,phase_dot_ref_);
+        PushBack(0.0,phase_ddot_ref_);
+        PushBack(0.0,fade_);
+        PushBack(0.0,alpha_);
+
+        std::cout << "DONE..."<< model_complete_path << std::endl;
+
     }
-
-    //delete vm_tmp_ptr;
-
-    //getchar();
-    //std::cout << "OK" << std::endl;
-
-    PushBack(0.0,scales_);
-    PushBack(0.0,phase_);
-    PushBack(0.0,phase_dot_);
-    PushBack(0.0,phase_ddot_);
-    PushBack(0.0,phase_ref_);
-    PushBack(0.0,phase_dot_ref_);
-    PushBack(0.0,phase_ddot_ref_);
-    PushBack(0.0,fade_);
-    PushBack(0.0,alpha_);
+    catch(...)
+    {
+        std::cout << "ERROR, IMPOSSIBLE TO CREATE THE GUIDE..."<< model_complete_path << std::endl;
+    }
 
 
     /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
@@ -155,8 +165,6 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
             std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
 
     guard.unlock(); // Unlock
-
-    std::cout << "DONE..."<< model_complete_path << std::endl;
 
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
@@ -513,7 +521,8 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
                 scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 break;
             case SOFT:
-                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
+                //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
+                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum; // To avoid numerical issues
                 break;
             default:
               break;
