@@ -51,7 +51,7 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 class VirtualMechanismAutom
 {
 public:
-    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double phase_ddot_th);
+    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th);
 
     void Step(const double phase_dot,const double phase_dot_ref, const double r);
     bool GetState();
@@ -63,13 +63,6 @@ private:
     double r_th_;
     state_t state_;
 };
-
-/*struct vm_struct
-{
-    Eigen::VectorXd state;
-    Eigen::VectorXd state_dot;
-    vm_t* vm;
-};*/
 
 class MechanismManager
 { 
@@ -104,11 +97,12 @@ class MechanismManager
     double GetScale(const int idx);
 
   protected:
+
     void Update(const prob_mode_t prob_mode);
     bool ReadConfig(std::string file_path);
     void Delete(const int idx, Eigen::VectorXd& vect);
     void PushBack(const double value, Eigen::VectorXd& vect);
-
+    void CheckForGuideActivation(const int idx);
 
   private:   
 
@@ -116,9 +110,6 @@ class MechanismManager
     void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
 
-    //enum prob_mode_t {HARD,POTENTIAL,SOFT};
-    //prob_mode_t prob_mode_;
-    
     std::string pkg_path_;
     
     long long loopCnt;
@@ -153,15 +144,15 @@ class MechanismManager
     double escape_factor_;
 
     double phase_dot_th_;
+    double phase_dot_preauto_th_;
     double r_th_;
-    double pre_auto_th_;
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
     std::vector<Eigen::VectorXd> vm_jacobian_;
     std::vector<vm_t*> vm_vector_;
+    std::vector<VirtualMechanismAutom* > vm_autom_;
 
-    //std::vector<vm_struct> vm_vector_;
     bool second_order_;
     bool use_weighted_dist_;
     bool use_active_guide_;
@@ -178,7 +169,7 @@ class MechanismManager
     //std::vector<filters::M3DFilter* > filter_phase_dot_;
     //std::vector<filters::M3DFilter* > filter_phase_ddot_;
     //std::vector<filters::M3DFilter* > filter_alpha_;
-    std::vector<VirtualMechanismAutom* > vm_autom_;
+
 
     // Thread stuff
     boost::thread thread_insert_;
@@ -191,19 +182,18 @@ class MechanismManager
     boost::atomic<int> nb_vm_prev_; // atom
 
     // Alpha computation
-    Eigen::VectorXd f_rob_;
+    /*Eigen::VectorXd f_rob_;
     double f_rob_norm_;
     Eigen::VectorXd t_versor_;
     double f_rob_t_;
     double f_rob_n_;
-    Eigen::VectorXd alpha_;
+    Eigen::VectorXd alpha_;*/
 
 
 #ifdef INCLUDE_ROS_CODE
     #ifdef USE_ROS_RT_PUBLISHER
         tool_box::RosNode ros_node_;
         tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
-        //tool_box::RealTimePublishers<tool_box::RealTimePublisherPath> rt_publishers_path_;
     #endif
 #endif
     

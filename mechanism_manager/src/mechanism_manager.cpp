@@ -32,22 +32,22 @@ void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_r
 {
     if(true)
     {
-    switch(state_)
-    {
-        case MANUAL:
-            if(phase_dot >= phase_dot_preauto_th_)
-                state_ = PREAUTO;
-            break;
-        case PREAUTO:
-            if(phase_dot <= (phase_dot_ref + phase_dot_th_))
-                state_ = AUTO;
-            break;
-        case AUTO:
-            //if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
-            if((std::abs(r) > (r_th_)))
-                state_ = MANUAL;
-            break;
-    }
+        switch(state_)
+        {
+            case MANUAL:
+                if(phase_dot >= phase_dot_preauto_th_)
+                    state_ = PREAUTO;
+                break;
+            case PREAUTO:
+                if(phase_dot <= (phase_dot_ref + phase_dot_th_))
+                    state_ = AUTO;
+                break;
+            case AUTO:
+                //if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
+                if((std::abs(r) > (r_th_)))
+                    state_ = MANUAL;
+                break;
+        }
     }
     else // Two states version
     {
@@ -105,17 +105,15 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     /*for(int i=0;i<scales_.size();i++)
         if(scales_(i) > 0.9)
             on_guide = true;*/
-
     //if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
     //{
     try
     {
         if(second_order_)
             vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-            //vm_vector_.push_back(vm_tmp_ptr); // NOTE the vm always works in xyz so we use position_dim_
+
         else
             vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-            //vm_vector_.push_back(new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path));
 
         VectorXd empty_vect(position_dim_);
 
@@ -125,7 +123,13 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
 
         vm_vector_.push_back(vm_tmp_ptr);
         vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-        vm_vector_.back()->setExecutionTime(execution_time_);
+
+        if(use_active_guide_)
+        {
+            vm_vector_.back()->setExecutionTime(execution_time_);
+            // Autom
+            vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_,r_th_));
+        }
 
         //filter_alpha_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
         //filter_alpha_.back()->SetN(n_samples_filter_);
@@ -136,11 +140,6 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
             dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
         }
 
-        //delete vm_tmp_ptr;
-
-        //getchar();
-        //std::cout << "OK" << std::endl;
-
         PushBack(0.0,scales_);
         PushBack(0.0,phase_);
         PushBack(0.0,phase_dot_);
@@ -149,7 +148,6 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         PushBack(0.0,phase_dot_ref_);
         PushBack(0.0,phase_ddot_ref_);
         PushBack(0.0,fade_);
-        PushBack(0.0,alpha_);
 
         std::cout << "DONE..."<< model_complete_path << std::endl;
 
@@ -169,19 +167,14 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
 #endif
-
-
 }
 
 void MechanismManager::InsertVM_no_rt()
 {
-
     std::string model_name;
     std::cout << "Insert model name: " << std::endl;
     std::cin >> model_name;
-
     InsertVM_no_rt(model_name);
-
 }
 
 void MechanismManager::InsertVM()
@@ -213,19 +206,21 @@ void MechanismManager::PushBack(const double value, VectorXd& vect)
 void MechanismManager::DeleteVM(const int idx)
 {
     // Delete only if I am not on the guide to erase
-
-    //MechanismManager::DeleteVM_no_rt(idx);
     thread_delete_ = boost::thread(&MechanismManager::DeleteVM_no_rt, this, idx);
-    //thread_delete_.join();
 }
 
 void MechanismManager::DeleteVM_no_rt(const int& idx)
 {
 
-   std::cout << "DELETE GUIDE N#"<< idx << std::endl;
+   std::cout << "DELETE GUIDE # "<< idx << std::endl;
 
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
    guard.lock();
+   if(idx < vm_autom_.size())
+   {
+       delete vm_autom_[idx];
+       vm_autom_.erase(vm_autom_.begin()+idx);
+   }
    if(idx < vm_vector_.size())
    {
        delete vm_vector_[idx];
@@ -243,7 +238,6 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        Delete(idx,phase_dot_ref_);
        Delete(idx,phase_ddot_ref_);
        Delete(idx,fade_);
-       Delete(idx,alpha_);
 
 #ifdef USE_ROS_RT_PUBLISHER
        rt_publishers_vector_.RemoveAll(idx);
@@ -251,8 +245,7 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
    }
    guard.unlock();
 
-   std::cout << "DELETE COMPLETE"<< idx << std::endl;
-
+   std::cout << "DELETE COMPLETE #"<< idx << std::endl;
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -268,10 +261,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
         return false;
     }
 
-    //std::string prob_mode_tmp;
-
     // Retrain basic parameters for all the virtual mechanisms
-    //main_node["prob_mode"] >> prob_mode_tmp;
     main_node["use_weighted_dist"] >> use_weighted_dist_;
     main_node["position_dim"] >> position_dim_;
     main_node["K"] >> K_;
@@ -283,11 +273,26 @@ bool MechanismManager::ReadConfig(std::string file_path)
         active_guide_node["execution_time"] >> execution_time_;
         active_guide_node["Kf"] >> Kf_;
         active_guide_node["Bf"] >> Bf_;
-        active_guide_node["n_samples_filter"] >> n_samples_filter_;
+        //active_guide_node["n_samples_filter"] >> n_samples_filter_;
         active_guide_node["phase_dot_th"] >> phase_dot_th_;
+        active_guide_node["phase_dot_preauto_th"] >> phase_dot_preauto_th_;
         active_guide_node["r_th"] >> r_th_;
-        active_guide_node["pre_auto_th"] >> pre_auto_th_;
         active_guide_node["fade_gain"] >> fade_gain_;
+        use_active_guide_ = true;
+
+        assert(Kf_ > 0.0);
+        assert(Bf_ > 0.0);
+        assert(fade_gain_ > 0.0);
+        assert(phase_dot_th_ > 0.0);
+        assert(phase_dot_preauto_th_ > phase_dot_th_);
+        assert(r_th_ > 0.0);
+    }
+    else
+    {
+        Kf_ = 1.0;
+        Bf_ = 1.0;
+        fade_gain_ = 1.0;
+        use_active_guide_ = false;
     }
 
     if(const YAML::Node& second_order_node = main_node["second_order"])
@@ -295,6 +300,9 @@ bool MechanismManager::ReadConfig(std::string file_path)
         second_order_node["inertia"] >> inertia_;
         second_order_node["Kr"] >> Kr_;
         second_order_ = true;
+
+        assert(inertia_ > 0.0);
+        assert(Kr_ > 0.0);
     }
     else
     {
@@ -305,26 +313,12 @@ bool MechanismManager::ReadConfig(std::string file_path)
 
     assert(K_ >= 0.0);
     assert(B_ >= 0.0);
-    assert(inertia_ > 0.0);
-    assert(Kr_ > 0.0);
-    assert(n_samples_filter_ > 0);
-    assert(phase_dot_th_ > 0.0);
-    assert(pre_auto_th_ > phase_dot_th_);
-    assert(r_th_ > 0.0);
 
-    /*
-    if (prob_mode_tmp == "hard")
-        prob_mode_ = HARD;
-    else if (prob_mode_tmp == "potential")
-        prob_mode_ = POTENTIAL;
-    else if (prob_mode_tmp == "soft")
-        prob_mode_ = SOFT;
-    else
-        prob_mode_ = POTENTIAL; // Default
-    */
+
+    //assert(n_samples_filter_ > 0);
+
     return true;
 }
-
 
 MechanismManager::MechanismManager()
 {
@@ -348,9 +342,6 @@ MechanismManager::MechanismManager()
       assert(file_read);
 #endif
 
-      //vm_vector_.size() = vm_vector_.size();
-      //assert(vm_vector_.size() >= 1);
-
       // Resize
       orientation_dim_ = 4; // NOTE orientation dimension is fixed, quaternion (w q1 q2 q3)
       tmp_eigen_vector_.resize(position_dim_);
@@ -360,14 +351,6 @@ MechanismManager::MechanismManager()
       f_pos_.resize(position_dim_);
       f_pos_prev_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
-
-
-      f_rob_.resize(position_dim_);
-      t_versor_.resize(position_dim_);
-      f_rob_t_ = 0.0;
-      f_rob_n_ = 0.0;
-      f_rob_norm_ = 1.0;
-
 
       // Clear
       tmp_eigen_vector_.fill(0.0);
@@ -392,7 +375,6 @@ MechanismManager::MechanismManager()
         ros_node_.Init("mechanism_manager");
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"alpha",&alpha_);
     }
     catch(const std::runtime_error& e)
     {
@@ -404,13 +386,13 @@ MechanismManager::MechanismManager()
 MechanismManager::~MechanismManager()
 {
       for(int i=0;i<vm_vector_.size();i++)
-      {
         delete vm_vector_[i];
         //delete filter_phase_dot_[i];
         //delete filter_phase_ddot_[i];
         //delete filter_alpha_[i];
-        //delete vm_autom_[i];
-      }
+
+      for(int i=0;i<vm_autom_.size();i++)
+        delete vm_autom_[i];
 
       thread_insert_.join();
       thread_delete_.join();
@@ -461,6 +443,19 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
     else
         f_out = f_pos_;
 }
+
+void MechanismManager::CheckForGuideActivation(const int idx)
+{
+    const double r = vm_vector_[idx]->getR();
+    const double phase_dot = vm_vector_[idx]->getPhaseDot();
+    const double phase_dot_ref = vm_vector_[idx]->getPhaseDotRef();
+    vm_autom_[idx]->Step(phase_dot,phase_dot_ref,r);
+    if(vm_autom_[idx]->GetState())
+        vm_vector_[idx]->setActive(true);
+    else
+        vm_vector_[idx]->setActive(false);
+}
+
 void MechanismManager::Update(const prob_mode_t prob_mode)
 { 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -469,6 +464,9 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
+            if(use_active_guide_)
+                CheckForGuideActivation(i);
+
             //vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
             vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
 
@@ -485,21 +483,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             vm_vector_[i]->getState(vm_state_[i]);
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
             vm_vector_[i]->getJacobian(vm_jacobian_[i]);
-
-            /////// HACKKKK
-            // Robot force components
-            /*f_rob_ = (robot_position_-vm_state_[i]);
-            f_rob_norm_ = f_rob_.norm();
-            t_versor_ = vm_jacobian_[i]/vm_jacobian_[i].norm();
-            f_rob_t_ = f_rob_.dot(t_versor_); // tangent
-            f_rob_n_ = (f_rob_ - f_rob_t_ * t_versor_).norm(); // normal
-            // compute escape_factor based on the tangentforce applied by the user/robot
-            //alpha_(i) = std::abs(f_rob_t_/f_rob_norm_)*(1.0-escape_factor_)+escape_factor_;
-            alpha_(i) = std::abs(f_rob_n_/f_rob_norm_)*(escape_factor_-1.0)+1.0; // opposte
-            //alpha_(i) = escape_factor_;
-            alpha_(i) = filter_alpha_[i]->Step(alpha_(i));
-            scales_(i) = vm_vector_[i]->getGaussian(robot_position_,alpha_(i));*/
-            /////// END HACKKKK
 
             // Compute the gaussian activations
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
@@ -521,8 +504,8 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
                 scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 break;
             case SOFT:
-                //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
-                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum; // To avoid numerical issues
+                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
+                //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum; // To avoid numerical issues
                 break;
             default:
               break;
@@ -537,11 +520,9 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
     else
         f_pos_ = f_pos_prev_; // Keep the previous force while the vectors are updating
 
-
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PublishAll();
 #endif
-
 }
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
