@@ -38,16 +38,6 @@ class VirtualMechanismInterface
           assert(Bf_ > 0.0);
           assert(fade_gain_ > 0.0);
 
-	      // Initialize the ros node
-          /*try
-	      {
-            ros_node_ptr_ = new tool_box::RosNode("virtual_mechanism"); // FIXME change here the name
-	      }
-	      catch(std::runtime_error err)
-	      {
-            std::cout<<err.what()<<std::endl;
-          }*/
-	      
 	      // Initialize/resize the attributes
 	      // NOTE We assume that the phase has dim 1x1
 	      state_.resize(state_dim);
@@ -201,7 +191,7 @@ class VirtualMechanismInterface
           inline double getB() const {return B_;}
           inline void setK(const double& K){assert(K > 0.0); K_ = K;}
           inline void setB(const double& B){assert(B > 0.0); B_ = B;}
-	  
+
           inline void Init()
           {
               // Initialize the attributes
@@ -211,17 +201,17 @@ class VirtualMechanismInterface
               ComputeInitialState();
               ComputeFinalState();
           }
-          
+
           inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
           {
              assert(q_start.size() == 4);
              assert(q_end.size() == 4);
-             
+
              q_start_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
              q_end_.reset(new quaternion_t(q_end[0],q_end[1],q_end[2],q_end[3]));
-             
+
              quaternion_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
-             
+
              update_quaternion_ = true;
 
              Init();
@@ -469,7 +459,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
 	      JxJt_.noalias() = J_transp_ * J_;
-	    
+
 	      torque_.noalias() = J_transp_ * force;
 
           phase_state_(0) = phase_;
@@ -478,14 +468,14 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           if(active_)
           {
              fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-             p_dot_integrated_ = p_dot_integrated_ + (inertia_ * phase_ddot_) * dt; // with tau
+             //p_dot_integrated_ = p_dot_integrated_ + (inertia_ * phase_ddot_) * dt; // with tau
              //p_dot_integrated_ = p_dot_integrated_ + (- inertia_ * phase_dot_ + control_) * dt; // without tau
              error_integrated_ = Kfi_ * (error_integrated_ + (phase_ref_ - phase_) * dt);
           }
           else
           {
              fade_ = fade_gain_ * (-fade_) * dt + fade_;
-             p_dot_integrated_ = p_;
+             //p_dot_integrated_ = p_;
              error_integrated_ = 0.0;
           }
 
@@ -498,10 +488,12 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
           phase_ddot_ = phase_state_dot_(1);
-	      
-          p_ = inertia_ * phase_dot_;
 
-          r_ = Kr_ * (p_ - p_dot_integrated_);
+          //p_ = inertia_ * phase_dot_;
+
+          //r_ = Kr_ * (p_ - p_dot_integrated_);
+
+          r_ = torque_(0)/J_transp_.norm();
 	  }
 	  
 	  Eigen::VectorXd phase_state_;
