@@ -22,7 +22,7 @@ class VirtualMechanismSpline: public VM_t
       VirtualMechanismSpline(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const std::string file_path);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
-      virtual void setWeightedDist(const bool activate); // FIXME: Fake function
+      //virtual void setWeightedDist(const bool activate); // FIXME: Fake function
       virtual double getGaussian(const Eigen::VectorXd& pos);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
       //void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);

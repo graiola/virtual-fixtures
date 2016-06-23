@@ -156,11 +156,11 @@ double VirtualMechanismSpline<VM_t>::getGaussian(const VectorXd& pos)
 
 }
 
-template<class VM_t>
+/*template<class VM_t>
 void VirtualMechanismSpline<VM_t>::setWeightedDist(const bool activate)
 {
   //use_weighted_dist_ = activate;
-}
+}*/
 
 template<class VM_t>
 double VirtualMechanismSpline<VM_t>::getDistance(const VectorXd& pos)

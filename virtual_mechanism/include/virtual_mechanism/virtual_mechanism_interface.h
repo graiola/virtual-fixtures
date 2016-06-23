@@ -147,7 +147,7 @@ class VirtualMechanismInterface
 	  
       // TO BE MOVED IN ANOTHER SUBCLASS!
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
-      virtual void setWeightedDist(const bool activate)=0;
+      inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
 
