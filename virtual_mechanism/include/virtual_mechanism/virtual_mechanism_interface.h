@@ -389,9 +389,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           Kr_ = Kr;
           Kfi_ = Kfi;
 
-          //phase_dot_prev_ = 0.0;
-          //phase_ddot_ = 0.0;
-	      
 	      // Resize the attributes
 	      phase_state_.resize(2); //phase_ and phase_dot
           phase_state_dot_.resize(2); //phase_dot and phase_ddot
@@ -414,42 +411,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           control_ = 0.0;
           error_integrated_ = 0.0;
 
-          r_ = 0.0;
-              
+          r_ = 0.0;   
 	  }
 	
-      /*virtual ~VirtualMechanismInterfaceSecondOrder()
-	  {
-	    
-	  }
-	  
-      using VirtualMechanismInterface::Update; // Use the VirtualMechanismInterface overloaded function
-	  
-	  virtual void Update(Eigen::VectorXd& force, const double dt)
-	  {
-	    
-	    phase_dot_prev_ = phase_dot_;
-	    VirtualMechanismInterface::Update(force,dt);
-	    
-      }*/
-	  
-      /*virtual void ApplySaturation()
-	  {
-	      // Saturations
-	      if(phase_ > 1.0)
-	      {
-		//LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
-		phase_ = 1;
-		phase_dot_ = 0;
-	      }
-	      else if (phase_ < 0.0)
-	      {
-		//LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
-		phase_ = 0;
-		phase_dot_ = 0;
-          }
-      }*/
-	  
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
       inline void setKr(const double Kr) {assert(Kr > 0.0); Kr_ = Kr;}
       inline void setKfi(const double Kfi) {assert(Kfi >= 0.0); Kfi_ = Kfi;}
@@ -491,41 +455,14 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
          //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
          //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
-
          //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
          //phase_state_dot_(1) = (1/inertia_)*(-0.00001 * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0))));
          //phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
          //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
+         //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
 
-          //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
-
-          phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
-
-         /* OLD STUFF WITH MOVE FORWARD AND BACKWARD... deprecated
-            // HACK 
-            if(phase_dot_> 0.2)
-                moveForward();
-            else if(phase_dot_< -0.2)
-                moveBackward();
-            // Compute phase dot
-            if(move_forward_) // Go forward
-            {
-                //std::cout << "Forward" <<std::endl;
-                //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-                //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
-            }
-            else // Go back
-            {
-                //std::cout << "Backward" <<std::endl;
-                //Kf_ = adaptive_gain_ptr_->ComputeGain((0 - phase_state(0)));
-                //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (0 - phase_state(0))) );
-            }*/
-
-	     //Kf_ = adaptive_gain_ptr_->ComputeGain((1 - phase_state(0)));
-	     //phase_state_dot_(1) = 10*( - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0))) );
-
-
-         phase_state_dot_(0) = phase_state(1); // original
+         phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
+         phase_state_dot_(0) = phase_state(1);
          //phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
@@ -535,40 +472,22 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	      torque_.noalias() = J_transp_ * force;
 
-          //phase_state_(0) = phase_prev_;
-          //phase_state_(1) = phase_dot_prev_;
           phase_state_(0) = phase_;
           phase_state_(1) = phase_dot_;
-          // For compatibility
-          //phase_prev_ = phase_;
-          //phase_dot_prev_ = phase_dot_;
 	        
           if(active_)
           {
              fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));
-             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
-
              p_dot_integrated_ = p_dot_integrated_ + (inertia_ * phase_ddot_) * dt; // with tau
-             //p_dot_integrated_ = p_dot_integrated_ + (- 0.1 * phase_dot_ + control_) * dt; // without tau
-
+             //p_dot_integrated_ = p_dot_integrated_ + (- inertia_ * phase_dot_ + control_) * dt; // without tau
              error_integrated_ = Kfi_ * (error_integrated_ + (phase_ref_ - phase_) * dt);
           }
           else
           {
              fade_ = fade_gain_ * (-fade_) * dt + fade_;
-             //phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - input + fade_ * (- Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0)));;
-             //phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
              p_dot_integrated_ = p_;
-
              error_integrated_ = 0.0;
-
           }
-
-          //orientation_integral_ = orientation_integral_ + orientation_error_ * dt_;
-
-
-          //control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
 
           control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_) + error_integrated_);
 	      
@@ -583,29 +502,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           p_ = inertia_ * phase_dot_;
 
           r_ = Kr_ * (p_ - p_dot_integrated_);
-
-	      //DynSystem(const Eigen::VectorXd& phase_state, const double& dt, const double& input);
-	      
-	      /*if(active_)
-	        phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0) - Bf_ * phase_state(1) + Kf_ * (1 - phase_state(0));
-		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0) - Bf_ * phase_dot_ + Kf_ * (1 - phase_);
-	      else
-		phase_state_dot_(1) = - B_ * JxJt_(0,0) * phase_state(1) - torque_(0,0);
-		//phase_ddot_ = - B_ * JxJt_(0,0) * phase_dot_ - torque_(0,0);
-	      
-	      phase_state_dot_(0) = phase_state(1);*/
-
-	      // Compute the new phase
-	      // FIXME Switch to RungeKutta  
-
-          /*phase_ddot_ = (1/inertia_)*( - torque_(0) - 0.1 * phase_dot_ + control_ );
-          phase_dot_ = phase_ddot_ * dt + phase_dot_prev_;
-          phase_ = phase_dot_ * dt + phase_prev_;*/
 	  }
 	  
-      //double phase_dot_prev_;
-      //double phase_ddot_;
-
 	  Eigen::VectorXd phase_state_;
 	  Eigen::VectorXd phase_state_dot_;
 	  Eigen::VectorXd phase_state_integrated_;
