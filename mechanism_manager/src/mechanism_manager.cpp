@@ -148,6 +148,7 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         PushBack(0.0,phase_dot_ref_);
         PushBack(0.0,phase_ddot_ref_);
         PushBack(0.0,fade_);
+        PushBack(0.0,r_);
 
         std::cout << "DONE..."<< model_complete_path << std::endl;
 
@@ -238,6 +239,7 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        Delete(idx,phase_dot_ref_);
        Delete(idx,phase_ddot_ref_);
        Delete(idx,fade_);
+       Delete(idx,r_);
 
 #ifdef USE_ROS_RT_PUBLISHER
        rt_publishers_vector_.RemoveAll(idx);
@@ -374,7 +376,9 @@ MechanismManager::MechanismManager()
     {
         ros_node_.Init("mechanism_manager");
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
     }
     catch(const std::runtime_error& e)
     {
@@ -454,6 +458,8 @@ void MechanismManager::CheckForGuideActivation(const int idx)
         vm_vector_[idx]->setActive(true);
     else
         vm_vector_[idx]->setActive(false);
+
+    r_(idx) = r;
 }
 
 void MechanismManager::Update(const prob_mode_t prob_mode)
@@ -467,8 +473,10 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             if(use_active_guide_)
                 CheckForGuideActivation(i);
 
-            //vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
-            vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
+            if(second_order_)
+                vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
+            else
+                vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
 
             // Retrain variables for plots
             phase_(i) = vm_vector_[i]->getPhase();
