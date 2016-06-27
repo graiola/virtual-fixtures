@@ -36,6 +36,12 @@ else()
 
 endif(NO_ROS_LIBS)
 
+## Visualize the folders src and include in QtCreator
+FILE(GLOB_RECURSE include_files "include/*.h")
+add_custom_target(headers SOURCES ${include_files})
+FILE(GLOB_RECURSE src_files "src/*.cpp")
+add_custom_target(src SOURCES ${src_files})
+
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${INCLUDE_INSTALL_DIR}
