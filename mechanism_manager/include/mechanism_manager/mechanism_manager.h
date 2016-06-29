@@ -120,6 +120,10 @@ class MechanismManager
     Eigen::VectorXd tmp_eigen_vector_; // Used to convert std to eigen vector
 
     Eigen::VectorXd f_pos_;
+    Eigen::VectorXd f_K_;
+    Eigen::VectorXd f_B_;
+    Eigen::VectorXd err_pos_;
+    Eigen::VectorXd err_vel_;
     Eigen::VectorXd f_ori_;
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
@@ -149,6 +153,8 @@ class MechanismManager
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;
+    std::vector<Eigen::MatrixXd> vm_K_;
+    std::vector<Eigen::MatrixXd> vm_B_;
     std::vector<Eigen::VectorXd> vm_jacobian_;
     std::vector<vm_t*> vm_vector_;
     std::vector<VirtualMechanismAutom* > vm_autom_;
@@ -157,8 +163,8 @@ class MechanismManager
     bool use_weighted_dist_;
     bool use_active_guide_;
     double execution_time_;
-    double K_;
-    double B_;
+    std::vector<double> K_;
+    std::vector<double> B_;
     double Kf_;
     double Bf_;
     double inertia_;

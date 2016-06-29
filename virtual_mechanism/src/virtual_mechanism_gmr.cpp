@@ -11,7 +11,7 @@ namespace virtual_mechanism_gmr
 {
 
 template <typename VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path):
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
 {
     use_spline_xyz_ = true; // FIXME
@@ -32,7 +32,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 
     if(use_spline_xyz_)
     {
-        std::vector<std::vector<double> > xyz(VM_t::state_dim_, std::vector<double>(n_points));
+        vector<vector<double> > xyz(VM_t::state_dim_, vector<double>(n_points));
         splines_xyz_.resize(VM_t::state_dim_);
         // Copy to std vectors
         for(int i=0;i<n_points;i++)
@@ -206,7 +206,7 @@ bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 }
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
 
     if(CreateGmrFromTxt(file_path))

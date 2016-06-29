@@ -28,42 +28,64 @@ namespace virtual_mechanism_interface
 class VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterface(int state_dim, double K, double B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),exec_time_(10.0),K_(K),B_(B),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+      VirtualMechanismInterface(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),exec_time_(10.0),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
-	      assert(state_dim_ == 2 || state_dim_ == 3); 
-	      assert(K_ > 0.0);
-	      assert(B_ > 0.0);
+          assert(state_dim_ == 2 || state_dim_ == 3);
+          assert(K.size() == state_dim_);
+          assert(B.size() == K.size());
+          for(unsigned int i=0; i<K.size(); i++)
+          {
+            assert(K[i] > 0.0);
+            assert(B[i] > 0.0);
+          }
 	      assert(Kf_ > 0.0);
           assert(Bf_ > 0.0);
           assert(fade_gain_ > 0.0);
 
 	      // Initialize/resize the attributes
 	      // NOTE We assume that the phase has dim 1x1
-	      state_.resize(state_dim);
-	      state_dot_.resize(state_dim);
+          state_.resize(state_dim);
+          state_dot_.resize(state_dim);
+          displacement_.resize(state_dim);
 	      torque_.resize(1);
-	      force_.resize(state_dim);
+          force_.resize(state_dim);
+          force_pos_.resize(state_dim);
+          force_vel_.resize(state_dim);
 	      final_state_.resize(state_dim);
 	      initial_state_.resize(state_dim);
 	      J_.resize(state_dim,1);
 	      J_transp_.resize(1,state_dim);
-	      JxJt_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+          BxJ_.resize(state_dim,1);
+          JtxBxJ_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
 	      
+          // Create a diagonal gain matrix
+          if(K.size() == 2)
+          {
+            K_ = Eigen::DiagonalMatrix<double,2>(K[0],K[1]);
+            B_ = Eigen::DiagonalMatrix<double,2>(B[0],B[1]);
+          }
+          else if(K.size() == 3)
+          {
+            K_ = Eigen::DiagonalMatrix<double,3>(K[0],K[1],K[2]);
+            B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
+          }
+
+
               // Default quaternions
               //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
               //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
               //quaternion_ << 1.0,0.0,0.0,0.0;
               
-          adaptive_gain_ptr_ = new tool_box::AdaptiveGain(K_,K_/100,0.01); //double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0
+          //adaptive_gain_ptr_ = new tool_box::AdaptiveGain(K_,K_/100,0.01); //double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
 	   {
           //if(ros_node_ptr_!=NULL)
             //delete ros_node_ptr_;
-	      if(adaptive_gain_ptr_!=NULL)
-            delete adaptive_gain_ptr_;
+          //if(adaptive_gain_ptr_!=NULL)
+          //  delete adaptive_gain_ptr_;
 	   }
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
@@ -135,11 +157,12 @@ class VirtualMechanismInterface
 	      if(adapt_gains_) //FIXME
             AdaptGains(pos,dt);
 	      
-
           //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
 
-	      force_ = K_ * (state_ - pos);
-	      force_ = force_ - B_ * vel;
+          displacement_.noalias() = state_ - pos;
+          force_pos_.noalias() = K_ * displacement_;
+          force_vel_.noalias() = B_ * vel;
+          force_ = force_pos_ - force_vel_;
           force_ = scale_ * force_;
 	      //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
 	      Update(force_,dt);
@@ -187,10 +210,10 @@ class VirtualMechanismInterface
               
           }
           inline double getKf() const {return Kf_;}
-          inline double getK() const {return K_;}
-          inline double getB() const {return B_;}
-          inline void setK(const double& K){assert(K > 0.0); K_ = K;}
-          inline void setB(const double& B){assert(B > 0.0); B_ = B;}
+          inline void getK(Eigen::MatrixXd& K) const {K = K_;}
+          inline void getB(Eigen::MatrixXd& B) const {B = B_;}
+          //inline void setK(const double& K){assert(K > 0.0); K_ = K;}
+          //inline void setB(const double& B){assert(B > 0.0); B_ = B;}
 
           inline void Init()
           {
@@ -252,24 +275,27 @@ class VirtualMechanismInterface
 
 	  int state_dim_;
       bool update_quaternion_;
-	  Eigen::VectorXd state_;
-	  Eigen::VectorXd state_dot_;
+      Eigen::VectorXd displacement_;
+      Eigen::VectorXd state_;
+      Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
-	  Eigen::VectorXd force_;
+      Eigen::VectorXd force_;
+      Eigen::VectorXd force_pos_;
+      Eigen::VectorXd force_vel_;
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
       boost::shared_ptr<quaternion_t > q_start_;
       boost::shared_ptr<quaternion_t > q_end_;
       boost::shared_ptr<quaternion_t > quaternion_;
-	  Eigen::MatrixXd JxJt_;
+      Eigen::MatrixXd BxJ_;
+      Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
       //Eigen::VectorXd J_vector_;
 
-
 	  // Gains
-	  double B_;
-	  double K_;
+      Eigen::MatrixXd B_;
+      Eigen::MatrixXd K_;
 	  
 	  // Clamping
 	  double clamp_;
@@ -283,7 +309,7 @@ class VirtualMechanismInterface
 	  double fade_;
 	  bool active_;
 	  bool move_forward_;
-	  tool_box::AdaptiveGain* adaptive_gain_ptr_;
+      //tool_box::AdaptiveGain* adaptive_gain_ptr_;
 
       double dt_;
       double r_;
@@ -299,7 +325,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, double K, double B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
         assert(epsilon > 0.1);
@@ -319,7 +345,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
-	      JxJt_.noalias() = J_transp_ * J_;
+          BxJ_.noalias() = B_ * J_;
+          JtxBxJ_.noalias() = J_transp_ * BxJ_;
+
           /*
 	      // Adapt Bf
 	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
@@ -327,7 +355,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
           det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
           */
 
-          det_ = B_ * JxJt_(0,0) + Bf_;
+          det_ = JtxBxJ_(0,0) + Bf_;
 
 	      torque_.noalias() = J_transp_ * force;
 	      
@@ -365,7 +393,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
 	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, double K, double B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0, double Kfi = 0.01):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0, double Kfi = 0.01):
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
 	      
@@ -458,7 +486,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
-	      JxJt_.noalias() = J_transp_ * J_;
+          //BxJ_.noalias() = B_ * J_;
+          //JtxBxJ_.noalias() = J_transp_ * BxJ_;
 
 	      torque_.noalias() = J_transp_ * force;
 

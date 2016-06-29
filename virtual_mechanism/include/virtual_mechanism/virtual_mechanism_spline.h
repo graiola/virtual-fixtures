@@ -19,7 +19,7 @@ class VirtualMechanismSpline: public VM_t
 {
 	public:
 
-      VirtualMechanismSpline(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const std::string file_path);
+      VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       //virtual void setWeightedDist(const bool activate); // FIXME: Fake function

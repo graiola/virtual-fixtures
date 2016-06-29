@@ -116,9 +116,12 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
             vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
         VectorXd empty_vect(position_dim_);
+        MatrixXd empty_mat(position_dim_,position_dim_);
 
         vm_state_.push_back(empty_vect);
         vm_state_dot_.push_back(empty_vect);
+        vm_K_.push_back(empty_mat);
+        vm_B_.push_back(empty_mat);
         vm_jacobian_.push_back(empty_vect);
 
         vm_vector_.push_back(vm_tmp_ptr);
@@ -228,6 +231,8 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        vm_vector_.erase(vm_vector_.begin()+idx);
        vm_state_.erase(vm_state_.begin()+idx);
        vm_state_dot_.erase(vm_state_dot_.begin()+idx);
+       vm_K_.erase(vm_K_.begin()+idx);
+       vm_B_.erase(vm_B_.begin()+idx);
        vm_jacobian_.erase(vm_jacobian_.begin()+idx);
        //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
@@ -313,11 +318,12 @@ bool MechanismManager::ReadConfig(std::string file_path)
         second_order_ = false;
     }
 
-    assert(K_ >= 0.0);
-    assert(B_ >= 0.0);
-
-
-    //assert(n_samples_filter_ > 0);
+    assert(K_.size() == B_.size());
+    for(unsigned int i=0; i<K_.size(); i++)
+    {
+        assert(K_[i] >= 0.0);
+        assert(B_[i] >= 0.0);
+    }
 
     return true;
 }
@@ -351,6 +357,10 @@ MechanismManager::MechanismManager()
       robot_velocity_.resize(position_dim_);
       robot_orientation_.resize(orientation_dim_);
       f_pos_.resize(position_dim_);
+      f_K_.resize(position_dim_);
+      f_B_.resize(position_dim_);
+      err_pos_.resize(position_dim_);
+      err_vel_.resize(position_dim_);
       f_pos_prev_.resize(position_dim_);
       f_ori_.resize(3); // NOTE The dimension is always 3 for rpy
 
@@ -360,6 +370,10 @@ MechanismManager::MechanismManager()
       robot_velocity_.fill(0.0);
       robot_orientation_ << 1.0, 0.0, 0.0, 0.0;
       f_pos_.fill(0.0);
+      f_K_.fill(0.0);
+      f_B_.fill(0.0);
+      err_pos_.fill(0.0);
+      err_vel_.fill(0.0);
       f_pos_prev_.fill(0.0);
       f_ori_.fill(0.0);
 
@@ -490,6 +504,8 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             // Retrain position/velocity and jacobian from the virtual mechanisms
             vm_vector_[i]->getState(vm_state_[i]);
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
+            vm_vector_[i]->getK(vm_K_[i]);
+            vm_vector_[i]->getB(vm_B_[i]);
             vm_vector_[i]->getJacobian(vm_jacobian_[i]);
 
             // Compute the gaussian activations
@@ -518,7 +534,11 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             default:
               break;
           }
-            f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_state_[i] - robot_position_) + vm_vector_[i]->getB() * (vm_state_dot_[i] - robot_velocity_)); // Sum over all the vms
+            err_pos_ = vm_state_[i] - robot_position_;
+            f_K_ .noalias() = vm_K_[i] * err_pos_;
+            err_vel_ = vm_state_dot_[i] - robot_velocity_;
+            f_B_.noalias() = vm_B_[i] * err_vel_;
+            f_pos_ += scales_(i) * (f_K_ + f_B_); // Sum over all the vms
           //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms           
         }
         f_pos_prev_ = f_pos_;

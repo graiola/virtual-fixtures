@@ -25,7 +25,7 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-      VirtualMechanismGmr(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const std::string file_path);
+      VirtualMechanismGmr(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
       ~VirtualMechanismGmr();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
@@ -65,7 +65,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
-      VirtualMechanismGmrNormalized(int state_dim, double K, double B, double Kf, double Bf, double fade_gain,  const std::string file_path);
+      VirtualMechanismGmrNormalized(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain,  const std::string file_path);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 
     protected:

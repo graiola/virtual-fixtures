@@ -40,7 +40,7 @@ void VirtualMechanismSpline<VM_t>::CreateSplineFromTxt(const string file_path)
 
 
 template <typename VM_t>
-VirtualMechanismSpline<VM_t>::VirtualMechanismSpline(int state_dim, double K, double B, double Kf, double Bf, double fade_gain, const string file_path):
+VirtualMechanismSpline<VM_t>::VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
     VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
     CreateSplineFromTxt(file_path);

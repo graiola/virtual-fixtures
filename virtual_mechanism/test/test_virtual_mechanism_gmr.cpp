@@ -20,11 +20,11 @@ using namespace DmpBbo;
 
 int test_dim = 3;
 double dt = 0.001;
-double K = 100.0;
-double B = 20.0;
 double Kf = 100.0;
 double Bf = 20.0;
 double fade_gain = 10.0;
+std::vector<double> K(test_dim,100.0);
+std::vector<double> B(test_dim,20.0);
 
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
@@ -44,7 +44,7 @@ TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
 {
-  
+
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
   EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
@@ -70,7 +70,7 @@ TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
   // Force input interface
   EXPECT_NO_THROW(vm1.Update(force,dt));
   EXPECT_NO_THROW(vm2.Update(force,dt));
-  
+
   // Cart input interface
   EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
   EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
@@ -146,6 +146,8 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   
 }
 
+
+
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
   boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
@@ -215,6 +217,9 @@ TEST(VirtualMechanismGmrTest, GetMethods)
   EXPECT_NO_THROW(vm1.getStateDot(state_dot));
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
+
+
+
 /*
 TEST(VirtualMechanismGmrTest, TestGMR)
 {
