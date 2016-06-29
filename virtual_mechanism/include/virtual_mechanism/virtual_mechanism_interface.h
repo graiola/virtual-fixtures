@@ -227,7 +227,7 @@ class VirtualMechanismInterface
 
       virtual inline void UpdateStateDot()
 	  {
-	      state_dot_ = J_ * phase_dot_;
+          state_dot_ = J_ * phase_dot_;
 	  }
 	  
 	  inline void UpdateQuaternion()
@@ -401,7 +401,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           control_ = 0.0;
           error_integrated_ = 0.0;
 
-          r_ = 0.0;   
+          r_ = 0.0;
 	  }
 	
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
@@ -499,7 +499,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  Eigen::VectorXd phase_state_;
 	  Eigen::VectorXd phase_state_dot_;
 	  Eigen::VectorXd phase_state_integrated_;
-	  Eigen::VectorXd state_dot_;
+      //Eigen::VectorXd state_dot_;
  
 	  Eigen::VectorXd k1_, k2_, k3_, k4_;
 
