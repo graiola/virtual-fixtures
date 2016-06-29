@@ -18,7 +18,7 @@ using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;
 
-int test_dim = 2;
+int test_dim = 3;
 double dt = 0.001;
 double K = 100.0;
 double B = 20.0;
@@ -30,7 +30,7 @@ typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 std::string file_name_spline = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/test_spline1.txt"; // FIXME
-std::string file_name_gmr = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test1.txt"; // FIXME
+std::string file_name_gmr = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test3d.txt"; // FIXME
 
 /*
 TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
@@ -40,21 +40,21 @@ TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
 
   EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
   EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
-}
-*/
+}*/
+
 TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
 {
   
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
   //ASSERT_DEATH(VirtualMechanismGmr(2,fa_ptr),".*");
-  //EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
-  //EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
 
   EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
   EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
 
 }
-/*
+
 TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
 {
   VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
@@ -77,6 +77,30 @@ TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
   
   END_REAL_TIME_CRITICAL_CODE();
   
+}
+
+TEST(VirtualMechanismGmrNormalizedTest, UpdateMethodGmr)
+{
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+
+  Eigen::VectorXd force(test_dim);
+  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd vel(test_dim);
+  force.fill(1.0);
+
+  START_REAL_TIME_CRITICAL_CODE();
+
+  // Force input interface
+  EXPECT_NO_THROW(vm1.Update(force,dt));
+  EXPECT_NO_THROW(vm2.Update(force,dt));
+
+  // Cart input interface
+  EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
+  EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
+
+  END_REAL_TIME_CRITICAL_CODE();
+
 }
 
 TEST(VirtualMechanismGmrTest, GetGaussian)
@@ -120,7 +144,7 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   
   END_REAL_TIME_CRITICAL_CODE();
   
-}*/
+}
 
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
@@ -172,13 +196,12 @@ TEST(VirtualMechanismGmrTest, GetDistance)
   }
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }*/
-/*
+
 TEST(VirtualMechanismGmrTest, GetMethods)
 {
-  boost::shared_ptr<fa_t> fa_ptr(generateDemoFa());
-  
-  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+
+  VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr);
   
   // State
   Eigen::VectorXd state;
@@ -192,7 +215,7 @@ TEST(VirtualMechanismGmrTest, GetMethods)
   EXPECT_NO_THROW(vm1.getStateDot(state_dot));
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
-
+/*
 TEST(VirtualMechanismGmrTest, TestGMR)
 {
   std::string file_name_input = "/home/sybot/test_data.txt"; // FIXME
