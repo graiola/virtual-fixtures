@@ -3,7 +3,7 @@ project(virtual_mechanism)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x  ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS ${CMAKE_CXX_FLAGS_DEBUG}")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fopenmp ${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
