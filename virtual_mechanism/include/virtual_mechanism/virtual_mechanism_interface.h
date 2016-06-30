@@ -32,7 +32,7 @@ class VirtualMechanismInterface
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),exec_time_(10.0),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
 	  {
           assert(state_dim_ == 2 || state_dim_ == 3);
-          assert(K.size() == state_dim_);
+          assert(K.size() == static_cast<unsigned int>(state_dim_));
           assert(B.size() == K.size());
           for(unsigned int i=0; i<K.size(); i++)
           {
