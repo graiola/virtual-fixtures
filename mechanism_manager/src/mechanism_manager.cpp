@@ -99,6 +99,7 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     std::cout << "CREATING..."<< model_complete_path << std::endl;
 
     vm_t* vm_tmp_ptr = NULL;
+
     //vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
     //bool on_guide = false;
@@ -178,19 +179,31 @@ void MechanismManager::InsertVM_no_rt()
     std::string model_name;
     std::cout << "Insert model name: " << std::endl;
     std::cin >> model_name;
+
+    //std::cout <<model_name << std::endl;
+    //getchar();
+
     InsertVM_no_rt(model_name);
 }
 
 void MechanismManager::InsertVM()
 {
+    //Eigen::initParallel();
     // Insert only if there are no guides or I am currently on a guide
-    thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this));
+    //thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this));
+
+    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this));
+    async_thread_insert_->Trigger();
 }
 
 void MechanismManager::InsertVM(std::string& model_name)
 {
+    //Eigen::initParallel();
     // Insert only if there are no guides or I am currently on a guide
-    thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
+    //thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
+
+    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
+    async_thread_insert_->Trigger();
 }
 
 void MechanismManager::Delete(const int idx, VectorXd& vect)
@@ -210,7 +223,9 @@ void MechanismManager::PushBack(const double value, VectorXd& vect)
 void MechanismManager::DeleteVM(const int idx)
 {
     // Delete only if I am not on the guide to erase
-    thread_delete_ = boost::thread(&MechanismManager::DeleteVM_no_rt, this, idx);
+    //thread_delete_ = boost::thread(&MechanismManager::DeleteVM_no_rt, this, idx);
+    async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM_no_rt, this, idx));
+    async_thread_delete_->Trigger();
 }
 
 void MechanismManager::DeleteVM_no_rt(const int& idx)
@@ -330,6 +345,12 @@ bool MechanismManager::ReadConfig(std::string file_path)
 
 MechanismManager::MechanismManager()
 {
+      Eigen::initParallel();
+
+      async_thread_insert_ = new AsyncThread();
+      async_thread_delete_ = new AsyncThread();
+      //async_thread_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this, file_name));
+      //async_thread_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this));
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
@@ -412,8 +433,11 @@ MechanismManager::~MechanismManager()
       for(int i=0;i<vm_autom_.size();i++)
         delete vm_autom_[i];
 
-      thread_insert_.join();
-      thread_delete_.join();
+      delete async_thread_insert_;
+      delete async_thread_delete_;
+
+      //thread_insert_.join();
+      //thread_delete_.join();
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)

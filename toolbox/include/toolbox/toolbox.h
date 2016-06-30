@@ -7,7 +7,6 @@
 #include <iterator>
 #include <cmath>
 
-
 #ifdef INCLUDE_ROS_CODE
 	////////// ROS
 	#include <ros/ros.h>
@@ -28,11 +27,69 @@
 
 ////////// BOOST
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 
 namespace tool_box 
 {
 
-const std::string ref_frame_name = "map"; // FIXME
+class AsyncThread
+{
+    typedef boost::function<void ()> funct_t;
+    public:
+        AsyncThread()
+        {
+            trigger_ = false;
+            stop_loop_ = false;
+            loop_ = boost::thread(boost::bind(&AsyncThread::Loop, this));
+        }
+
+        ~AsyncThread()
+        {
+            //std::cout << "Destroy" << std::endl;
+            stop_loop_ = true;
+            callback_.join();
+            loop_.join();
+        }
+
+        inline void AddHandler(funct_t f)
+        {
+            f_ = f;
+        }
+
+        inline void Trigger()
+        {
+            //std::cout << "Set the Trigger" << std::endl;
+            trigger_ = true;
+        }
+
+        inline void Loop()
+        {
+            while(!stop_loop_)
+            {
+                if(trigger_)
+                {
+                    if(!f_.empty())
+                    {
+                        //std::cout << "Launching the Callback" << std::endl;
+                        trigger_ = false;
+                        callback_ =  boost::thread(f_);
+                        callback_.join();
+                    }
+                    else
+                        std::cout << "ERROR: No Callback function" << std::endl;
+                }
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            }
+            return;
+        }
+
+    private:
+        funct_t f_;
+        boost::atomic<bool> trigger_;
+        boost::atomic<bool> stop_loop_;
+        boost::thread loop_;
+        boost::thread callback_;
+};
 
 class MinJerk
 {
@@ -52,24 +109,24 @@ class MinJerk
 			    x=xf;v=0.0;p=0.0;j=0.0;
 			    return;
 		    }
-		    x=	  a0 + 
+            x=	a0 +
 			    a1*tau +
 			    a2*pow(tau,2)+
 			    a3*pow(tau,3)+
 			    a4*pow(tau,4)+
 			    a5*pow(tau,5);
-		    v=	  a1/D +
+            v=	a1/D +
 			    2*a2*tau/D+
 			    3*a3*pow(tau,2)/D+
 			    4*a4*pow(tau,3)/D+
 			    5*a5*pow(tau,4)/D;
 			    
-		    p=	  2*a2/pow(D,2)+
+            p=	2*a2/pow(D,2)+
 			    6*a3*tau/pow(D,2)+
 			    12*a4*pow(tau,2)/pow(D,2)+
 			    20*a5*pow(tau,3)/pow(D,2);
 		    
-		    j=	  6*a3/pow(D,3)+
+            j=	6*a3/pow(D,3)+
 			    24*a4*tau/pow(D,3)+
 			    60*a5*pow(tau,2)/pow(D,3);
 		}

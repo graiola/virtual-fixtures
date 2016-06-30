@@ -106,6 +106,8 @@ class MechanismManager
 
   private:   
 
+    tool_box::AsyncThread* async_thread_insert_;
+    tool_box::AsyncThread* async_thread_delete_;
     void InsertVM_no_rt(std::string& model_name); // No Real time
     void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
