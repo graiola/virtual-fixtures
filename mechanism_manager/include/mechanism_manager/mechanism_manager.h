@@ -106,8 +106,6 @@ class MechanismManager
 
   private:   
 
-    tool_box::AsyncThread* async_thread_insert_;
-    tool_box::AsyncThread* async_thread_delete_;
     void InsertVM_no_rt(std::string& model_name); // No Real time
     void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
@@ -180,9 +178,9 @@ class MechanismManager
 
 
     // Thread stuff
-    boost::thread thread_insert_;
-    boost::thread thread_delete_;
     mutex_t mtx_;
+    tool_box::AsyncThread* async_thread_insert_;
+    tool_box::AsyncThread* async_thread_delete_;
 
     // Cached values
     Eigen::VectorXd f_pos_prev_;

@@ -179,29 +179,17 @@ void MechanismManager::InsertVM_no_rt()
     std::string model_name;
     std::cout << "Insert model name: " << std::endl;
     std::cin >> model_name;
-
-    //std::cout <<model_name << std::endl;
-    //getchar();
-
     InsertVM_no_rt(model_name);
 }
 
 void MechanismManager::InsertVM()
 {
-    //Eigen::initParallel();
-    // Insert only if there are no guides or I am currently on a guide
-    //thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this));
-
     async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this));
     async_thread_insert_->Trigger();
 }
 
 void MechanismManager::InsertVM(std::string& model_name)
 {
-    //Eigen::initParallel();
-    // Insert only if there are no guides or I am currently on a guide
-    //thread_insert_ = boost::thread(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
-
     async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
     async_thread_insert_->Trigger();
 }
@@ -222,8 +210,6 @@ void MechanismManager::PushBack(const double value, VectorXd& vect)
 
 void MechanismManager::DeleteVM(const int idx)
 {
-    // Delete only if I am not on the guide to erase
-    //thread_delete_ = boost::thread(&MechanismManager::DeleteVM_no_rt, this, idx);
     async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM_no_rt, this, idx));
     async_thread_delete_->Trigger();
 }
@@ -349,8 +335,6 @@ MechanismManager::MechanismManager()
 
       async_thread_insert_ = new AsyncThread();
       async_thread_delete_ = new AsyncThread();
-      //async_thread_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this, file_name));
-      //async_thread_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this));
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
