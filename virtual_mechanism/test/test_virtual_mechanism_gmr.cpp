@@ -5,6 +5,11 @@
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 #include "virtual_mechanism/virtual_mechanism_spline.h"
 
+////////// Function Approximator
+#include <functionapproximators/FunctionApproximatorGMR.hpp>
+#include <functionapproximators/ModelParametersGMR.hpp>
+#include <functionapproximators/MetaParametersGMR.hpp>
+
 ////////// STD
 #include <iostream>
 #include <fstream> 
@@ -277,6 +282,71 @@ TEST(VirtualMechanismGmrTest, TestGMR)
 
 }
 */
+
+
+TEST(VirtualMechanismGmrTest, TestGMR)
+{
+  // Gaussian Mixture Regression (GMR)
+  int dim = 2;
+  int number_of_gaussians = 10;
+  int n_points = 300;
+  //bool overwrite = false;
+  MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(dim,number_of_gaussians);
+  FunctionApproximatorGMR* fa_ptr = new FunctionApproximatorGMR(meta_parameters_gmr);
+  std::vector<std::vector<double> > data_vector;
+  std::vector<std::vector<double> > output_vector(n_points,std::vector<double>(dim));
+
+  std::string file_name_input;
+  std::string file_name_output;
+
+  for (int i = 0; i<4; i++)
+  {
+      file_name_input = "/home/sybot/trj_" + to_string(i+1) + ".txt"; // FIXME
+      file_name_output = "/home/sybot/trj_" + to_string(i+1) + "_out.txt"; // FIXME
+
+      tool_box::ReadTxtFile(file_name_input.c_str(),data_vector);
+
+      int nbr = data_vector.size();
+      int nbc = data_vector[0].size();
+
+      MatrixXd inputs(nbr,1);
+      MatrixXd targets(nbr,nbc);
+      MatrixXd inputs_predict(n_points,1);
+      MatrixXd outputs(n_points,nbc);
+
+      for (int i=0;i<nbr;i++)
+      {
+            //inputs(i,0) = data_vector[i][0];
+            targets(i,0) = data_vector[i][0];
+            targets(i,1) = data_vector[i][1];
+      }
+
+      //fa_ptr->train();
+
+      inputs.col(0) = VectorXd::LinSpaced(nbr, 0.0, 1.0);
+
+      fa_ptr->trainIncremental(inputs,targets);
+
+      inputs_predict.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+      fa_ptr->predict(inputs_predict,outputs);
+
+      for (int i=0;i<n_points;i++)
+        for (int j=0;j<dim;j++)
+            output_vector[i][j] = outputs(i,j);
+
+      tool_box::WriteTxtFile(file_name_output.c_str(),output_vector);
+  }
+
+  delete meta_parameters_gmr;
+  delete fa_ptr;
+
+  //VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+
+
+}
+
 
 int main(int argc, char** argv)
 {
