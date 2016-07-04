@@ -378,6 +378,16 @@ double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
   return err_.norm();
 }
 
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
+{
+  // Extract the phase and the pos
+  MatrixXd phase = data.col(0);
+  MatrixXd pos = data.rightCols(VM_t::state_dim_);
+
+  fa_->trainIncremental(phase,pos);
+}
+
 // Explicitly instantiate the templates, and its member definitions
 template class VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>;
 template class VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>;

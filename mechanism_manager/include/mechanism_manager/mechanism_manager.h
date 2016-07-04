@@ -83,10 +83,12 @@ class MechanismManager
     void InsertVM(std::string& model_name);
     void InsertVM();
     void DeleteVM(const int idx);
+    void UpdateVM(const Eigen::MatrixXd& data, const int idx);
+    void UpdateVM(double* const data, const int n_rows, const int idx);
     void Stop();
     bool OnVm();
-    inline bool InsertDone() const {if(insert_done_) return true; else return false;}
-    inline bool DeleteDone() const {if(delete_done_) return true; else return false;}
+    //inline bool InsertDone() const {if(insert_done_) return true; else return false;}
+    //inline bool DeleteDone() const {if(delete_done_) return true; else return false;}
 
     // Gets
     inline int GetPositionDim() const {return position_dim_;}
@@ -111,6 +113,8 @@ class MechanismManager
     void InsertVM_no_rt(std::string& model_name); // No Real time
     void InsertVM_no_rt(); // No Real time
     void DeleteVM_no_rt(const int& idx); // No Real time
+    void UpdateVM_no_rt(const Eigen::MatrixXd& data, const int idx);
+    void UpdateVM_no_rt(double* const data, const int n_rows, const int idx);
 
     std::string pkg_path_;
     
@@ -182,8 +186,9 @@ class MechanismManager
     mutex_t mtx_;
     tool_box::AsyncThread* async_thread_insert_;
     tool_box::AsyncThread* async_thread_delete_;
-    boost::atomic<bool> insert_done_;
-    boost::atomic<bool> delete_done_;
+    tool_box::AsyncThread* async_thread_update_;
+    //boost::atomic<bool> insert_done_;
+    //boost::atomic<bool> delete_done_;
 
     // Cached values
     Eigen::VectorXd f_pos_prev_;

@@ -76,7 +76,7 @@ class AsyncThread
                         callback_.join();
                     }
                     else
-                        std::cout << "ERROR: No Callback function" << std::endl;
+                        std::cerr << "No Callback function" << std::endl;
                 }
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             }

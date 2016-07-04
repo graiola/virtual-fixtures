@@ -89,16 +89,14 @@ void MechanismManager::Stop()
 void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
 
-    insert_done_ = false;
+    //insert_done_ = false;
 
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
 
-    std::cout << "LOADING..."<< model_complete_path << std::endl;
+    std::cout << "Creating the guide... "<< model_complete_path << std::endl;
 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
-
-    std::cout << "CREATING..."<< model_complete_path << std::endl;
 
     vm_t* vm_tmp_ptr = NULL;
 
@@ -155,16 +153,16 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         PushBack(0.0,fade_);
         PushBack(0.0,r_);
 
-        std::cout << "DONE..."<< model_complete_path << std::endl;
+        std::cout << "Guide number#" << vm_vector_.size()-1 << " created." << std::endl;
 
-        insert_done_ = true;
+        //insert_done_ = true;
 
     }
     catch(...)
     {
-        std::cout << "ERROR, IMPOSSIBLE TO CREATE THE GUIDE..."<< model_complete_path << std::endl;
+        std::cerr << "Impossible to create the guide... "<< model_complete_path << std::endl;
 
-        insert_done_ = false;
+        //insert_done_ = false;
     }
 
 
@@ -223,9 +221,7 @@ void MechanismManager::DeleteVM(const int idx)
 void MechanismManager::DeleteVM_no_rt(const int& idx)
 {
 
-   delete_done_ = false;
-
-   std::cout << "DELETE GUIDE # "<< idx << std::endl;
+   //delete_done_ = false;
 
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
    guard.lock();
@@ -236,6 +232,8 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
    }
    if(idx < vm_vector_.size())
    {
+       std::cout << "Deleting guide number#"<< idx << std::endl;
+
        delete vm_vector_[idx];
        vm_vector_.erase(vm_vector_.begin()+idx);
        vm_state_.erase(vm_state_.begin()+idx);
@@ -255,15 +253,18 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        Delete(idx,fade_);
        Delete(idx,r_);
 
+       std::cout << "Delete of guide  number#"<< idx << " complete." << std::endl;
+
 #ifdef USE_ROS_RT_PUBLISHER
        rt_publishers_vector_.RemoveAll(idx);
 #endif
    }
+   else
+       std::cerr << "Impossible to remove guide number#"<< idx << std::endl;
+
    guard.unlock();
 
-   delete_done_ = true;
-
-   std::cout << "DELETE COMPLETE #"<< idx << std::endl;
+   //delete_done_ = true;
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -345,6 +346,7 @@ MechanismManager::MechanismManager()
 
       async_thread_insert_ = new AsyncThread();
       async_thread_delete_ = new AsyncThread();
+      async_thread_update_ = new AsyncThread();
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
@@ -401,8 +403,8 @@ MechanismManager::MechanismManager()
       nb_vm_prev_ = 0;
 
       // Bools
-      insert_done_ = false;
-      delete_done_ = false;
+      //insert_done_ = false;
+      //delete_done_ = false;
 
 #ifdef USE_ROS_RT_PUBLISHER
     try
@@ -435,6 +437,7 @@ MechanismManager::~MechanismManager()
 
       delete async_thread_insert_;
       delete async_thread_delete_;
+      delete async_thread_update_;
 
       //thread_insert_.join();
       //thread_delete_.join();
@@ -665,5 +668,38 @@ bool MechanismManager::OnVm()
     on_guide_prev_ = on_guide;
     return on_guide;
 }
+
+void MechanismManager::UpdateVM(double* const data, const int n_rows, const int idx)
+{
+    async_thread_update_->AddHandler(boost::bind(&MechanismManager::UpdateVM_no_rt, this, data, n_rows, idx));
+    async_thread_update_->Trigger();
+}
+
+void MechanismManager::UpdateVM(const MatrixXd& data, const int idx)
+{
+    async_thread_update_->AddHandler(boost::bind(&MechanismManager::UpdateVM_no_rt, this, data, idx));
+    async_thread_update_->Trigger();
+}
+
+void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
+{
+    std::cout << "Updating guide number#"<< idx << std::endl;
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    if(idx < vm_vector_.size())
+        vm_vector_[idx]->UpdateGuide(data);
+    else
+        std::cerr << "There are no guides available" << std::endl;
+    guard.unlock();
+    std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
+}
+
+void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
+{
+    //int n_rows = data.size()/position_dim_;
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    UpdateVM_no_rt(mat,idx);
+}
+
 
 } // namespace

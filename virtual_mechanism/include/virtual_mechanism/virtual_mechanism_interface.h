@@ -170,6 +170,7 @@ class VirtualMechanismInterface
 	  
       // TO BE MOVED IN ANOTHER SUBCLASS!
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
+      inline void UpdateGuide(const Eigen::MatrixXd& data){}
       inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
@@ -199,7 +200,7 @@ class VirtualMechanismInterface
       inline double getPDotIntegrated() const {return p_dot_integrated_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
-      inline void getJacobian(Eigen::VectorXd& jacobian) const {jacobian = J_;}
+      inline void getJacobian(Eigen::MatrixXd& jacobian) const {jacobian = J_;}
 	  inline void getQuaternion(Eigen::VectorXd& q) const 
 	  {
               assert(q.size() == 4); 
@@ -250,7 +251,7 @@ class VirtualMechanismInterface
 
       virtual inline void UpdateStateDot()
 	  {
-          state_dot_ = J_ * phase_dot_;
+          state_dot_.noalias() = J_ * phase_dot_;
 	  }
 	  
 	  inline void UpdateQuaternion()
