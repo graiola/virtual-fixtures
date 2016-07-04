@@ -85,6 +85,8 @@ class MechanismManager
     void DeleteVM(const int idx);
     void Stop();
     bool OnVm();
+    inline bool InsertDone() const {if(insert_done_) return true; else return false;}
+    inline bool DeleteDone() const {if(delete_done_) return true; else return false;}
 
     // Gets
     inline int GetPositionDim() const {return position_dim_;}
@@ -176,11 +178,12 @@ class MechanismManager
     //std::vector<filters::M3DFilter* > filter_phase_ddot_;
     //std::vector<filters::M3DFilter* > filter_alpha_;
 
-
     // Thread stuff
     mutex_t mtx_;
     tool_box::AsyncThread* async_thread_insert_;
     tool_box::AsyncThread* async_thread_delete_;
+    boost::atomic<bool> insert_done_;
+    boost::atomic<bool> delete_done_;
 
     // Cached values
     Eigen::VectorXd f_pos_prev_;

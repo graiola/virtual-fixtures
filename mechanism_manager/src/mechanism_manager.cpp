@@ -89,6 +89,8 @@ void MechanismManager::Stop()
 void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
 
+    insert_done_ = false;
+
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
 
     std::cout << "LOADING..."<< model_complete_path << std::endl;
@@ -111,10 +113,9 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     try
     {
         if(second_order_)
-            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-
+            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
         else
-            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
         VectorXd empty_vect(position_dim_);
         MatrixXd empty_mat(position_dim_,position_dim_);
@@ -123,7 +124,7 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         vm_state_dot_.push_back(empty_vect);
         vm_K_.push_back(empty_mat);
         vm_B_.push_back(empty_mat);
-        vm_jacobian_.push_back(empty_vect);
+        //vm_jacobian_.push_back(empty_vect);
 
         vm_vector_.push_back(vm_tmp_ptr);
         vm_vector_.back()->setWeightedDist(use_weighted_dist_);
@@ -156,10 +157,14 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
 
         std::cout << "DONE..."<< model_complete_path << std::endl;
 
+        insert_done_ = true;
+
     }
     catch(...)
     {
         std::cout << "ERROR, IMPOSSIBLE TO CREATE THE GUIDE..."<< model_complete_path << std::endl;
+
+        insert_done_ = false;
     }
 
 
@@ -167,11 +172,12 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         for(int i=0;i<vm_vector_.size();i++)
             std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
 
-    guard.unlock(); // Unlock
-
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
 #endif
+
+    guard.unlock(); // Unlock
+
 }
 
 void MechanismManager::InsertVM_no_rt()
@@ -217,6 +223,8 @@ void MechanismManager::DeleteVM(const int idx)
 void MechanismManager::DeleteVM_no_rt(const int& idx)
 {
 
+   delete_done_ = false;
+
    std::cout << "DELETE GUIDE # "<< idx << std::endl;
 
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -234,7 +242,7 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        vm_state_dot_.erase(vm_state_dot_.begin()+idx);
        vm_K_.erase(vm_K_.begin()+idx);
        vm_B_.erase(vm_B_.begin()+idx);
-       vm_jacobian_.erase(vm_jacobian_.begin()+idx);
+       //vm_jacobian_.erase(vm_jacobian_.begin()+idx);
        //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
        Delete(idx,scales_);
@@ -252,6 +260,8 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
 #endif
    }
    guard.unlock();
+
+   delete_done_ = true;
 
    std::cout << "DELETE COMPLETE #"<< idx << std::endl;
 }
@@ -331,7 +341,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
 
 MechanismManager::MechanismManager()
 {
-      Eigen::initParallel();
+      //Eigen::initParallel();
 
       async_thread_insert_ = new AsyncThread();
       async_thread_delete_ = new AsyncThread();
@@ -390,10 +400,16 @@ MechanismManager::MechanismManager()
       on_guide_prev_ = false;
       nb_vm_prev_ = 0;
 
+      // Bools
+      insert_done_ = false;
+      delete_done_ = false;
+
 #ifdef USE_ROS_RT_PUBLISHER
     try
     {
         ros_node_.Init("mechanism_manager");
+        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_position",&robot_position_);
+        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_velocity",&robot_velocity_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
@@ -485,15 +501,16 @@ void MechanismManager::CheckForGuideActivation(const int idx)
 }
 
 void MechanismManager::Update(const prob_mode_t prob_mode)
-{ 
+{
+
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
-            if(use_active_guide_)
-                CheckForGuideActivation(i);
+            //if(use_active_guide_)
+            //    CheckForGuideActivation(i);
 
             if(second_order_)
                 vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
@@ -509,12 +526,13 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
             fade_(i) = vm_vector_[i]->getFade();
 
+            // NOTE: It seems there are troubles here...
             // Retrain position/velocity and jacobian from the virtual mechanisms
             vm_vector_[i]->getState(vm_state_[i]);
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
             vm_vector_[i]->getK(vm_K_[i]);
             vm_vector_[i]->getB(vm_B_[i]);
-            vm_vector_[i]->getJacobian(vm_jacobian_[i]);
+            //vm_vector_[i]->getJacobian(vm_jacobian_[i]);
 
             // Compute the gaussian activations
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
@@ -557,7 +575,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         f_pos_ = f_pos_prev_; // Keep the previous force while the vectors are updating
 
 #ifdef USE_ROS_RT_PUBLISHER
-    rt_publishers_vector_.PublishAll();
+   rt_publishers_vector_.PublishAll();
 #endif
 }
 
