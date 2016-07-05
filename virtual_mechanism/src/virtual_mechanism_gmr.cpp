@@ -206,40 +206,51 @@ bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 }
 
 template<class VM_t>
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const MatrixXd& data): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+{
+    int n_gaussians = 10; // FIXME: to export
+    MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians); // input/phase dimension is 1
+    fa_ = new fa_t(meta_parameters_gmr);
+    UpdateGuide(data);
+    Init();
+}
+
+template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-
     if(CreateGmrFromTxt(file_path))
-    {
-
-      assert(fa_->isTrained());
-      assert(fa_->getExpectedInputDim() == 1);
-      assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
-
-      fa_input_.resize(1,1);
-      fa_output_.resize(1,VM_t::state_dim_);
-      fa_output_dot_.resize(1,VM_t::state_dim_);
-      variance_.resize(1,VM_t::state_dim_);
-      covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
-      covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
-      err_.resize(VM_t::state_dim_);
-
-      variance_.fill(1.0);
-      covariance_ = variance_.row(0).asDiagonal();
-      covariance_inv_.fill(0.0);
-      err_.fill(0.0);
-      prob_ = 0.0;
-      determinant_cov_ = 1.0;
-
-      // By default don't use the Mahalanobis distance
-      use_weighted_dist_ = false;
-
-      // Initialize the state of the virtual mechanism
-      VM_t::Init();
-    }
+        Init();
     else
-        throw new invalid_argument("The Function Approximator has not been created, NULL Pointer returned");
+        throw new invalid_argument("Impossible to load GMM from file.");
+}
 
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::Init()
+{
+    assert(fa_->isTrained());
+    assert(fa_->getExpectedInputDim() == 1);
+    assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
+
+    fa_input_.resize(1,1);
+    fa_output_.resize(1,VM_t::state_dim_);
+    fa_output_dot_.resize(1,VM_t::state_dim_);
+    variance_.resize(1,VM_t::state_dim_);
+    covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
+    covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
+    err_.resize(VM_t::state_dim_);
+
+    variance_.fill(1.0);
+    covariance_ = variance_.row(0).asDiagonal();
+    covariance_inv_.fill(0.0);
+    err_.fill(0.0);
+    prob_ = 0.0;
+    determinant_cov_ = 1.0;
+
+    // By default don't use the Mahalanobis distance
+    use_weighted_dist_ = false;
+
+    // Initialize the state of the virtual mechanism
+    VM_t::Init();
 }
 
 template<class VM_t>
@@ -381,9 +392,26 @@ double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
 {
+  MatrixXd pos, phase;
+
   // Extract the phase and the pos
-  MatrixXd phase = data.col(0);
-  MatrixXd pos = data.rightCols(VM_t::state_dim_);
+  if(data.cols() == VM_t::state_dim_ + 1) // phase + pos
+  {  
+    phase = data.col(0);
+    pos = data.rightCols(VM_t::state_dim_);
+  }
+  else // only pos
+  {
+    pos = data;
+    phase.resize(pos.rows(),1);
+    phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
+  }
+
+  std::cout << "pos" << std::endl;
+  std::cout << pos << std::endl;
+  //std::cout << "phase" << std::endl;
+  //std::cout << phase << std::endl;
+  getchar();
 
   fa_->trainIncremental(phase,pos);
 }

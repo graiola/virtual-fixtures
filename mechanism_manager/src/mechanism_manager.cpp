@@ -88,7 +88,6 @@ void MechanismManager::Stop()
 
 void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
-
     //insert_done_ = false;
 
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
@@ -505,7 +504,6 @@ void MechanismManager::CheckForGuideActivation(const int idx)
 
 void MechanismManager::Update(const prob_mode_t prob_mode)
 {
-
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
@@ -529,7 +527,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
             fade_(i) = vm_vector_[i]->getFade();
 
-            // NOTE: It seems there are troubles here...
             // Retrain position/velocity and jacobian from the virtual mechanisms
             vm_vector_[i]->getState(vm_state_[i]);
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
@@ -687,9 +684,76 @@ void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     if(idx < vm_vector_.size())
+    {
+        std::cout << "Updating..." << std::endl;
         vm_vector_[idx]->UpdateGuide(data);
+        std::cout << "...DONE!" << std::endl;
+    }
     else
-        std::cerr << "There are no guides available" << std::endl;
+    {
+        std::cout << "Guide not available, creating a new guide..." << std::endl;
+
+
+
+        vm_t* vm_tmp_ptr = NULL;
+
+
+
+            if(second_order_)
+                vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
+            else
+                vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
+
+            VectorXd empty_vect(position_dim_);
+            MatrixXd empty_mat(position_dim_,position_dim_);
+
+            vm_state_.push_back(empty_vect);
+            vm_state_dot_.push_back(empty_vect);
+            vm_K_.push_back(empty_mat);
+            vm_B_.push_back(empty_mat);
+            //vm_jacobian_.push_back(empty_vect);
+
+            vm_vector_.push_back(vm_tmp_ptr);
+            vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+
+            if(use_active_guide_)
+            {
+                vm_vector_.back()->setExecutionTime(execution_time_);
+                // Autom
+                vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_,r_th_));
+            }
+
+
+            if(second_order_)
+            {
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+            }
+
+            PushBack(0.0,scales_);
+            PushBack(0.0,phase_);
+            PushBack(0.0,phase_dot_);
+            PushBack(0.0,phase_ddot_);
+            PushBack(0.0,phase_ref_);
+            PushBack(0.0,phase_dot_ref_);
+            PushBack(0.0,phase_ddot_ref_);
+            PushBack(0.0,fade_);
+            PushBack(0.0,r_);
+
+            std::cout << "Guide number#" << vm_vector_.size()-1 << " created." << std::endl;
+
+
+
+        /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
+            for(int i=0;i<vm_vector_.size();i++)
+                std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
+
+    #ifdef USE_ROS_RT_PUBLISHER
+        rt_publishers_vector_.PushBackEmptyAll();
+    #endif
+
+    }
+
     guard.unlock();
     std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
 }

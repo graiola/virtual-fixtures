@@ -7,6 +7,7 @@
 ////////// Function Approximator
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
 #include <functionapproximators/ModelParametersGMR.hpp>
+#include <functionapproximators/MetaParametersGMR.hpp>
 
 ////////// BOOST
 #include <boost/shared_ptr.hpp>
@@ -26,6 +27,7 @@ class VirtualMechanismGmr: public VM_t
 	public:
 
       VirtualMechanismGmr(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
+      VirtualMechanismGmr(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const Eigen::MatrixXd& data);
       ~VirtualMechanismGmr();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
@@ -37,6 +39,7 @@ class VirtualMechanismGmr: public VM_t
 	  
 	protected:
 	  
+      void Init();
       bool CreateGmrFromTxt(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
