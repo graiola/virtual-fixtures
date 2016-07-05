@@ -82,9 +82,10 @@ class MechanismManager
     // Mechanism Manager external interface
     void InsertVM(std::string& model_name);
     void InsertVM();
+    void InsertVM(const Eigen::MatrixXd& data);
     void DeleteVM(const int idx);
     void UpdateVM(const Eigen::MatrixXd& data, const int idx);
-    void UpdateVM(double* const data, const int n_rows, const int idx);
+    void UpdateVM(double* const data, const int n_rows, const int idx); // Used by TAO
     void Stop();
     bool OnVm();
     //inline bool InsertDone() const {if(insert_done_) return true; else return false;}
@@ -95,8 +96,8 @@ class MechanismManager
     int GetNbVms();
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
-    void GetVmPosition(const int idx, double* const position_ptr);
-    void GetVmVelocity(const int idx, double* const velocity_ptr);
+    void GetVmPosition(const int idx, double* const position_ptr); // Used by TAO
+    void GetVmVelocity(const int idx, double* const velocity_ptr); // Used by TAO
     double GetPhase(const int idx);
     double GetScale(const int idx);
 
@@ -107,12 +108,14 @@ class MechanismManager
     void Delete(const int idx, Eigen::VectorXd& vect);
     void PushBack(const double value, Eigen::VectorXd& vect);
     void CheckForGuideActivation(const int idx);
+    void InitGuide(vm_t* const vm_tmp_ptr);
 
   private:   
-
-    void InsertVM_no_rt(std::string& model_name); // No Real time
-    void InsertVM_no_rt(); // No Real time
-    void DeleteVM_no_rt(const int& idx); // No Real time
+    // No Real time
+    void InsertVM_no_rt(std::string& model_name);
+    void InsertVM_no_rt(const Eigen::MatrixXd& data);
+    void InsertVM_no_rt();
+    void DeleteVM_no_rt(const int& idx);
     void UpdateVM_no_rt(const Eigen::MatrixXd& data, const int idx);
     void UpdateVM_no_rt(double* const data, const int n_rows, const int idx);
 

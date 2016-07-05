@@ -86,27 +86,53 @@ void MechanismManager::Stop()
     }
 }
 
+void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
+{
+    VectorXd empty_vect(position_dim_);
+    MatrixXd empty_mat(position_dim_,position_dim_);
+
+    vm_state_.push_back(empty_vect);
+    vm_state_dot_.push_back(empty_vect);
+    vm_K_.push_back(empty_mat);
+    vm_B_.push_back(empty_mat);
+    vm_vector_.push_back(vm_tmp_ptr);
+    vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+
+    if(use_active_guide_)
+    {
+        vm_vector_.back()->setExecutionTime(execution_time_);
+        // Autom
+        vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_,r_th_));
+    }
+
+    if(second_order_)
+    {
+        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
+        dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
+    }
+
+    PushBack(0.0,scales_);
+    PushBack(0.0,phase_);
+    PushBack(0.0,phase_dot_);
+    PushBack(0.0,phase_ddot_);
+    PushBack(0.0,phase_ref_);
+    PushBack(0.0,phase_dot_ref_);
+    PushBack(0.0,phase_ddot_ref_);
+    PushBack(0.0,fade_);
+    PushBack(0.0,r_);
+
+#ifdef USE_ROS_RT_PUBLISHER
+    rt_publishers_vector_.PushBackEmptyAll();
+#endif
+}
+
 void MechanismManager::InsertVM_no_rt(std::string& model_name)
 {
-    //insert_done_ = false;
-
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
-
     std::cout << "Creating the guide... "<< model_complete_path << std::endl;
-
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
-
     vm_t* vm_tmp_ptr = NULL;
-
-    //vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
-
-    //bool on_guide = false;
-    /*for(int i=0;i<scales_.size();i++)
-        if(scales_(i) > 0.9)
-            on_guide = true;*/
-    //if(vm_vector_.size() == 0 || on_guide) // NOTE: We should be in free mode if vm_vector_ is empty otherwise we have jumps on the force.
-    //{
     try
     {
         if(second_order_)
@@ -114,67 +140,41 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
         else
             vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
-        VectorXd empty_vect(position_dim_);
-        MatrixXd empty_mat(position_dim_,position_dim_);
-
-        vm_state_.push_back(empty_vect);
-        vm_state_dot_.push_back(empty_vect);
-        vm_K_.push_back(empty_mat);
-        vm_B_.push_back(empty_mat);
-        //vm_jacobian_.push_back(empty_vect);
-
-        vm_vector_.push_back(vm_tmp_ptr);
-        vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-
-        if(use_active_guide_)
-        {
-            vm_vector_.back()->setExecutionTime(execution_time_);
-            // Autom
-            vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_,r_th_));
-        }
-
-        //filter_alpha_.push_back(new filters::M3DFilter(3)); // 3 = Average filter
-        //filter_alpha_.back()->SetN(n_samples_filter_);
-
-        if(second_order_)
-        {
-            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-            dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
-        }
-
-        PushBack(0.0,scales_);
-        PushBack(0.0,phase_);
-        PushBack(0.0,phase_dot_);
-        PushBack(0.0,phase_ddot_);
-        PushBack(0.0,phase_ref_);
-        PushBack(0.0,phase_dot_ref_);
-        PushBack(0.0,phase_ddot_ref_);
-        PushBack(0.0,fade_);
-        PushBack(0.0,r_);
+        InitGuide(vm_tmp_ptr);
 
         std::cout << "Guide number#" << vm_vector_.size()-1 << " created." << std::endl;
-
-        //insert_done_ = true;
-
     }
     catch(...)
     {
         std::cerr << "Impossible to create the guide... "<< model_complete_path << std::endl;
-
-        //insert_done_ = false;
     }
 
+    guard.unlock(); // Unlock
+}
 
-    /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
-        for(int i=0;i<vm_vector_.size();i++)
-            std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
+void MechanismManager::InsertVM_no_rt(const MatrixXd& data)
+{
+    std::cout << "Creating the guide from data... "<< std::endl;
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock(); // Lock
+    vm_t* vm_tmp_ptr = NULL;
+    try
+    {
+        if(second_order_)
+            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
+        else
+            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
 
-#ifdef USE_ROS_RT_PUBLISHER
-    rt_publishers_vector_.PushBackEmptyAll();
-#endif
+        InitGuide(vm_tmp_ptr);
+
+        std::cout << "Guide number#" << vm_vector_.size()-1 << " created." << std::endl;
+    }
+    catch(...)
+    {
+        std::cerr << "Impossible to create the guide from data... " << std::endl;
+    }
 
     guard.unlock(); // Unlock
-
 }
 
 void MechanismManager::InsertVM_no_rt()
@@ -191,9 +191,15 @@ void MechanismManager::InsertVM()
     async_thread_insert_->Trigger();
 }
 
+void MechanismManager::InsertVM(const MatrixXd& data)
+{
+    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM_no_rt), this, data));
+    async_thread_insert_->Trigger();
+}
+
 void MechanismManager::InsertVM(std::string& model_name)
 {
-    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this, model_name));
+    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM_no_rt), this, model_name));
     async_thread_insert_->Trigger();
 }
 
@@ -681,80 +687,24 @@ void MechanismManager::UpdateVM(const MatrixXd& data, const int idx)
 void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
 {
     std::cout << "Updating guide number#"<< idx << std::endl;
+    //boost::mutex::scoped_lock guard(mtx_); // scoped
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     if(idx < vm_vector_.size())
     {
+
         std::cout << "Updating..." << std::endl;
         vm_vector_[idx]->UpdateGuide(data);
         std::cout << "...DONE!" << std::endl;
+        guard.unlock();
     }
     else
     {
+        guard.unlock(); // FIXME
         std::cout << "Guide not available, creating a new guide..." << std::endl;
-
-
-
-        vm_t* vm_tmp_ptr = NULL;
-
-
-
-            if(second_order_)
-                vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
-            else
-                vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
-
-            VectorXd empty_vect(position_dim_);
-            MatrixXd empty_mat(position_dim_,position_dim_);
-
-            vm_state_.push_back(empty_vect);
-            vm_state_dot_.push_back(empty_vect);
-            vm_K_.push_back(empty_mat);
-            vm_B_.push_back(empty_mat);
-            //vm_jacobian_.push_back(empty_vect);
-
-            vm_vector_.push_back(vm_tmp_ptr);
-            vm_vector_.back()->setWeightedDist(use_weighted_dist_);
-
-            if(use_active_guide_)
-            {
-                vm_vector_.back()->setExecutionTime(execution_time_);
-                // Autom
-                vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_,r_th_));
-            }
-
-
-            if(second_order_)
-            {
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setInertia(inertia_);
-                dynamic_cast<VirtualMechanismInterfaceSecondOrder*>(vm_vector_.back())->setKr(Kr_);
-            }
-
-            PushBack(0.0,scales_);
-            PushBack(0.0,phase_);
-            PushBack(0.0,phase_dot_);
-            PushBack(0.0,phase_ddot_);
-            PushBack(0.0,phase_ref_);
-            PushBack(0.0,phase_dot_ref_);
-            PushBack(0.0,phase_ddot_ref_);
-            PushBack(0.0,fade_);
-            PushBack(0.0,r_);
-
-            std::cout << "Guide number#" << vm_vector_.size()-1 << " created." << std::endl;
-
-
-
-        /*std::cout << "Size of vm_vector_: " << vm_vector_.size() << std::endl;
-            for(int i=0;i<vm_vector_.size();i++)
-                std::cout << "Pointer: " << i+1 << vm_vector_[i] << std::endl;*/
-
-    #ifdef USE_ROS_RT_PUBLISHER
-        rt_publishers_vector_.PushBackEmptyAll();
-    #endif
-
+        InsertVM_no_rt(data);
     }
 
-    guard.unlock();
     std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
 }
 

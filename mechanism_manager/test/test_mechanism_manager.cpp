@@ -149,6 +149,14 @@ TEST(MechanismManagerTest, InsertVmMethod)
   delete mm;
 }
 
+/*TEST(MechanismManagerTest, UpdateGuideMethod)
+{
+  MechanismManager* mm = new MechanismManager();
+  EXPECT_NO_THROW(mm->InsertVM(model_name3));
+
+  delete mm;
+}*/
+
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
   MechanismManager* mm = new MechanismManager();
@@ -191,6 +199,8 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm->DeleteVM(0));
 
+  getchar();
+
   delete mm;
 }
 
@@ -205,6 +215,8 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   MechanismManager mm;
   EXPECT_NO_THROW(mm.InsertVM(model_name3));
+
+  getchar();
 
   int pos_dim = mm.GetPositionDim();
 
@@ -229,13 +241,13 @@ TEST(MechanismManagerTest, LoopUpdate)
   for (int i=0;i<n_steps;i++)
   {
 
-      //START_REAL_TIME_CRITICAL_CODE();
+      START_REAL_TIME_CRITICAL_CODE();
       EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
       EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
       EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
       EXPECT_NO_THROW(scale = mm.GetScale(0));
       EXPECT_NO_THROW(phase = mm.GetPhase(0));
-      //END_REAL_TIME_CRITICAL_CODE();
+      END_REAL_TIME_CRITICAL_CODE();
 
       /*if(i == 7)
       {

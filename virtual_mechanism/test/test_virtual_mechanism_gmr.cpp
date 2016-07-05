@@ -47,7 +47,7 @@ TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
   EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_spline));
 }*/
 
-TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
+TEST(VirtualMechanismGmrTest, InitializesCorrectlyFromFile)
 {
 
   //ASSERT_DEATH(VirtualMechanismGmr(1,fa_ptr),".*");
@@ -57,7 +57,58 @@ TEST(VirtualMechanismGmrTest, InitializesCorrectlyGmr)
 
   EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
   EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,file_name_gmr));
+}
 
+TEST(VirtualMechanismGmrTest, InitializesCorrectlyFromData)
+{
+  int n_points = 100;
+  MatrixXd data(n_points,test_dim); // No phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+
+  data.resize(n_points,test_dim+1); // With phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t>(test_dim,K,B,Kf,Bf,fade_gain,data));
+}
+
+TEST(VirtualMechanismGmrTest, UpdateGuideNormalized)
+{
+  int n_points = 100;
+  MatrixXd data(n_points,test_dim); // No phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,data);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,data);
+
+  EXPECT_NO_THROW(vm1.UpdateGuide(data));
+  EXPECT_NO_THROW(vm2.UpdateGuide(data));
+
+  /*data.resize(n_points,test_dim+1); // With phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,data);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,data);
+
+  EXPECT_NO_THROW(vm1.UpdateGuide(data));
+  EXPECT_NO_THROW(vm2.UpdateGuide(data));*/
 }
 
 TEST(VirtualMechanismGmrTest, UpdateMethodGmr)

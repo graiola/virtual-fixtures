@@ -10,14 +10,43 @@ using namespace tk;
 namespace virtual_mechanism_gmr 
 {
 
-template <typename VM_t>
+template <class VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
     VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
 {
+    Init();
+    Normalize();
+}
+
+template <class VM_t>
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const MatrixXd& data):
+    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,data)
+{
+    Init();
+    Normalize();
+}
+
+template <class VM_t>
+void VirtualMechanismGmrNormalized<VM_t>::Init()
+{
+    Jz_.resize(VM_t::state_dim_,1);
+
+    loopCnt = 0;
+    z_ = 0.0;
+    z_dot_ = 0.0;
+    z_dot_ref_ = 0.1;
+}
+
+template <class VM_t>
+void VirtualMechanismGmrNormalized<VM_t>::Normalize()
+{
+    const int n_points = 1000; // FIXME
     use_spline_xyz_ = true; // FIXME
 
-    const int n_points = 1000; // This is causing some troubles with the stack
-    Jz_.resize(VM_t::state_dim_,1);
+    spline_phase_.clear(); // spline::clear()
+    spline_phase_inv_.clear(); // spline::clear()
+    splines_xyz_.clear(); // std::vector::clear()
+
     std::vector<double> phase_for_spline(n_points);
     std::vector<double> abscisse_for_spline(n_points);
 
@@ -26,6 +55,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
     //Eigen::MatrixXd output_position_dot(n_points,VM_t::state_dim_);
     Eigen::MatrixXd position_diff(n_points-1,VM_t::state_dim_);
     input_phase.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
     // Get xyz from GMR using a linspaced phase [0,1], preserve the rhythme
     this->fa_->predict(input_phase,output_position);
     //fa_->predictDot(input_phase,output_position,output_position_dot);
@@ -70,14 +100,16 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim
 
     spline_phase_.set_points(abscisse_for_spline,phase_for_spline); // set_points(x,y) ----> z = f(s)
     spline_phase_inv_.set_points(phase_for_spline,abscisse_for_spline); // set_points(x,y) ----> s = g(z)
-
-    loopCnt = 0;
-    z_ = 0.0;
-    z_dot_ = 0.0;
-    z_dot_ref_ = 0.1;
 }
 
-template <typename VM_t>
+template<class VM_t>
+void VirtualMechanismGmrNormalized<VM_t>::UpdateGuide(const MatrixXd& data)
+{
+  VirtualMechanismGmr<VM_t>::UpdateGuide(data);
+  Normalize();
+}
+
+template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
 
@@ -131,17 +163,9 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
       }
   }
   VM_t::J_ = VM_t::J_transp_.transpose();
-
-  /*if(loopCnt%100==0)
-  {
-      std::cout << "****************" << std::endl;
-      std::cout << ciccio<< std::endl;
-  }
-
-  loopCnt++;*/
 }
 
-template <typename VM_t>
+template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::ComputeStateGivenPhase(const double abscisse_in, VectorXd& state_out, VectorXd& state_out_dot, double& phase_out, double& phase_out_dot) // Not for rt
 {
   assert(abscisse_in <= 1.0);
@@ -173,25 +197,25 @@ void VirtualMechanismGmrNormalized<VM_t>::ComputeStateGivenPhase(const double ab
 
 }
 
-template<typename VM_t>
+template<class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateState()
 {
     VM_t::state_ = this->fa_output_.transpose();
 }
 
-template<typename VM_t>
+template<class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
 {
     VM_t::state_dot_ = this->Jz_ * this->z_dot_; // Keep the velocities of the demonstrations
 }
 
-template <typename VM_t>
+template <class VM_t>
 VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
 {
     delete fa_;
 }
 
-template <typename VM_t>
+template <class VM_t>
 bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
@@ -208,7 +232,7 @@ bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const MatrixXd& data): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-    int n_gaussians = 10; // FIXME: to export
+    int n_gaussians = 10; //FIXME
     MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians); // input/phase dimension is 1
     fa_ = new fa_t(meta_parameters_gmr);
     UpdateGuide(data);
@@ -406,13 +430,6 @@ void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
     phase.resize(pos.rows(),1);
     phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
   }
-
-  std::cout << "pos" << std::endl;
-  std::cout << pos << std::endl;
-  //std::cout << "phase" << std::endl;
-  //std::cout << phase << std::endl;
-  getchar();
-
   fa_->trainIncremental(phase,pos);
 }
 
