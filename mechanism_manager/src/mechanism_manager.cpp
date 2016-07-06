@@ -696,15 +696,16 @@ void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
         std::cout << "Updating..." << std::endl;
         vm_vector_[idx]->UpdateGuide(data);
         std::cout << "...DONE!" << std::endl;
-        guard.unlock();
+
     }
     else
     {
-        guard.unlock(); // FIXME
+        //guard.unlock(); // FIXME
         std::cout << "Guide not available, creating a new guide..." << std::endl;
         InsertVM_no_rt(data);
     }
 
+    guard.unlock();
     std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
 }
 

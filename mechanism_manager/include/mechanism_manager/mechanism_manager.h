@@ -33,7 +33,7 @@
 namespace mechanism_manager
 {
 
-typedef boost::mutex mutex_t;
+typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
 enum prob_mode_t {HARD,POTENTIAL,SOFT};
 
