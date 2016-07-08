@@ -6,6 +6,7 @@ using namespace tool_box;
 using namespace virtual_mechanism_interface;
 using namespace DmpBbo;
 using namespace tk;
+using namespace dtw;
 
 namespace virtual_mechanism_gmr 
 {
@@ -40,7 +41,7 @@ void VirtualMechanismGmrNormalized<VM_t>::Init()
 template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 {
-    const int n_points = 1000; // FIXME
+    const int n_points = 100; // FIXME
     use_spline_xyz_ = true; // FIXME
 
     spline_phase_.clear(); // spline::clear()
@@ -107,6 +108,13 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateGuide(const MatrixXd& data)
 {
   VirtualMechanismGmr<VM_t>::UpdateGuide(data);
   Normalize();
+}
+
+template<class VM_t>
+void VirtualMechanismGmrNormalized<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
+{
+    VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(data);
+    Normalize();
 }
 
 template <class VM_t>
@@ -431,6 +439,44 @@ void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
     phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
   }
   fa_->trainIncremental(phase,pos);
+}
+
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
+{
+    int n_points = data.rows();
+
+    Eigen::MatrixXd pos;
+    Eigen::MatrixXd phase;
+
+    Eigen::MatrixXd pos_ref(n_points,VM_t::state_dim_);
+    Eigen::MatrixXd phase_ref(n_points,1);
+    phase_ref.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+    this->fa_->predict(phase_ref,pos_ref);
+
+    // Extract the phase and the pos
+    if(data.cols() == VM_t::state_dim_ + 1) // phase + pos
+    {
+      phase = data.col(0);
+      pos = data.rightCols(VM_t::state_dim_);
+    }
+    else // only pos
+    {
+      pos = data;
+      phase.resize(pos.rows(),1);
+      phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
+    }
+
+    //std::cout << "BEFORE" << std::endl;
+    //std::cout << phase << std::endl;
+
+    align_phase(phase,phase_ref,pos,pos_ref);
+
+    //std::cout << "AFTER" << std::endl;
+    //std::cout << phase << std::endl;
+
+    fa_->trainIncremental(phase,pos);
 }
 
 // Explicitly instantiate the templates, and its member definitions

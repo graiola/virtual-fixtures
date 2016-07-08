@@ -15,6 +15,7 @@
 
 ////////// Toolbox
 #include "toolbox/spline/spline.h"
+#include "toolbox/dtw/dtw.h"
 
 namespace virtual_mechanism_gmr
 {
@@ -36,6 +37,7 @@ class VirtualMechanismGmr: public VM_t
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0);
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
       void UpdateGuide(const Eigen::MatrixXd& data);
+      void AlignAndUpateGuide(const Eigen::MatrixXd& data);
 	  
 	protected:
 	  
@@ -55,7 +57,7 @@ class VirtualMechanismGmr: public VM_t
 	  Eigen::MatrixXd fa_output_dot_;
 	  Eigen::MatrixXd variance_;
 	  Eigen::MatrixXd covariance_;
-	  Eigen::MatrixXd covariance_inv_;
+      Eigen::MatrixXd covariance_inv_;
 	  
 	  Eigen::VectorXd err_;
 
@@ -73,6 +75,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       VirtualMechanismGmrNormalized(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const Eigen::MatrixXd& data);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
       void UpdateGuide(const Eigen::MatrixXd& data);
+      void AlignAndUpateGuide(const Eigen::MatrixXd& data);
 
     protected:
 
