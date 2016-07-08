@@ -39,8 +39,8 @@ class VirtualMechanismInterface
             assert(K[i] > 0.0);
             assert(B[i] > 0.0);
           }
-	      assert(Kf_ > 0.0);
-          assert(Bf_ > 0.0);
+          assert(Kf_ >= 0.0);
+          assert(Bf_ >= 0.0);
           assert(fade_gain_ > 0.0);
 
 	      // Initialize/resize the attributes
@@ -171,6 +171,7 @@ class VirtualMechanismInterface
       // TO BE MOVED IN ANOTHER SUBCLASS!
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
       virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
+      virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
       inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
@@ -184,7 +185,7 @@ class VirtualMechanismInterface
 	  inline void setActive(const bool active) {active_ = active;}
       inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
-	  inline void moveBackward() {move_forward_ = false;}
+      inline void moveBackward() {move_forward_ = false;}
 	  inline void moveForward() {move_forward_ = true;}
 	  
 	  inline double getTorque() const {return torque_(0,0);} // For test purpose
@@ -349,12 +350,10 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
           BxJ_.noalias() = B_ * J_;
           JtxBxJ_.noalias() = J_transp_ * BxJ_;
 
-          /*
 	      // Adapt Bf
-	      Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
+          /*Bd_ = std::exp(-4/epsilon_*JxJt_(0,0)) * Bd_max_; // NOTE: Since JxJt_ has dim 1x1 the determinant is the only value in it
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
-          det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;
-          */
+          det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;*/
 
           det_ = JtxBxJ_(0,0) + Bf_;
 
