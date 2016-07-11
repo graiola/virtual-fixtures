@@ -169,9 +169,11 @@ class VirtualMechanismInterface
 	  }
 	  
       // TO BE MOVED IN ANOTHER SUBCLASS!
+      // FIXMEEEEEE
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
       virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
       virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
+      virtual bool SaveGMMToTxt(const std::string file_path){}
       inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
