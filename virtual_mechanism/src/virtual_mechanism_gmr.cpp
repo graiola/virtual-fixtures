@@ -8,7 +8,7 @@ using namespace DmpBbo;
 using namespace tk;
 using namespace dtw;
 
-namespace virtual_mechanism_gmr 
+namespace virtual_mechanism_gmr
 {
 
 template <class VM_t>
@@ -224,7 +224,7 @@ VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
 }
 
 template <class VM_t>
-bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
+bool VirtualMechanismGmr<VM_t>::LoadGMMFromTxt(const string file_path) // LoadGMMFromTxt
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
     if(model_parameters_gmr!=NULL)
@@ -233,6 +233,16 @@ bool VirtualMechanismGmr<VM_t>::CreateGmrFromTxt(const string file_path)
         delete model_parameters_gmr;
         return true;
     }
+    else
+        return false;
+}
+
+template <class VM_t>
+bool VirtualMechanismGmr<VM_t>::SaveGMMToTxt(const string file_path)
+{
+    const ModelParametersGMR* model_parameters_gmr = static_cast<const ModelParametersGMR*>(fa_->getModelParameters());
+    if(model_parameters_gmr->saveGMMToMatrix(file_path, true)) // overwrite = true
+        return true;
     else
         return false;
 }
@@ -250,7 +260,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, 
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-    if(CreateGmrFromTxt(file_path))
+    if(LoadGMMFromTxt(file_path))
         Init();
     else
         throw new invalid_argument("Impossible to load GMM from file.");

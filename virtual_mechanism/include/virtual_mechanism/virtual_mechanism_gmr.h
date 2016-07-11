@@ -38,11 +38,12 @@ class VirtualMechanismGmr: public VM_t
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
+      bool SaveGMMToTxt(const std::string file_path);
 	  
 	protected:
 	  
       void Init();
-      bool CreateGmrFromTxt(const std::string file_path);
+      bool LoadGMMFromTxt(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
