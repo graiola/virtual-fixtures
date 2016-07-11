@@ -27,9 +27,6 @@
 ////////// BOOST
 #include <boost/thread.hpp>
 
-////////// STD
-//#include <atomic>
-
 namespace mechanism_manager
 {
 
@@ -86,6 +83,7 @@ class MechanismManager
     void DeleteVM(const int idx);
     void UpdateVM(const Eigen::MatrixXd& data, const int idx);
     void UpdateVM(double* const data, const int n_rows, const int idx); // Used by TAO
+    void SaveVM(const int idx);
     void Stop();
     bool OnVm();
     //inline bool InsertDone() const {if(insert_done_) return true; else return false;}
@@ -118,6 +116,7 @@ class MechanismManager
     void DeleteVM_no_rt(const int& idx);
     void UpdateVM_no_rt(const Eigen::MatrixXd& data, const int idx);
     void UpdateVM_no_rt(double* const data, const int n_rows, const int idx);
+    void SaveVM_no_rt(const int idx);
 
     std::string pkg_path_;
     
@@ -138,6 +137,8 @@ class MechanismManager
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd scales_;
+    Eigen::VectorXd scales_hard_;
+    Eigen::VectorXd scales_soft_;
 
     Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;
@@ -190,6 +191,7 @@ class MechanismManager
     tool_box::AsyncThread* async_thread_insert_;
     tool_box::AsyncThread* async_thread_delete_;
     tool_box::AsyncThread* async_thread_update_;
+    tool_box::AsyncThread* async_thread_save_;
     //boost::atomic<bool> insert_done_;
     //boost::atomic<bool> delete_done_;
 

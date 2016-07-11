@@ -112,6 +112,8 @@ void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
     }
 
     PushBack(0.0,scales_);
+    PushBack(0.0,scales_hard_);
+    PushBack(0.0,scales_soft_);
     PushBack(0.0,phase_);
     PushBack(0.0,phase_dot_);
     PushBack(0.0,phase_ddot_);
@@ -136,9 +138,9 @@ void MechanismManager::InsertVM_no_rt(std::string& model_name)
     try
     {
         if(second_order_)
-            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
         else
-            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,model_complete_path);
 
         InitGuide(vm_tmp_ptr);
 
@@ -161,9 +163,9 @@ void MechanismManager::InsertVM_no_rt(const MatrixXd& data)
     try
     {
         if(second_order_)
-            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceSecondOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
         else
-            vm_tmp_ptr = new VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
+            vm_tmp_ptr = new VirtualMechanismGmrNormalized<VirtualMechanismInterfaceFirstOrder>(position_dim_,K_,B_,Kf_,Bf_,fade_gain_,data);
 
         InitGuide(vm_tmp_ptr);
 
@@ -185,6 +187,32 @@ void MechanismManager::InsertVM_no_rt()
     InsertVM_no_rt(model_name);
 }
 
+void MechanismManager::SaveVM_no_rt(const int idx)
+{
+    std::string model_name;
+    std::cout << "Insert model name: " << std::endl;
+    std::cin >> model_name;
+    std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
+
+    std::cout << "Saving guide number#"<< idx << " to " << model_complete_path << std::endl;
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    if(idx < vm_vector_.size())
+    {
+        std::cout << "Saving..." << std::endl;
+        if(vm_vector_[idx]->SaveGMMToTxt(model_complete_path))
+            std::cout << "...DONE!" << std::endl;
+        else
+            std::cerr << "Impossible to save the file " << model_complete_path << std::endl;
+    }
+    else
+    {
+        std::cout << "Guide number#" << idx << "not available..." << std::endl;
+    }
+    guard.unlock();
+    std::cout << "Saving of guide number#"<< idx << " complete." << std::endl;
+}
+
 void MechanismManager::InsertVM()
 {
     async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM_no_rt, this));
@@ -201,6 +229,12 @@ void MechanismManager::InsertVM(std::string& model_name)
 {
     async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM_no_rt), this, model_name));
     async_thread_insert_->Trigger();
+}
+
+void MechanismManager::SaveVM(const int idx)
+{
+    async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM_no_rt, this, idx));
+    async_thread_save_->Trigger();
 }
 
 void MechanismManager::Delete(const int idx, VectorXd& vect)
@@ -249,6 +283,8 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
        Delete(idx,scales_);
+       Delete(idx,scales_hard_);
+       Delete(idx,scales_soft_);
        Delete(idx,phase_);
        Delete(idx,phase_dot_);
        Delete(idx,phase_ddot_);
@@ -313,8 +349,8 @@ bool MechanismManager::ReadConfig(std::string file_path)
     }
     else
     {
-        Kf_ = 1.0;
-        Bf_ = 1.0;
+        Kf_ = 0.0;
+        Bf_ = 0.0;
         fade_gain_ = 1.0;
         use_active_guide_ = false;
     }
@@ -352,6 +388,7 @@ MechanismManager::MechanismManager()
       async_thread_insert_ = new AsyncThread();
       async_thread_delete_ = new AsyncThread();
       async_thread_update_ = new AsyncThread();
+      async_thread_save_   = new AsyncThread();
 
 #ifdef INCLUDE_ROS_CODE
       pkg_path_ = ros::package::getPath("mechanism_manager");
@@ -420,6 +457,8 @@ MechanismManager::MechanismManager()
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_hard",&scales_hard_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
     }
     catch(const std::runtime_error& e)
@@ -443,6 +482,7 @@ MechanismManager::~MechanismManager()
       delete async_thread_insert_;
       delete async_thread_delete_;
       delete async_thread_update_;
+      delete async_thread_save_;
 
       //thread_insert_.join();
       //thread_delete_.join();
@@ -541,8 +581,8 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             //vm_vector_[i]->getJacobian(vm_jacobian_[i]);
 
             // Compute the gaussian activations
-            //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
-            scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
+            scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
+            //scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
         }
 
         f_pos_.fill(0.0); // Reset the force
@@ -554,13 +594,17 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
           switch(prob_mode)
           {
             case HARD:
-                scales_(i) =  scales_(i)/sum;
+                scales_hard_(i) = scales_(i)/sum;
+                scales_(i) =  scales_hard_(i);
                 break;
             case POTENTIAL:
                 scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 break;
             case SOFT:
-                scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
+                scales_soft_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+                //scales_hard_(i) = scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
+                scales_hard_(i) = scales_(i)/sum; // To avoid numerical issues
+                scales_(i) =  scales_soft_(i) * scales_hard_(i);
                 //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum; // To avoid numerical issues
                 break;
             default:
@@ -661,9 +705,27 @@ bool MechanismManager::OnVm()
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
+
         for(int i=0;i<scales_.size();i++)
-            if(scales_(i) > 0.9)
+        {
+            if(scales_(i) >= 0.9/static_cast<double>(scales_.size())) // Hacky
                 on_guide = true;
+        }
+
+
+        //if(scales_.size() == 1) // Case with only one guide
+        //{
+        //    if(scales_(0) > 0.9)
+        //        on_guide = true;
+        //}
+        //else if(scales_.size() > 1) // Case with multiple guides
+        //{
+        //    for(int i=0;i<scales_.size();i++)
+        //    {
+        //        if(scales_(i) > 1.0/static_cast<double>(scales_.size())) // Hacky
+        //            on_guide = true;
+        //    }
+        //}
     }
     else
         on_guide = on_guide_prev_;
@@ -687,16 +749,18 @@ void MechanismManager::UpdateVM(const MatrixXd& data, const int idx)
 void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
 {
     std::cout << "Updating guide number#"<< idx << std::endl;
+
+    //CheckForSingularities();
+
     //boost::mutex::scoped_lock guard(mtx_); // scoped
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     if(idx < vm_vector_.size())
     {
-
         std::cout << "Updating..." << std::endl;
         vm_vector_[idx]->UpdateGuide(data);
+        //vm_vector_[idx]->AlignAndUpateGuide(data);
         std::cout << "...DONE!" << std::endl;
-
     }
     else
     {
