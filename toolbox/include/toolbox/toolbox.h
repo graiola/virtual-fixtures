@@ -32,6 +32,43 @@
 namespace tool_box 
 {
 
+inline void Delete(const int idx, Eigen::VectorXd& vect)
+{
+    int n = vect.size()-idx-1;
+    vect.segment(idx,n) = vect.tail(n);
+    vect.conservativeResize(vect.size()-1);
+}
+
+inline void PushBack(const double value, Eigen::VectorXd& vect)
+{
+    int n = vect.size();
+    vect.conservativeResize(n+1,Eigen::NoChange);
+    vect(n) = value;
+}
+
+inline void PushBack(const Eigen::ArrayXd vect, Eigen::MatrixXd& mat)
+{
+    assert(vect.size() == mat.cols());
+    int n = mat.rows();
+    mat.conservativeResize(n+1,Eigen::NoChange);
+    mat.row(n) = vect;
+}
+
+inline void CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.01)
+{
+    Eigen::MatrixXd data_tmp = data;
+    data.resize(0,data_tmp.cols());
+
+    for(int i = 0; i < data_tmp.rows()-1; i++)
+        if((data_tmp.row(i+1) - data_tmp.row(i)).norm() > dt*dist_min)
+        {
+            PushBack(data_tmp.row(i),data);
+        }
+
+    if(data.rows() == 0)
+        std::cerr << "Data is empty, did you move the robot?" << std::endl;
+}
+
 class AsyncThread
 {
     typedef boost::function<void ()> funct_t;
