@@ -230,6 +230,47 @@ class AdaptiveGain
 		double c_;
 };
 
+template<typename Scalar, int RowsAtCompileTime, int ColsAtCompileTime>
+inline bool ReadTxtFile(std::string filename, Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>& m)
+{
+
+  // General structure
+  // 1. Read file contents into vector<double> and count number of lines
+  // 2. Initialize matrix
+  // 3. Put data in vector<double> into matrix
+
+  std::ifstream input(filename.c_str());
+  if (input.fail())
+  {
+    std::cerr << "ERROR. Cannot find file '" << filename << "'." << std::endl;
+    m = Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>(0,0);
+  }
+  std::string line;
+  Scalar d;
+
+  std::vector<Scalar> v;
+  int n_rows = 0;
+  while (getline(input, line))
+  {
+    ++n_rows;
+    std::stringstream input_line(line);
+    while (!input_line.eof())
+    {
+      input_line >> d;
+      v.push_back(d);
+    }
+  }
+  input.close();
+
+  int n_cols = v.size()/n_rows;
+  m = Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>(n_rows,n_cols);
+
+  for (int i=0; i<n_rows; i++)
+    for (int j=0; j<n_cols; j++)
+      m(i,j) = v[i*n_cols + j];
+
+}
+
 template<typename value_t>
 void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
     std::string line;
@@ -252,7 +293,7 @@ void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values
     std::cout << "File ["<<filename<<"] read with success  ["<<nb_vals<<" values, "<<i<<" lines] "<<std::endl;
     }
     else{
-     std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
+     std::cerr << "Unable to open file : ["<<filename<<"]"<<std::endl;
     }
     myfile.close();
 }
@@ -266,6 +307,24 @@ void WriteTxtFile(const char* filename, std::vector<value_t>& values) {
     {
         while(row < nb_rows) {
         myfile << values[row] << "\n";
+            row++;
+        }
+    std::cout << "File ["<<filename<<"] write with success  ["<<nb_rows<<" rows ] "<<std::endl;
+    }
+    else{
+     std::cerr << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
+
+inline void WriteTxtFile(const char* filename, Eigen::VectorXd& values) {
+    std::ofstream myfile (filename);
+    std::size_t row = 0;
+    std::size_t nb_rows = values.size();
+    if (myfile.is_open())
+    {
+        while(row < nb_rows) {
+        myfile << values(row) << "\n";
             row++;
         }
     std::cout << "File ["<<filename<<"] write with success  ["<<nb_rows<<" rows ] "<<std::endl;
@@ -298,7 +357,33 @@ void WriteTxtFile(const char* filename, std::vector<std::vector<value_t> >& valu
     std::cout << "File ["<<filename<<"] write with success  ["<<nb_rows<<" rows ]["<<nb_cols<<" cols ] "<<std::endl;
     }
     else{
-     std::cout << "Unable to open file : ["<<filename<<"]"<<std::endl;
+     std::cerr << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
+
+inline void WriteTxtFile(const char* filename, Eigen::MatrixXd& values ) {
+    std::ofstream myfile (filename);
+    std::size_t row = 0;
+    std::size_t nb_rows = values.rows();
+    std::size_t col = 0;
+    std::size_t nb_cols = values.cols();
+
+    if (myfile.is_open())
+    {
+        while(row < nb_rows) {
+            while(col < nb_cols) {
+                myfile << values(row,col) << " ";
+                col++;
+            }
+            col = 0;
+            row++;
+            myfile << "\n";
+        }
+    std::cout << "File ["<<filename<<"] write with success  ["<<nb_rows<<" rows ]["<<nb_cols<<" cols ] "<<std::endl;
+    }
+    else{
+     std::cerr << "Unable to open file : ["<<filename<<"]"<<std::endl;
     }
     myfile.close();
 }
