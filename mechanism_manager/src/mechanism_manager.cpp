@@ -581,8 +581,12 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             //vm_vector_[i]->getJacobian(vm_jacobian_[i]);
 
             // Compute the gaussian activations
-            scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
+            //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
+            //scales_(i) = vm_vector_[i]->getDistance(robot_position_);
+
+
+            scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
         }
 
         f_pos_.fill(0.0); // Reset the force
@@ -708,7 +712,10 @@ bool MechanismManager::OnVm()
 
         for(int i=0;i<scales_.size();i++)
         {
-            if(scales_(i) >= 0.9/static_cast<double>(scales_.size())) // Hacky
+            //if(scales_(i) >= 0.9/static_cast<double>(scales_.size())) // Hacky
+            //    on_guide = true;
+
+            if(scales_(i) > 0.9) // Hacky
                 on_guide = true;
         }
 
@@ -749,29 +756,32 @@ void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
 void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 {
     std::cout << "Crop incoming data" << std::endl;
-    CropData(data);
-
-    std::cout << "Updating guide number#"<< idx << std::endl;
-
-    //boost::mutex::scoped_lock guard(mtx_); // scoped
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock();
-    if(idx < vm_vector_.size())
+    if(CropData(data))
     {
-        std::cout << "Updating..." << std::endl;
-        vm_vector_[idx]->UpdateGuide(data);
-        //vm_vector_[idx]->AlignAndUpateGuide(data);
-        std::cout << "...DONE!" << std::endl;
+        std::cout << "Updating guide number#"<< idx << std::endl;
+
+        //boost::mutex::scoped_lock guard(mtx_); // scoped
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        if(idx < vm_vector_.size())
+        {
+            std::cout << "Updating..." << std::endl;
+            vm_vector_[idx]->UpdateGuide(data);
+            //vm_vector_[idx]->AlignAndUpateGuide(data);
+            std::cout << "...DONE!" << std::endl;
+        }
+        else
+        {
+            //guard.unlock(); // FIXME
+            std::cout << "Guide not available, creating a new guide..." << std::endl;
+            InsertVM_no_rt(data);
+        }
+
+        guard.unlock();
+        std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
     }
     else
-    {
-        //guard.unlock(); // FIXME
-        std::cout << "Guide not available, creating a new guide..." << std::endl;
-        InsertVM_no_rt(data);
-    }
-
-    guard.unlock();
-    std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
+        std::cerr << "Impossible to update guide, data is empty" << std::endl;
 }
 
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
