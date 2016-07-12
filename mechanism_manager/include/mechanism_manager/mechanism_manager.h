@@ -81,8 +81,8 @@ class MechanismManager
     void InsertVM();
     void InsertVM(const Eigen::MatrixXd& data);
     void DeleteVM(const int idx);
-    void UpdateVM(const Eigen::MatrixXd& data, const int idx);
-    void UpdateVM(double* const data, const int n_rows, const int idx); // Used by TAO
+    void UpdateVM(Eigen::MatrixXd& data, const int idx);
+    void UpdateVM(double* data, const int n_rows, const int idx); // Used by TAO
     void SaveVM(const int idx);
     void Stop();
     bool OnVm();
@@ -103,8 +103,8 @@ class MechanismManager
 
     void Update(const prob_mode_t prob_mode);
     bool ReadConfig(std::string file_path);
-    void Delete(const int idx, Eigen::VectorXd& vect);
-    void PushBack(const double value, Eigen::VectorXd& vect);
+    //void Delete(const int idx, Eigen::VectorXd& vect);
+    //void PushBack(const double value, Eigen::VectorXd& vect);
     void CheckForGuideActivation(const int idx);
     void InitGuide(vm_t* const vm_tmp_ptr);
 
@@ -114,8 +114,8 @@ class MechanismManager
     void InsertVM_no_rt(const Eigen::MatrixXd& data);
     void InsertVM_no_rt();
     void DeleteVM_no_rt(const int& idx);
-    void UpdateVM_no_rt(const Eigen::MatrixXd& data, const int idx);
-    void UpdateVM_no_rt(double* const data, const int n_rows, const int idx);
+    void UpdateVM_no_rt(Eigen::MatrixXd& data, const int idx);
+    void UpdateVM_no_rt(double* data, const int n_rows, const int idx);
     void SaveVM_no_rt(const int idx);
 
     std::string pkg_path_;

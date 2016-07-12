@@ -236,7 +236,7 @@ void MechanismManager::SaveVM(const int idx)
     async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM_no_rt, this, idx));
     async_thread_save_->Trigger();
 }
-
+/*
 void MechanismManager::Delete(const int idx, VectorXd& vect)
 {
     int n = vect.size()-idx-1;
@@ -250,7 +250,7 @@ void MechanismManager::PushBack(const double value, VectorXd& vect)
     vect.conservativeResize(n+1,NoChange);
     vect(n) = value;
 }
-
+*/
 void MechanismManager::DeleteVM(const int idx)
 {
     async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM_no_rt, this, idx));
@@ -734,23 +734,24 @@ bool MechanismManager::OnVm()
     return on_guide;
 }
 
-void MechanismManager::UpdateVM(double* const data, const int n_rows, const int idx)
+void MechanismManager::UpdateVM(double* data, const int n_rows, const int idx)
 {
     async_thread_update_->AddHandler(boost::bind(&MechanismManager::UpdateVM_no_rt, this, data, n_rows, idx));
     async_thread_update_->Trigger();
 }
 
-void MechanismManager::UpdateVM(const MatrixXd& data, const int idx)
+void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
 {
     async_thread_update_->AddHandler(boost::bind(&MechanismManager::UpdateVM_no_rt, this, data, idx));
     async_thread_update_->Trigger();
 }
 
-void MechanismManager::UpdateVM_no_rt(const MatrixXd& data, const int idx)
+void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 {
-    std::cout << "Updating guide number#"<< idx << std::endl;
+    std::cout << "Crop incoming data" << std::endl;
+    CropData(data);
 
-    //CheckForSingularities();
+    std::cout << "Updating guide number#"<< idx << std::endl;
 
     //boost::mutex::scoped_lock guard(mtx_); // scoped
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
