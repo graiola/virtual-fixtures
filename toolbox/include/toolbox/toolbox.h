@@ -54,7 +54,7 @@ inline void PushBack(const Eigen::ArrayXd vect, Eigen::MatrixXd& mat)
     mat.row(n) = vect;
 }
 
-inline void CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.01)
+inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.01)
 {
     Eigen::MatrixXd data_tmp = data;
     data.resize(0,data_tmp.cols());
@@ -66,7 +66,12 @@ inline void CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double 
         }
 
     if(data.rows() == 0)
+    {
         std::cerr << "Data is empty, did you move the robot?" << std::endl;
+        return false;
+    }
+    else
+        return true;
 }
 
 class AsyncThread
