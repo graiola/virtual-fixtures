@@ -39,6 +39,8 @@ class VirtualMechanismGmr: public VM_t
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       bool SaveGMMToTxt(const std::string file_path);
+      double ComputeResponsability(const Eigen::MatrixXd& pos);
+      virtual double GetResponsability();
 	  
 	protected:
 	  

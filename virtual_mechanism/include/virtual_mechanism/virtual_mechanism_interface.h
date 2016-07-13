@@ -174,6 +174,8 @@ class VirtualMechanismInterface
       virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
       virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
       virtual bool SaveGMMToTxt(const std::string file_path){}
+      virtual double ComputeResponsability(const Eigen::MatrixXd& pos){}
+      virtual double GetResponsability(){}
       inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;

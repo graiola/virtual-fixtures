@@ -83,6 +83,8 @@ class MechanismManager
     void DeleteVM(const int idx);
     void UpdateVM(Eigen::MatrixXd& data, const int idx);
     void UpdateVM(double* data, const int n_rows, const int idx); // Used by TAO
+    void ClusterVM(Eigen::MatrixXd& data);
+    void ClusterVM(double* data, const int n_rows); // Used by TAO
     void SaveVM(const int idx);
     void Stop();
     bool OnVm();
@@ -117,6 +119,8 @@ class MechanismManager
     void UpdateVM_no_rt(Eigen::MatrixXd& data, const int idx);
     void UpdateVM_no_rt(double* data, const int n_rows, const int idx);
     void SaveVM_no_rt(const int idx);
+    void ClusterVM_no_rt(Eigen::MatrixXd& data);
+    void ClusterVM_no_rt(double* const data, const int n_rows);
 
     std::string pkg_path_;
     

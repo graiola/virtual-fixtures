@@ -230,7 +230,7 @@ bool VirtualMechanismGmr<VM_t>::LoadGMMFromTxt(const string file_path) // LoadGM
     if(model_parameters_gmr!=NULL)
     {
         fa_ = new fa_t(model_parameters_gmr);
-        delete model_parameters_gmr;
+        //delete model_parameters_gmr;
         return true;
     }
     else
@@ -400,7 +400,7 @@ double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos, const double 
   // Hence the 1.0/covariance_inv_.determinant() below
   //  ( (2\pi)^N*|\Sigma| )^(-1/2)
 
-  prob_ *= pow(pow(2*M_PI,VM_t::state_.size())/determinant_cov_,-0.5);
+  prob_ *= pow(pow(2*M_PI,VM_t::state_.size()) * determinant_cov_,-0.5);
 
   return prob_;
   
@@ -478,15 +478,27 @@ void VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
       phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
     }
 
-    //std::cout << "BEFORE" << std::endl;
-    //std::cout << phase << std::endl;
+    std::string file_name = "/home/sybot/gennaro_output/phase_before.txt";
+    WriteTxtFile(file_name.c_str(),phase);
 
     align_phase(phase,phase_ref,pos,pos_ref);
 
-    //std::cout << "AFTER" << std::endl;
-    //std::cout << phase << std::endl;
+    file_name = "/home/sybot/gennaro_output/phase_after.txt";
+    WriteTxtFile(file_name.c_str(),phase);
 
     fa_->trainIncremental(phase,pos);
+}
+
+template<class VM_t>
+double VirtualMechanismGmr<VM_t>::ComputeResponsability(const MatrixXd& pos)
+{
+    return fa_->computeResponsability(pos);
+}
+
+template<class VM_t>
+double VirtualMechanismGmr<VM_t>::GetResponsability()
+{
+    return fa_->getCachedResponsability();
 }
 
 // Explicitly instantiate the templates, and its member definitions

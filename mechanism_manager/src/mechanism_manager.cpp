@@ -584,8 +584,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
             //scales_(i) = vm_vector_[i]->getDistance(robot_position_);
-
-
             scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
         }
 
@@ -753,6 +751,18 @@ void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
     async_thread_update_->Trigger();
 }
 
+void MechanismManager::ClusterVM(double* data, const int n_rows)
+{
+    async_thread_update_->AddHandler(boost::bind(&MechanismManager::ClusterVM_no_rt, this, data, n_rows));
+    async_thread_update_->Trigger();
+}
+
+void MechanismManager::ClusterVM(MatrixXd& data)
+{
+    async_thread_update_->AddHandler(boost::bind(&MechanismManager::ClusterVM_no_rt, this, data));
+    async_thread_update_->Trigger();
+}
+
 void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 {
     std::cout << "Crop incoming data" << std::endl;
@@ -790,6 +800,70 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     UpdateVM_no_rt(mat,idx);
 }
+
+void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
+{
+    std::cout << "Crop incoming data" << std::endl;
+    if(CropData(data))
+    {
+        std::cout << "Clustering the incoming data" << std::endl;
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        if(vm_vector_.size()>0)
+        {
+            //VectorXd new_resp(vm_vector_.size());
+            //VectorXd old_resp(vm_vector_.size());
+            double new_resp, old_resp;
+            ArrayXd resp_change_in_percentage(vm_vector_.size());
+            ArrayXd::Index max_resp_idx;
+            for(int i=0;i<vm_vector_.size();i++)
+            {
+
+                old_resp = vm_vector_[i]->GetResponsability();
+                new_resp = vm_vector_[i]->ComputeResponsability(data);
+
+                resp_change_in_percentage(i) = ((new_resp - old_resp)/old_resp) * 100;
+
+                std::cout << "Responsability of guide number# " << i << " : " << resp_change_in_percentage(i) << std::endl;
+
+            }
+
+            if((resp_change_in_percentage < -30.0).all())
+            {
+
+                std::cout << "Creating a new guide..." << std::endl;
+                InsertVM_no_rt(data);
+                std::cout << "...DONE!" << std::endl;
+            }
+            else
+            {
+                 resp_change_in_percentage.maxCoeff(&max_resp_idx);
+                 std::cout << "Updating guide number# "<<max_resp_idx<< std::endl;
+                 UpdateVM_no_rt(data,max_resp_idx);
+                 std::cout << "...DONE!" << std::endl;
+            }
+
+        }
+        else
+        {
+            std::cout << "No guides available, creating a new guide..." << std::endl;
+            InsertVM_no_rt(data);
+        }
+
+        guard.unlock();
+        std::cout << "Clustering complete" << std::endl;
+    }
+    else
+        std::cerr << "Impossible to update guide, data is empty" << std::endl;
+}
+
+void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
+{
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    ClusterVM_no_rt(mat);
+}
+
+
 
 
 } // namespace
