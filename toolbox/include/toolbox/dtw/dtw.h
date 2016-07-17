@@ -21,7 +21,6 @@ void align_phase(Eigen::MatrixXd& phase1, const Eigen::MatrixXd& phase2, const E
 } // namespace
 */
 
-
 namespace{
 
 namespace dtw{
@@ -88,7 +87,6 @@ double dtw(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, int w = -1)
     return dtw(sig1,sig2,D,w);
 }
 
-
 void align_idx(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, Eigen::VectorXi& idx, int w = -1)
 {
     Eigen::MatrixXd D_tmp;
@@ -131,9 +129,9 @@ void align_phase(Eigen::MatrixXd& phase1, const Eigen::MatrixXd& phase2, const E
         phase1(i,0) = phase2(idx(i),0);
 }
 
-}
-}
+} // dtw namespace
 
+} // anonym namespace
 
 
 #endif /* DTW_H_ */
