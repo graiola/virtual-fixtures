@@ -444,6 +444,8 @@ MechanismManager::MechanismManager()
       on_guide_prev_ = false;
       nb_vm_prev_ = 0;
 
+      loopCnt = 0;
+
       // Bools
       //insert_done_ = false;
       //delete_done_ = false;
@@ -585,6 +587,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_,escape_factor_);
             //scales_(i) = vm_vector_[i]->getDistance(robot_position_);
             scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+            //scales_(i) = vm_vector_[i]->PolynomScale(robot_position_);
         }
 
         f_pos_.fill(0.0); // Reset the force
@@ -596,6 +599,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
           switch(prob_mode)
           {
             case HARD:
+                scales_soft_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
                 scales_hard_(i) = scales_(i)/sum;
                 scales_(i) =  scales_hard_(i);
                 break;
@@ -604,8 +608,9 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
                 break;
             case SOFT:
                 scales_soft_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_));
+                //scales_soft_(i) = vm_vector_[i]->PolynomScale(robot_position_);
                 //scales_hard_(i) = scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
-                scales_hard_(i) = scales_(i)/sum; // To avoid numerical issues
+                scales_hard_(i) = scales_(i)/sum;
                 scales_(i) =  scales_soft_(i) * scales_hard_(i);
                 //scales_(i) = std::exp(-escape_factor_*vm_vector_[i]->getDistance(robot_position_)) * scales_(i)/sum; // To avoid numerical issues
                 break;
@@ -800,7 +805,7 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     UpdateVM_no_rt(mat,idx);
 }
-
+/*
 void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
 {
     std::cout << "Crop incoming data" << std::endl;
@@ -838,6 +843,79 @@ void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
             else
             {
                  resp_change_in_percentage.maxCoeff(&max_resp_idx);
+                 std::cout << "Updating guide number# "<<max_resp_idx<< std::endl;
+                 UpdateVM_no_rt(data,max_resp_idx);
+                 std::cout << "...DONE!" << std::endl;
+            }
+
+        }
+        else
+        {
+            std::cout << "No guides available, creating a new guide..." << std::endl;
+            InsertVM_no_rt(data);
+        }
+
+        guard.unlock();
+        std::cout << "Clustering complete" << std::endl;
+    }
+    else
+        std::cerr << "Impossible to update guide, data is empty" << std::endl;
+}
+*/
+
+void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
+{
+    //std::string file_path = "/home/sybot/gennaro_output/cropped_data_" + std::to_string(loopCnt++);
+    std::cout << "Crop incoming data" << std::endl;
+    if(CropData(data))
+    {
+        //tool_box::WriteTxtFile(file_path.c_str(),data);
+
+        std::cout << "Clustering the incoming data" << std::endl;
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        if(vm_vector_.size()>0)
+        {
+            ArrayXd resps(vm_vector_.size());
+            ArrayXi h(vm_vector_.size());
+            ArrayXd::Index max_resp_idx;
+            //int dofs = position_dim_/2 * (position_dim_ + 1)  - 1; // WTF
+            int dofs = 10; // WTF
+            double old_resp, new_resp;
+            for(int i=0;i<vm_vector_.size();i++)
+            {
+                old_resp = vm_vector_[i]->GetResponsability();
+                new_resp = vm_vector_[i]->ComputeResponsability(data); // NOTE: I should check for ties by comparing the new_resp for each guide
+
+                try
+                {
+
+                 h(i) = lratiotest(old_resp,new_resp, dofs);
+
+                }
+
+                catch(...)
+                {
+                    std::cerr << "Something is wrong with lratiotest, skipping the clustering..." << std::endl;
+                    break;
+                }
+
+
+                if(h(i) == 1)
+                    resps(i) = -std::numeric_limits<double>::infinity();
+                else
+                    resps(i) = new_resp;
+            }
+
+            if((h == 1).all())
+            {
+                std::cout << "Creating a new guide..." << std::endl;
+                InsertVM_no_rt(data);
+                std::cout << "...DONE!" << std::endl;
+            }
+            else
+            {
+                 resps.maxCoeff(&max_resp_idx); // Break the tie
                  std::cout << "Updating guide number# "<<max_resp_idx<< std::endl;
                  UpdateVM_no_rt(data,max_resp_idx);
                  std::cout << "...DONE!" << std::endl;
