@@ -28,9 +28,26 @@
 ////////// BOOST
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
+#include <boost/math/distributions/chi_squared.hpp>
 
 namespace tool_box 
 {
+
+inline int lratiotest(double loglik_unrestricted, double loglik_restricted, int dofs)
+{
+    boost::math::chi_squared chidist(dofs);
+    double alpha = 0.05;
+    double stat = 2*(loglik_unrestricted-loglik_restricted);
+
+    if(stat < 0) // The restricted is "better"
+        return 0;
+
+    double p = 1 - boost::math::cdf(chidist,stat);
+    if(p<=alpha)
+        return 1;
+    else
+        return 0;
+}
 
 inline void Delete(const int idx, Eigen::VectorXd& vect)
 {
@@ -54,7 +71,7 @@ inline void PushBack(const Eigen::ArrayXd vect, Eigen::MatrixXd& mat)
     mat.row(n) = vect;
 }
 
-inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.01)
+inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.05)
 {
     Eigen::MatrixXd data_tmp = data;
     data.resize(0,data_tmp.cols());
