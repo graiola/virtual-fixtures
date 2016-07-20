@@ -41,8 +41,8 @@ void VirtualMechanismGmrNormalized<VM_t>::Init()
 template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 {
-    const int n_points = 100; // FIXME
-    use_spline_xyz_ = true; // FIXME
+    const int n_points = 1000; // FIXME
+    use_spline_xyz_ = false; // FIXME
 
     spline_phase_.clear(); // spline::clear()
     spline_phase_inv_.clear(); // spline::clear()
@@ -416,6 +416,18 @@ double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos, const double 
   
   return output;*/
   
+}
+
+template<class VM_t>
+double VirtualMechanismGmr<VM_t>::PolynomScale(const VectorXd& pos, double w) //  0.001 [m]
+{
+    err_ = pos - VM_t::state_;
+    double x = err_.norm()/w;
+
+    if(x <= 1.0)
+        return x*x*x*x - 2*x*x + 1;
+    else
+        return 0.0;
 }
 
 template<class VM_t>

@@ -179,6 +179,7 @@ class VirtualMechanismInterface
       inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
+      virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001)=0;
 
 	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
 	  
@@ -331,7 +332,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
       //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 0.0, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 1.0, double epsilon = 10)://double Kf = 1.25
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
         assert(epsilon > 0.1);
@@ -359,7 +360,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      //Bf_ = std::exp(-4/epsilon_*JxJt_.determinant()) * Bf_max_; // NOTE JxJt_.determinant() is always positive! so it's ok
           det_ = B_ * JxJt_(0,0) + Bd_ * Bd_;*/
 
-          det_ = JtxBxJ_(0,0) + Bf_;
+          det_ = JtxBxJ_(0,0) + Bd_;
 
 	      torque_.noalias() = J_transp_ * force;
 	      

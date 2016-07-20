@@ -35,6 +35,7 @@ class VirtualMechanismGmr: public VM_t
       virtual void setWeightedDist(const bool activate);
       virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const;
       virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0);
+      virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001); //  w [m]
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);

@@ -133,7 +133,6 @@ TEST(VirtualMechanismGmrTest, UpdateMethodGmr)
   EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
   
   END_REAL_TIME_CRITICAL_CODE();
-  
 }
 
 TEST(VirtualMechanismGmrNormalizedTest, UpdateMethodGmr)
