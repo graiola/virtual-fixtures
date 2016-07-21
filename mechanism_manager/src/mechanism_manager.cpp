@@ -88,15 +88,23 @@ void MechanismManager::Stop()
 
 void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
 {
-    VectorXd empty_vect(position_dim_);
-    MatrixXd empty_mat(position_dim_,position_dim_);
+    VectorXd empty_vect_N(position_dim_);
+    MatrixXd empty_mat_NxN(position_dim_,position_dim_);
+    MatrixXd empty_mat_Nx1(position_dim_,1);
 
-    vm_state_.push_back(empty_vect);
-    vm_state_dot_.push_back(empty_vect);
-    vm_K_.push_back(empty_mat);
-    vm_B_.push_back(empty_mat);
+    vm_state_.push_back(empty_vect_N);
+    vm_state_dot_.push_back(empty_vect_N);
+    vm_K_.push_back(empty_mat_NxN);
+    vm_B_.push_back(empty_mat_NxN);
     vm_vector_.push_back(vm_tmp_ptr);
+
+
     vm_vector_.back()->setWeightedDist(use_weighted_dist_);
+    vm_jacobian_.push_back(empty_mat_Nx1);
+    f_vm_.push_back(empty_vect_N);
+    t_versor_.push_back(empty_vect_N);
+
+    vm_fades_.push_back(DynSystemFirstOrder(0.001,10.0));
 
     if(use_active_guide_)
     {
@@ -112,6 +120,7 @@ void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
     }
 
     PushBack(0.0,scales_);
+    PushBack(0.0,scales_t_);
     PushBack(0.0,scales_hard_);
     PushBack(0.0,scales_soft_);
     PushBack(0.0,phase_);
@@ -279,10 +288,16 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        vm_state_dot_.erase(vm_state_dot_.begin()+idx);
        vm_K_.erase(vm_K_.begin()+idx);
        vm_B_.erase(vm_B_.begin()+idx);
-       //vm_jacobian_.erase(vm_jacobian_.begin()+idx);
+
+
+       vm_jacobian_.erase(vm_jacobian_.begin()+idx);
+       f_vm_.erase(f_vm_.begin()+idx);
+       t_versor_.erase(t_versor_.begin()+idx);
+       vm_fades_.erase(vm_fades_.begin()+idx);
        //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
        Delete(idx,scales_);
+       Delete(idx,scales_t_);
        Delete(idx,scales_hard_);
        Delete(idx,scales_soft_);
        Delete(idx,phase_);
@@ -461,7 +476,10 @@ MechanismManager::MechanismManager()
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_hard",&scales_hard_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
+        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"t_versor_x",&t_versor_[0]);
+        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"t_versor_y",&t_versor_[1]);
     }
     catch(const std::runtime_error& e)
     {
@@ -580,7 +598,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             vm_vector_[i]->getStateDot(vm_state_dot_[i]);
             vm_vector_[i]->getK(vm_K_[i]);
             vm_vector_[i]->getB(vm_B_[i]);
-            //vm_vector_[i]->getJacobian(vm_jacobian_[i]);
+            vm_vector_[i]->getJacobian(vm_jacobian_[i]);
 
             // Compute the gaussian activations
             //scales_(i) = vm_vector_[i]->getGaussian(robot_position_);
@@ -617,13 +635,40 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             default:
               break;
           }
-            err_pos_ = vm_state_[i] - robot_position_;
-            f_K_ .noalias() = vm_K_[i] * err_pos_;
-            err_vel_ = vm_state_dot_[i] - robot_velocity_;
-            f_B_.noalias() = vm_B_[i] * err_vel_;
-            f_pos_ += scales_(i) * (f_K_ + f_B_); // Sum over all the vms
-          //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms           
+          err_pos_ = vm_state_[i] - robot_position_;
+          f_K_ .noalias() = vm_K_[i] * err_pos_;
+          err_vel_ = vm_state_dot_[i] - robot_velocity_;
+          f_B_.noalias() = vm_B_[i] * err_vel_;
+
+          //scales_t_(i) = ComputeScalesT(scales_hard_(i));
+
+          t_versor_[i] = vm_jacobian_[i]/vm_jacobian_[i].norm();
+
+          f_vm_[i] = f_K_ + f_B_;
+
+          //f_pos_ += scales_(i) * (f_K_ + f_B_ ); // Sum over all the vms
+          //f_pos_ += scales_(i) * (vm_vector_[i]->getK() * (vm_vector_[i]->getState() - robot_position_) + vm_vector_[i]->getB() * (vm_vector_[i]->getStateDot() - robot_velocity_)); // Sum over all the vms
         }
+
+        for(int i=0; i<vm_vector_.size();i++)
+            if(scales_(i) > 1.0/static_cast<double>(vm_vector_.size()))
+                for(int j=0; j<vm_vector_.size();j++)
+                    if(j!=i)
+                        scales_t_(j) = vm_fades_[j].IntegrateForward();
+                    else
+                        scales_t_(j) = vm_fades_[j].IntegrateBackward();
+
+        for(int i=0; i<vm_vector_.size();i++)
+        {
+            f_pos_ += scales_(i) * f_vm_[i];
+            for(int j=0; j<vm_vector_.size();j++)
+            {
+                if(j!=i)
+                    f_pos_ -= scales_(i) * scales_t_(i) * t_versor_[j] * f_vm_[i].dot(t_versor_[j]);
+            }
+        }
+
+
         f_pos_prev_ = f_pos_;
         nb_vm_prev_ = vm_vector_.size();
         //guard_.unlock();
@@ -634,6 +679,16 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
 #ifdef USE_ROS_RT_PUBLISHER
    rt_publishers_vector_.PublishAll();
 #endif
+}
+
+double MechanismManager::ComputeScalesT(const double scale)
+{
+
+
+    /*if(scale >= 1.0/static_cast<double>(vm_vector_.size()))
+        return 1.0;
+    else
+        return static_cast<double>(vm_vector_.size()) * scale;*/
 }
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)

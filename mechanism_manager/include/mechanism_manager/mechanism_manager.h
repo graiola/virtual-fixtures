@@ -122,6 +122,8 @@ class MechanismManager
     void ClusterVM_no_rt(Eigen::MatrixXd& data);
     void ClusterVM_no_rt(double* const data, const int n_rows);
 
+    double ComputeScalesT(const double scale);
+
     std::string pkg_path_;
     
     long long loopCnt;
@@ -169,7 +171,8 @@ class MechanismManager
     std::vector<Eigen::VectorXd> vm_state_dot_;
     std::vector<Eigen::MatrixXd> vm_K_;
     std::vector<Eigen::MatrixXd> vm_B_;
-    std::vector<Eigen::VectorXd> vm_jacobian_;
+    std::vector<Eigen::MatrixXd> vm_jacobian_;
+    std::vector<tool_box::DynSystemFirstOrder> vm_fades_;
     std::vector<vm_t*> vm_vector_;
     std::vector<VirtualMechanismAutom* > vm_autom_;
 
@@ -204,13 +207,10 @@ class MechanismManager
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom
 
-    // Alpha computation
-    /*Eigen::VectorXd f_rob_;
-    double f_rob_norm_;
-    Eigen::VectorXd t_versor_;
-    double f_rob_t_;
-    double f_rob_n_;
-    Eigen::VectorXd alpha_;*/
+    // Lock stuff
+    std::vector<Eigen::VectorXd> f_vm_;
+    std::vector<Eigen::VectorXd> t_versor_;
+    Eigen::VectorXd scales_t_;
 
 
 #ifdef INCLUDE_ROS_CODE
