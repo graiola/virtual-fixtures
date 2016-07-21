@@ -71,7 +71,7 @@ inline void PushBack(const Eigen::ArrayXd vect, Eigen::MatrixXd& mat)
     mat.row(n) = vect;
 }
 
-inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.05)
+inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double dist_min = 0.01)
 {
     Eigen::MatrixXd data_tmp = data;
     data.resize(0,data_tmp.cols());
@@ -90,6 +90,49 @@ inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double 
     else
         return true;
 }
+
+class DynSystemFirstOrder
+{
+
+public:
+    DynSystemFirstOrder(double dt, double gain, double ref = 1.0)
+    {
+        assert(dt > 0.0);
+        dt_ = dt;
+        assert(gain > 0.0);
+        gain_ = gain;
+        ref_ = ref;
+        state_ = 0.0;
+    }
+
+    inline double IntegrateForward()
+    {
+        return state_ = gain_ * (ref_ - state_) * dt_ + state_;
+    }
+
+    inline double IntegrateBackward()
+    {
+        return state_ = gain_ * (-state_) * dt_ + state_;
+    }
+
+    inline void Reset()
+    {
+        state_ = 0.0;
+    }
+
+    inline double GetState()
+    {
+        return state_;
+    }
+
+private:
+
+    double dt_;
+    double gain_;
+    double ref_;
+    double state_;
+
+};
 
 class AsyncThread
 {
