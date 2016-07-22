@@ -42,7 +42,7 @@ template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 {
     const int n_points = 1000; // FIXME
-    use_spline_xyz_ = false; // FIXME
+    use_spline_xyz_ = true; // FIXME
 
     spline_phase_.clear(); // spline::clear()
     spline_phase_inv_.clear(); // spline::clear()
