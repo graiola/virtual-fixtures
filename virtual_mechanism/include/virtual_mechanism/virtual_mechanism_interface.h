@@ -475,7 +475,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
       inline void DynSystem(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state)
 	  {
 
-         //phase_state_dot_(1) = (1/inertia_)*(- B_ * JxJt_(0,0) * phase_state(1) - input); // Old version with damping
+         //phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1); // Old version with damping
+         phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1 + input2); // Old version with damping
+
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
          //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
          //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
@@ -484,15 +486,15 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
          //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
          //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
 
-         phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
+         //phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
          phase_state_dot_(0) = phase_state(1);
          //phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
-          //BxJ_.noalias() = B_ * J_;
-          //JtxBxJ_.noalias() = J_transp_ * BxJ_;
+          BxJ_.noalias() = B_ * J_;
+          JtxBxJ_.noalias() = J_transp_ * BxJ_;
 
 	      torque_.noalias() = J_transp_ * force;
 
