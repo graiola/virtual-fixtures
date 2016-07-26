@@ -15,7 +15,6 @@ namespace mechanism_manager
   using namespace tool_box;
   using namespace Eigen;
 
-  typedef FunctionApproximatorGMR fa_t;
   
 VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th)
 {
