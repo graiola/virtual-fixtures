@@ -761,11 +761,10 @@ void MechanismManager::ClusterVM(MatrixXd& data)
 
 void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 {
-    std::cout << "Crop incoming data" << std::endl;
-    if(CropData(data))
-    {
+    //std::cout << "Crop incoming data" << std::endl;
+    //if(CropData(data))
+    //{
         std::cout << "Updating guide number#"<< idx << std::endl;
-
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock();
         if(idx < vm_vector_.size())
@@ -783,9 +782,9 @@ void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 
         guard.unlock();
         std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
-    }
-    else
-        std::cerr << "Impossible to update guide, data is empty" << std::endl;
+    //}
+    //else
+    //    std::cerr << "Impossible to update guide, data is empty" << std::endl;
 }
 
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
