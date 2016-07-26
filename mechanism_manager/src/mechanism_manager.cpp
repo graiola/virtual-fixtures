@@ -245,21 +245,7 @@ void MechanismManager::SaveVM(const int idx)
     async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM_no_rt, this, idx));
     async_thread_save_->Trigger();
 }
-/*
-void MechanismManager::Delete(const int idx, VectorXd& vect)
-{
-    int n = vect.size()-idx-1;
-    vect.segment(idx,n) = vect.tail(n);
-    vect.conservativeResize(vect.size()-1);
-}
 
-void MechanismManager::PushBack(const double value, VectorXd& vect)
-{
-    int n = vect.size();
-    vect.conservativeResize(n+1,NoChange);
-    vect(n) = value;
-}
-*/
 void MechanismManager::DeleteVM(const int idx)
 {
     async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM_no_rt, this, idx));
@@ -451,19 +437,12 @@ MechanismManager::MechanismManager()
       f_pos_prev_.fill(0.0);
       f_ori_.fill(0.0);
 
-      //vm_vector_.reserve(6);
-      //vm_state_.reserve(6);
-      //vm_state_dot_.reserve(6);
-
       // Chached
       on_guide_prev_ = false;
       nb_vm_prev_ = 0;
 
       loopCnt = 0;
 
-      // Bools
-      //insert_done_ = false;
-      //delete_done_ = false;
 
 #ifdef USE_ROS_RT_PUBLISHER
     try
@@ -478,8 +457,6 @@ MechanismManager::MechanismManager()
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
-        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"t_versor_x",&t_versor_[0]);
-        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"t_versor_y",&t_versor_[1]);
     }
     catch(const std::runtime_error& e)
     {
@@ -503,9 +480,6 @@ MechanismManager::~MechanismManager()
       delete async_thread_delete_;
       delete async_thread_update_;
       delete async_thread_save_;
-
-      //thread_insert_.join();
-      //thread_delete_.join();
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)
@@ -576,8 +550,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
-            //if(use_active_guide_)
-            //    CheckForGuideActivation(i);
 
             if(second_order_)
                 vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
@@ -651,7 +623,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         }
 
         for(int i=0; i<vm_vector_.size();i++)
-            if(scales_(i) > 1.0/static_cast<double>(vm_vector_.size()))
             if(scales_hard_(i) > 1.0/static_cast<double>(vm_vector_.size()))
                 for(int j=0; j<vm_vector_.size();j++)
                     if(j!=i)
@@ -669,7 +640,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
             }
         }
 
-
         f_pos_prev_ = f_pos_;
         nb_vm_prev_ = vm_vector_.size();
         //guard_.unlock();
@@ -680,16 +650,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
 #ifdef USE_ROS_RT_PUBLISHER
    rt_publishers_vector_.PublishAll();
 #endif
-}
-
-double MechanismManager::ComputeScalesT(const double scale)
-{
-
-
-    /*if(scale >= 1.0/static_cast<double>(vm_vector_.size()))
-        return 1.0;
-    else
-        return static_cast<double>(vm_vector_.size()) * scale;*/
 }
 
 void MechanismManager::GetVmPosition(const int idx, double* const position_ptr)
@@ -724,7 +684,6 @@ void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
     {
         if(idx < vm_vector_.size())
             vm_vector_[idx]->getStateDot(velocity);
-        //guard_.unlock();
     }
 }
 
@@ -749,7 +708,6 @@ double MechanismManager::GetScale(const int idx)
             return scales_(idx);
         else
             return 0.0;
-        //guard_.unlock();
     }
 }
 
@@ -768,30 +726,11 @@ bool MechanismManager::OnVm()
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
-
         for(int i=0;i<scales_.size();i++)
         {
-            //if(scales_(i) >= 0.9/static_cast<double>(scales_.size())) // Hacky
-            //    on_guide = true;
-
             if(scales_(i) > 0.9) // Hacky
                 on_guide = true;
         }
-
-
-        //if(scales_.size() == 1) // Case with only one guide
-        //{
-        //    if(scales_(0) > 0.9)
-        //        on_guide = true;
-        //}
-        //else if(scales_.size() > 1) // Case with multiple guides
-        //{
-        //    for(int i=0;i<scales_.size();i++)
-        //    {
-        //        if(scales_(i) > 1.0/static_cast<double>(scales_.size())) // Hacky
-        //            on_guide = true;
-        //    }
-        //}
     }
     else
         on_guide = on_guide_prev_;
@@ -857,7 +796,6 @@ void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
 {
-    //int n_rows = data.size()/position_dim_;
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     UpdateVM_no_rt(mat,idx);
 }
@@ -945,9 +883,7 @@ void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
 
                 try
                 {
-
                  h(i) = lratiotest(old_resp,new_resp, dofs);
-
                 }
 
                 catch(...)
@@ -955,7 +891,6 @@ void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
                     std::cerr << "Something is wrong with lratiotest, skipping the clustering..." << std::endl;
                     break;
                 }
-
 
                 if(h(i) == 1)
                     resps(i) = -std::numeric_limits<double>::infinity();
@@ -996,8 +931,5 @@ void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     ClusterVM_no_rt(mat);
 }
-
-
-
 
 } // namespace
