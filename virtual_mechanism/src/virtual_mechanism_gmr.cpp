@@ -458,7 +458,8 @@ void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
   {
     pos = data;
     phase.resize(pos.rows(),1);
-    phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
+    //phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0); // Time
+    ComputeAbscisse(pos,phase); // Abscisse
   }
   fa_->trainIncremental(phase,pos);
 }
@@ -487,7 +488,8 @@ void VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
     {
       pos = data;
       phase.resize(pos.rows(),1);
-      phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0);
+      //phase.col(0) = VectorXd::LinSpaced(pos.rows(), 0.0, 1.0); // Time
+      ComputeAbscisse(pos,phase); // Abscisse
     }
 
     std::string file_name = "/home/sybot/gennaro_output/phase_before.txt";
