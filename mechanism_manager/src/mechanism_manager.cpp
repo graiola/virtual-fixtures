@@ -641,7 +641,6 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
 
         f_pos_prev_ = f_pos_;
         nb_vm_prev_ = vm_vector_.size();
-        //guard_.unlock();
     }
     else
         f_pos_ = f_pos_prev_; // Keep the previous force while the vectors are updating
@@ -672,7 +671,6 @@ void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
     {
         if(idx < vm_vector_.size())
             vm_vector_[idx]->getState(position);
-        //guard_.unlock();
     }
 }
 
