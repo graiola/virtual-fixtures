@@ -50,7 +50,7 @@ class VirtualMechanismAutom
 public:
     VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th);
 
-    void Step(const double phase_dot,const double phase_dot_ref, const double r);
+    void Step(const double phase_dot,const double phase_dot_ref, bool collision_detected);
     bool GetState();
 
 private:
@@ -59,6 +59,7 @@ private:
     double phase_dot_th_;
     double r_th_;
     state_t state_;
+    long long loopCnt;
 };
 
 class MechanismManager
@@ -91,6 +92,8 @@ class MechanismManager
     //inline bool InsertDone() const {if(insert_done_) return true; else return false;}
     //inline bool DeleteDone() const {if(delete_done_) return true; else return false;}
 
+    inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;} // HACKY
+
     // Gets
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
@@ -121,8 +124,6 @@ class MechanismManager
     void SaveVM_no_rt(const int idx);
     void ClusterVM_no_rt(Eigen::MatrixXd& data);
     void ClusterVM_no_rt(double* const data, const int n_rows);
-
-    double ComputeScalesT(const double scale);
 
     std::string pkg_path_;
     
@@ -166,6 +167,7 @@ class MechanismManager
     double phase_dot_th_;
     double phase_dot_preauto_th_;
     double r_th_;
+    bool collision_detected_;
 
     std::vector<Eigen::VectorXd> vm_state_;
     std::vector<Eigen::VectorXd> vm_state_dot_;

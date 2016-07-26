@@ -14,7 +14,6 @@ namespace mechanism_manager
   using namespace DmpBbo;
   using namespace tool_box;
   using namespace Eigen;
-
   
 VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th, const double r_th)
 {
@@ -25,9 +24,10 @@ VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, 
     phase_dot_th_ = phase_dot_th;
     r_th_ = r_th;
     state_ = MANUAL;
+    loopCnt = 0;
 }
 
-void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, const double r)
+void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, bool collision_detected)
 {
     if(true)
     {
@@ -43,7 +43,8 @@ void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_r
                 break;
             case AUTO:
                 //if((phase_dot < (phase_dot_ref - phase_dot_th_))) // + NOT INERTIA CONDITION? MAYBE ACCELERATION CONDITION OR FORCE CONDITION
-                if((std::abs(r) > (r_th_)))
+                //if((std::abs(r) > (r_th_)))
+                if(collision_detected)
                     state_ = MANUAL;
                 break;
         }
@@ -72,6 +73,30 @@ bool VirtualMechanismAutom::GetState()
             activate_vm = true;
             break;
     }
+
+
+    if(loopCnt%1000==0)
+    {
+        switch(state_)
+        {
+            case MANUAL:
+                std::cout << "****" <<std::endl;
+                std::cout << "MANUAL" <<std::endl;
+                break;
+            case PREAUTO:
+                std::cout << "****" <<std::endl;
+                std::cout << "PREAUTO" <<std::endl;
+                break;
+            case AUTO:
+                std::cout << "****" <<std::endl;
+                std::cout << "AUTO" <<std::endl;
+                break;
+        }
+
+
+    }
+    loopCnt++;
+
     return activate_vm;
 }
 
@@ -442,6 +467,7 @@ MechanismManager::MechanismManager()
 
       loopCnt = 0;
 
+      collision_detected_ = true; // Let's start not active
 
 #ifdef USE_ROS_RT_PUBLISHER
     try
@@ -456,6 +482,7 @@ MechanismManager::MechanismManager()
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
+        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
     }
     catch(const std::runtime_error& e)
     {
@@ -529,16 +556,16 @@ void MechanismManager::Update(const VectorXd& robot_pose, const VectorXd& robot_
 
 void MechanismManager::CheckForGuideActivation(const int idx)
 {
-    const double r = vm_vector_[idx]->getR();
+    //const double r = vm_vector_[idx]->getR();
     const double phase_dot = vm_vector_[idx]->getPhaseDot();
     const double phase_dot_ref = vm_vector_[idx]->getPhaseDotRef();
-    vm_autom_[idx]->Step(phase_dot,phase_dot_ref,r);
+    vm_autom_[idx]->Step(phase_dot,phase_dot_ref,collision_detected_);
     if(vm_autom_[idx]->GetState())
         vm_vector_[idx]->setActive(true);
     else
         vm_vector_[idx]->setActive(false);
 
-    r_(idx) = r;
+    //r_(idx) = r;
 }
 
 void MechanismManager::Update(const prob_mode_t prob_mode)
@@ -549,9 +576,14 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
         // Update the virtual mechanisms states, compute single probabilities
         for(int i=0; i<vm_vector_.size();i++)
         {
+            if(use_active_guide_)
+                CheckForGuideActivation(i);
 
             if(second_order_)
-                vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
+            {
+                //vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_,scales_(i)); // Add scales here to scale also on the vm
+                vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
+            }
             else
                 vm_vector_[i]->Update(robot_position_,robot_velocity_,dt_);
 
@@ -611,8 +643,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
           err_vel_ = vm_state_dot_[i] - robot_velocity_;
           f_B_.noalias() = vm_B_[i] * err_vel_;
 
-          //scales_t_(i) = ComputeScalesT(scales_hard_(i));
-
+          // Jacobian versor
           t_versor_[i] = vm_jacobian_[i]/vm_jacobian_[i].norm();
 
           f_vm_[i] = f_K_ + f_B_;
@@ -761,9 +792,6 @@ void MechanismManager::ClusterVM(MatrixXd& data)
 
 void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 {
-    //std::cout << "Crop incoming data" << std::endl;
-    //if(CropData(data))
-    //{
         std::cout << "Updating guide number#"<< idx << std::endl;
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock();
@@ -782,9 +810,6 @@ void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
 
         guard.unlock();
         std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
-    //}
-    //else
-    //    std::cerr << "Impossible to update guide, data is empty" << std::endl;
 }
 
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
@@ -866,13 +891,12 @@ void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
             ArrayXd resps(vm_vector_.size());
             ArrayXi h(vm_vector_.size());
             ArrayXd::Index max_resp_idx;
-            //int dofs = position_dim_/2 * (position_dim_ + 1)  - 1; // WTF
             int dofs = 10; // WTF
             double old_resp, new_resp;
             for(int i=0;i<vm_vector_.size();i++)
             {
                 old_resp = vm_vector_[i]->GetResponsability();
-                new_resp = vm_vector_[i]->ComputeResponsability(data); // NOTE: I should check for ties by comparing the new_resp for each guide
+                new_resp = vm_vector_[i]->ComputeResponsability(data);
 
                 try
                 {
