@@ -92,8 +92,6 @@ bool VirtualMechanismAutom::GetState()
                 std::cout << "AUTO" <<std::endl;
                 break;
         }
-
-
     }
     loopCnt++;
 
@@ -278,9 +276,6 @@ void MechanismManager::DeleteVM(const int idx)
 
 void MechanismManager::DeleteVM_no_rt(const int& idx)
 {
-
-   //delete_done_ = false;
-
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
    guard.lock();
    if(idx < vm_autom_.size())
@@ -298,13 +293,10 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        vm_state_dot_.erase(vm_state_dot_.begin()+idx);
        vm_K_.erase(vm_K_.begin()+idx);
        vm_B_.erase(vm_B_.begin()+idx);
-
-
        vm_jacobian_.erase(vm_jacobian_.begin()+idx);
        f_vm_.erase(f_vm_.begin()+idx);
        t_versor_.erase(t_versor_.begin()+idx);
        vm_fades_.erase(vm_fades_.begin()+idx);
-       //filter_alpha_.erase(filter_alpha_.begin()+idx);
 
        Delete(idx,scales_);
        Delete(idx,scales_t_);
@@ -329,8 +321,6 @@ void MechanismManager::DeleteVM_no_rt(const int& idx)
        std::cerr << "Impossible to remove guide number#"<< idx << std::endl;
 
    guard.unlock();
-
-   //delete_done_ = true;
 }
 
 bool MechanismManager::ReadConfig(std::string file_path)
@@ -481,7 +471,6 @@ MechanismManager::MechanismManager()
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_hard",&scales_hard_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"r",&r_);
         rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
     }
     catch(const std::runtime_error& e)
@@ -495,9 +484,6 @@ MechanismManager::~MechanismManager()
 {
       for(int i=0;i<vm_vector_.size();i++)
         delete vm_vector_[i];
-        //delete filter_phase_dot_[i];
-        //delete filter_phase_ddot_[i];
-        //delete filter_alpha_[i];
 
       for(int i=0;i<vm_autom_.size();i++)
         delete vm_autom_[i];
