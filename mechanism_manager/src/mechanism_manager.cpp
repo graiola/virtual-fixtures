@@ -696,7 +696,6 @@ double MechanismManager::GetPhase(const int idx)
             return vm_vector_[idx]->getPhase();
         else
             return 0.0;
-        //guard_.unlock();
     }
 }
 double MechanismManager::GetScale(const int idx)
@@ -770,7 +769,6 @@ void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
     {
         std::cout << "Updating guide number#"<< idx << std::endl;
 
-        //boost::mutex::scoped_lock guard(mtx_); // scoped
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock();
         if(idx < vm_vector_.size())
@@ -782,7 +780,6 @@ void MechanismManager::UpdateVM_no_rt(MatrixXd& data, const int idx)
         }
         else
         {
-            //guard.unlock(); // FIXME
             std::cout << "Guide not available, creating a new guide..." << std::endl;
             InsertVM_no_rt(data);
         }
