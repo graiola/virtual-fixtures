@@ -726,7 +726,7 @@ bool MechanismManager::OnVm()
     {
         for(int i=0;i<scales_.size();i++)
         {
-            if(scales_(i) > 0.9) // Hacky
+            if(scales_(i) > 0.9) // We are on a guide if it's scale is ... (so that we are on it)
                 on_guide = true;
         }
     }
@@ -903,11 +903,8 @@ void MechanismManager::ClusterVM_no_rt(MatrixXd& data)
             else
             {
                  resps.maxCoeff(&max_resp_idx); // Break the tie
-                 std::cout << "Updating guide number# "<<max_resp_idx<< std::endl;
                  UpdateVM_no_rt(data,max_resp_idx);
-                 std::cout << "...DONE!" << std::endl;
             }
-
         }
         else
         {
