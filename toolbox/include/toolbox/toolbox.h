@@ -33,6 +33,19 @@
 namespace tool_box 
 {
 
+inline void ComputeAbscisse(const Eigen::MatrixXd& xyz, Eigen::MatrixXd& abscisse)
+{
+    // Compute the abscisse curviligne
+    abscisse.resize(xyz.rows(),1);
+    abscisse.setZero();
+    for(int i=0;i<xyz.rows()-1;i++)
+        abscisse(i+1,0) = (xyz.row(i+1) - xyz.row(i)).norm() + abscisse(i,0);
+    // Normalize
+    double tot_length = abscisse(xyz.rows()-1,0);
+    for(int i=0;i<abscisse.size();i++)
+        abscisse(i,0) = abscisse(i,0)/tot_length;
+}
+
 inline int lratiotest(double loglik_unrestricted, double loglik_restricted, int dofs)
 {
     boost::math::chi_squared chidist(dofs);
