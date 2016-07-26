@@ -652,6 +652,7 @@ void MechanismManager::Update(const prob_mode_t prob_mode)
 
         for(int i=0; i<vm_vector_.size();i++)
             if(scales_(i) > 1.0/static_cast<double>(vm_vector_.size()))
+            if(scales_hard_(i) > 1.0/static_cast<double>(vm_vector_.size()))
                 for(int j=0; j<vm_vector_.size();j++)
                     if(j!=i)
                         scales_t_(j) = vm_fades_[j].IntegrateForward();
