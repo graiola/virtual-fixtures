@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <mechanism_manager/interface.h>
+//#include <mechanism_manager/mechanism_manager_interface.h>
 
 namespace Ui {
 class MainWindow;
@@ -28,7 +28,7 @@ protected:
 
 private:
     Ui::MainWindow *ui;
-    org::VirtualFixture::MechanismManager::Interface* mm_;
+    //org::VirtualFixture::MechanismManager::Interface* mm_;
 };
 
 #endif // MAINWINDOW_H

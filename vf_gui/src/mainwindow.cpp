@@ -7,10 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    mm_ = new org::VirtualFixture::MechanismManager::Interface("org.VirtualFixture.MechanismManager.Interface",
-                                                               "/MechanismManagerInterface",
-                                                               QDBusConnection::sessionBus(),
-                                                               this);
+
 
     startTimer(1000);
 }
@@ -20,10 +17,12 @@ void MainWindow::timerEvent(QTimerEvent *event)
 {
 
 Q_UNUSED(event);
-if (mm_->isValid())
+/*if (mm_->isValid())
     ui->label->setText("connected");
 else
     ui->label->setText("disconnected");
+
+    */
 }
 
 MainWindow::~MainWindow()
@@ -39,11 +38,11 @@ void MainWindow::on_quitButton_clicked()
 void MainWindow::on_deleteButton_clicked()
 {
 
-    mm_->Delete();
+    //mm_->Delete();
 
 }
 
 void MainWindow::on_insertButton_clicked()
 {
-    mm_->Insert();
+    //mm_->Insert();
 }

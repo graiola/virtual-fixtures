@@ -480,21 +480,8 @@ MechanismManager::MechanismManager()
     }
 #endif
 
-#ifdef QT5_DBUS
-      dbus_thread_ = boost::thread(&MechanismManager::StartDBus,this);
-#endif
 }
-#ifdef QT5_DBUS
-void MechanismManager::StartDBus()
-{
-    mm_interface_ = new MechanismManagerInterface(NULL,this);
-}
-/*void MechanismManager::StopDBus()
-{
-    mm_interface_->Stop
-}*/
 
-#endif
 MechanismManager::~MechanismManager()
 {
       for(int i=0;i<vm_vector_.size();i++)
@@ -507,10 +494,6 @@ MechanismManager::~MechanismManager()
       delete async_thread_delete_;
       delete async_thread_update_;
       delete async_thread_save_;
-
-      //dbus_thread_.interrupt();
-      //delete mm_interface_;
-
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)

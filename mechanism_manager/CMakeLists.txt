@@ -7,8 +7,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
-find_package(Qt5DBus)
-find_package(Qt5Widgets)
 
 
 if(TEST_ENABLED)
@@ -107,43 +105,6 @@ else()
 endif(NO_ROS_LIBS)
 
 set(ALL_SRC src/mechanism_manager.cpp include/${PROJECT_NAME}/mechanism_manager.h)
-
-if(Qt5DBus_FOUND)
-    message(STATUS "Qt5DBus found")
-    set(CMAKE_AUTOMOC ON)
-
-    set(XML_INTERFACE_NAME org.VirtualFixture.MechanismManager.Interface.xml)
-
-    set(ALL_SRC
-        ${ALL_SRC}
-        src/mechanism_manager_interface.cpp
-        include/${PROJECT_NAME}/mechanism_manager_interface.h
-        ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME}
-        )
-
-    # Generate the xml interface file
-    qt5_generate_dbus_interface(
-        include/${PROJECT_NAME}/mechanism_manager_interface.h
-        ${XML_INTERFACE_NAME}
-        #OPTIONS -a
-    )
-
-    #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME} DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-    # From the xml interface file generate the adaptor .h and .cpp
-    qt5_add_dbus_adaptor(ADAPTOR_FILES
-                         ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME}
-                         ${PROJECT_NAME}/mechanism_manager_interface.h
-                         mechanism_manager::MechanismManagerInterface)
-    set(ALL_SRC ${ALL_SRC} ${ADAPTOR_FILES})
-
-    # From the xml interface file generate the interface .h and .cpp
-    qt5_add_dbus_interface(INTERFACE_FILES ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME} interface)
-    set(ALL_SRC ${ALL_SRC} ${INTERFACE_FILES})
-    install(FILES ${INTERFACE_FILES} DESTINATION ${INCLUDE_INSTALL_DIR})
-
-    set(LINK_LIBS ${LINK_LIBS} Qt5::DBus Qt5::Widgets)
-endif(Qt5DBus_FOUND)
 
 ###########
 ## Build ##

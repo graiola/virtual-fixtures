@@ -2,7 +2,6 @@
 #define MECHANISM_MANAGER_H
 
 //#define USE_ROS_RT_PUBLISHER
-#define QT5_DBUS
 
 ////////// Toolbox
 #include <toolbox/toolbox.h>
@@ -121,7 +120,6 @@ class MechanismManager
 
   private:   
     // No Real time
-    void StartDBus();
     void InsertVM_no_rt(std::string& model_name);
     void InsertVM_no_rt(const Eigen::MatrixXd& data);
     void InsertVM_no_rt();
@@ -135,10 +133,6 @@ class MechanismManager
     std::string pkg_path_;
     
     long long loopCnt;
-
-#ifdef QT5_DBUS
-    MechanismManagerInterface* mm_interface_;
-#endif
 
     //std::vector<bool> activated_;
     //std::vector<bool> active_guide_;
@@ -212,7 +206,6 @@ class MechanismManager
     tool_box::AsyncThread* async_thread_delete_;
     tool_box::AsyncThread* async_thread_update_;
     tool_box::AsyncThread* async_thread_save_;
-    boost::thread dbus_thread_;
     //boost::atomic<bool> insert_done_;
     //boost::atomic<bool> delete_done_;
 
