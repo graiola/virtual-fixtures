@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.6)
 project(mechanism_manager)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
@@ -7,6 +7,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
+find_package(Qt5DBus)
+find_package(Qt5Widgets)
+
 
 if(TEST_ENABLED)
     set(BIN_TEST_NAME test_${PROJECT_NAME})
@@ -66,8 +69,9 @@ else()
 	catkin_package(
 	  INCLUDE_DIRS include
 	  LIBRARIES ${PROJECT_NAME}
-	  CATKIN_DEPENDS roscpp roslib rospy std_msgs toolbox virtual_mechanism
-	  DEPENDS system_lib boost dmpbbo yaml-cpp
+          #CATKIN_DEPENDS roscpp roslib rospy std_msgs toolbox virtual_mechanism
+          #DEPENDS system_lib boost dmpbbo yaml-cpp
+          DEPENDS boost
 	)
 
 	set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
@@ -102,6 +106,45 @@ else()
 
 endif(NO_ROS_LIBS)
 
+set(ALL_SRC src/mechanism_manager.cpp include/${PROJECT_NAME}/mechanism_manager.h)
+
+if(Qt5DBus_FOUND)
+    message(STATUS "Qt5DBus found")
+    set(CMAKE_AUTOMOC ON)
+
+    set(XML_INTERFACE_NAME org.VirtualFixture.MechanismManager.Interface.xml)
+
+    set(ALL_SRC
+        ${ALL_SRC}
+        src/mechanism_manager_interface.cpp
+        include/${PROJECT_NAME}/mechanism_manager_interface.h
+        ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME}
+        )
+
+    # Generate the xml interface file
+    qt5_generate_dbus_interface(
+        include/${PROJECT_NAME}/mechanism_manager_interface.h
+        ${XML_INTERFACE_NAME}
+        #OPTIONS -a
+    )
+
+    #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME} DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+    # From the xml interface file generate the adaptor .h and .cpp
+    qt5_add_dbus_adaptor(ADAPTOR_FILES
+                         ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME}
+                         ${PROJECT_NAME}/mechanism_manager_interface.h
+                         mechanism_manager::MechanismManagerInterface)
+    set(ALL_SRC ${ALL_SRC} ${ADAPTOR_FILES})
+
+    # From the xml interface file generate the interface .h and .cpp
+    qt5_add_dbus_interface(INTERFACE_FILES ${CMAKE_CURRENT_BINARY_DIR}/${XML_INTERFACE_NAME} interface)
+    set(ALL_SRC ${ALL_SRC} ${INTERFACE_FILES})
+    install(FILES ${INTERFACE_FILES} DESTINATION ${INCLUDE_INSTALL_DIR})
+
+    set(LINK_LIBS ${LINK_LIBS} Qt5::DBus Qt5::Widgets)
+endif(Qt5DBus_FOUND)
+
 ###########
 ## Build ##
 ###########
@@ -114,12 +157,19 @@ include_directories(
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
-    include/${PROJECT_NAME}/mechanism_manager.h
-    src/mechanism_manager.cpp
+    ${ALL_SRC}
 )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    # The location of the headers before installation
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+     # The location of the headers after installation
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
@@ -134,3 +184,10 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
+
+## Visualize the folders src and include in QtCreator
+FILE(GLOB_RECURSE include_files "include/*.h")
+add_custom_target(headers SOURCES ${include_files})
+FILE(GLOB_RECURSE src_files "src/*.cpp")
+add_custom_target(src SOURCES ${src_files})
+

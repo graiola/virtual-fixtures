@@ -1,6 +1,6 @@
 use_weighted_dist: true
-position_dim: 3
-K: [2500.0,250.0,100.0] #2500.0
-B: [10.0,10.0,10.0] #20
+position_dim: 2
+K: [2500.0,250.0] #2500.0
+B: [10.0,10.0] #20
 escape_factor: 150.0 #150.0
 

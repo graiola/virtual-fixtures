@@ -20,9 +20,7 @@ using namespace boost;
 using namespace DmpBbo;
 
 double dt = 0.001;
-std::string model_name1 = "test2d_1.txt";
-std::string model_name2 = "test2d_2.txt";
-std::string model_name3 = "test3d.txt";
+std::string model_name = "test_gmm.txt";
 
 TEST(MechanismManagerTest, InitializesCorrectly)
 {
@@ -144,7 +142,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocityRawVectors)
 TEST(MechanismManagerTest, InsertVmMethod)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM(model_name3));
+  EXPECT_NO_THROW(mm->InsertVM(model_name));
 
   delete mm;
 }
@@ -152,19 +150,19 @@ TEST(MechanismManagerTest, InsertVmMethod)
 /*TEST(MechanismManagerTest, UpdateGuideMethod)
 {
   MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM(model_name3));
+  EXPECT_NO_THROW(mm->InsertVM(model_name));
 
   delete mm;
 }*/
 
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
-  MechanismManager* mm = new MechanismManager();
+  MechanismManager mm;
 
   // Insert
-  EXPECT_NO_THROW(mm->InsertVM(model_name3));
+  EXPECT_NO_THROW(mm.InsertVM(model_name));
 
-  int pos_dim = mm->GetPositionDim();
+  int pos_dim = mm.GetPositionDim();
 
   // EIGEN INTERFACE
   Eigen::VectorXd rob_pos;
@@ -179,9 +177,9 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   rob_vel.fill(1.0);
   f_out.fill(0.0);
   START_REAL_TIME_CRITICAL_CODE();
-  EXPECT_NO_THROW(mm->Update(rob_pos,rob_vel,dt,f_out)); // Update
-  EXPECT_NO_THROW(mm->GetVmPosition(0,pos)); // Get
-  EXPECT_NO_THROW(mm->GetVmVelocity(0,vel)); // Get
+  EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out)); // Update
+  EXPECT_NO_THROW(mm.GetVmPosition(0,pos)); // Get
+  EXPECT_NO_THROW(mm.GetVmVelocity(0,vel)); // Get
   END_REAL_TIME_CRITICAL_CODE();
 
   // RAW VECTORS INTERFACE
@@ -191,17 +189,14 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   std::vector<double> pos_std(pos_dim);
   std::vector<double> vel_std(pos_dim);
   START_REAL_TIME_CRITICAL_CODE();
-  EXPECT_NO_THROW(mm->Update(&rob_pos_std[0],&rob_vel_std[0],dt,&f_out_std[0])); // Update
-  EXPECT_NO_THROW(mm->GetVmPosition(0,&pos_std[0])); // Get
-  EXPECT_NO_THROW(mm->GetVmVelocity(0,&vel_std[0])); // Get
+  EXPECT_NO_THROW(mm.Update(&rob_pos_std[0],&rob_vel_std[0],dt,&f_out_std[0])); // Update
+  EXPECT_NO_THROW(mm.GetVmPosition(0,&pos_std[0])); // Get
+  EXPECT_NO_THROW(mm.GetVmVelocity(0,&vel_std[0])); // Get
   END_REAL_TIME_CRITICAL_CODE();
 
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
-  EXPECT_NO_THROW(mm->DeleteVM(0));
+  EXPECT_NO_THROW(mm.DeleteVM(0));
 
-  getchar();
-
-  delete mm;
 }
 
 TEST(MechanismManagerTest, LoopUpdate)
@@ -214,9 +209,7 @@ TEST(MechanismManagerTest, LoopUpdate)
   std::cout << "EIGEN THREADS = " << nthreads <<std::endl;*/
 
   MechanismManager mm;
-  EXPECT_NO_THROW(mm.InsertVM(model_name3));
-
-  getchar();
+  EXPECT_NO_THROW(mm.InsertVM(model_name));
 
   int pos_dim = mm.GetPositionDim();
 
@@ -237,17 +230,17 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   double scale, phase;
 
-  int n_steps = 100000;
+  int n_steps = 10000000; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
-      START_REAL_TIME_CRITICAL_CODE();
+      //START_REAL_TIME_CRITICAL_CODE();
       EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
       EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
       EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
       EXPECT_NO_THROW(scale = mm.GetScale(0));
       EXPECT_NO_THROW(phase = mm.GetPhase(0));
-      END_REAL_TIME_CRITICAL_CODE();
+      //END_REAL_TIME_CRITICAL_CODE();
 
       /*if(i == 7)
       {

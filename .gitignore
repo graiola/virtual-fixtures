@@ -15,3 +15,4 @@ build
 *.lo
 *.kate-swp*
 *_pb2.py
+*.user
