@@ -2,7 +2,6 @@
 #define MECHANISM_MANAGER_H
 
 //#define USE_ROS_RT_PUBLISHER
-#define QT5_DBUS
 
 ////////// Toolbox
 #include <toolbox/toolbox.h>
@@ -30,8 +29,6 @@
 
 namespace mechanism_manager
 {
-
-class MechanismManagerInterface;
 
 typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
@@ -76,8 +73,8 @@ class MechanismManager
 
     // NOTE: We can not copy mechanism manager because of the internal thread and the mutex
     // We can explicit that thanks to C++11
-    //MechanismManager( const MechanismManager& other ) = delete; // non construction-copyable
-    //MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
+    MechanismManager( const MechanismManager& other ) = delete; // non construction-copyable
+    MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
   
     // Loop Update Interfaces
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const prob_mode_t prob_mode = SOFT);
@@ -95,8 +92,6 @@ class MechanismManager
     void SaveVM(const int idx);
     void Stop();
     bool OnVm();
-    //inline bool InsertDone() const {if(insert_done_) return true; else return false;}
-    //inline bool DeleteDone() const {if(delete_done_) return true; else return false;}
 
     inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;} // HACKY
 
@@ -114,14 +109,11 @@ class MechanismManager
 
     void Update(const prob_mode_t prob_mode);
     bool ReadConfig(std::string file_path);
-    //void Delete(const int idx, Eigen::VectorXd& vect);
-    //void PushBack(const double value, Eigen::VectorXd& vect);
     void CheckForGuideActivation(const int idx);
     void InitGuide(vm_t* const vm_tmp_ptr);
 
   private:   
     // No Real time
-    void StartDBus();
     void InsertVM_no_rt(std::string& model_name);
     void InsertVM_no_rt(const Eigen::MatrixXd& data);
     void InsertVM_no_rt();
@@ -135,10 +127,6 @@ class MechanismManager
     std::string pkg_path_;
     
     long long loopCnt;
-
-#ifdef QT5_DBUS
-    MechanismManagerInterface* mm_interface_;
-#endif
 
     //std::vector<bool> activated_;
     //std::vector<bool> active_guide_;
@@ -212,7 +200,6 @@ class MechanismManager
     tool_box::AsyncThread* async_thread_delete_;
     tool_box::AsyncThread* async_thread_update_;
     tool_box::AsyncThread* async_thread_save_;
-    boost::thread dbus_thread_;
     //boost::atomic<bool> insert_done_;
     //boost::atomic<bool> delete_done_;
 

@@ -35,8 +35,8 @@ std::vector<double> B(test_dim,20.0);
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
-std::string file_name_spline = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/test_spline1.txt"; // FIXME
-std::string file_name_gmr = "/home/sybot/ros_catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test_gmm.txt"; // FIXME
+std::string file_name_spline = "/home/gennaro/catkin_ws/src/virtual-fixtures/mechanism_manager/models/spline/test_spline1.txt"; // FIXME
+std::string file_name_gmr = "/home/gennaro/catkin_ws/src/virtual-fixtures/mechanism_manager/models/gmm/test_gmm.txt"; // FIXME
 
 /*
 TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
