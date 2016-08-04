@@ -397,7 +397,7 @@ bool MechanismManager::ReadConfig(std::string file_path)
     return true;
 }
 
-MechanismManager::MechanismManager()
+MechanismManager::MechanismManager(): mm_server_(NULL)
 {
       //Eigen::initParallel();
 
@@ -460,30 +460,36 @@ MechanismManager::MechanismManager()
 
       collision_detected_ = true; // Let's start not active
 
-#ifdef USE_ROS_RT_PUBLISHER
+#ifdef INCLUDE_ROS_CODE
     try
     {
         ros_node_.Init("mechanism_manager");
-        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_position",&robot_position_);
-        //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_velocity",&robot_velocity_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_hard",&scales_hard_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
-        rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
+        mm_server_ = new MechanismManagerServer(this,ros_node_.GetNode());
     }
     catch(const std::runtime_error& e)
     {
-      ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+       ROS_ERROR("Failed to create the MechanismManagerServer: %s",e.what());
     }
+    #ifdef USE_ROS_RT_PUBLISHER
+        try
+        {
+            //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_position",&robot_position_);
+            //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"robot_velocity",&robot_velocity_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_hard",&scales_hard_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_soft",&scales_soft_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale_t",&scales_t_);
+            rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
+        }
+        catch(const std::runtime_error& e)
+        {
+          ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+        }
+    #endif
 #endif
-
-
-    mm_server_ = new MechanismManagerServer(this,ros_node_.GetNode());
 }
-
 
 MechanismManager::~MechanismManager()
 {
@@ -498,7 +504,8 @@ MechanismManager::~MechanismManager()
       delete async_thread_update_;
       delete async_thread_save_;
 
-      delete mm_server_;
+      if(mm_server_!=NULL)
+        delete mm_server_;
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)
