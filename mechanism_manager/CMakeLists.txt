@@ -42,6 +42,8 @@ else()
 	  std_msgs
 	  toolbox
 	  virtual_mechanism
+          actionlib
+          actionlib_msgs
 	  COMPONENTS
 	  sensor_msgs
 	  geometry_msgs
@@ -55,6 +57,15 @@ else()
 	   message(STATUS "Realtime tools found")
 	endif()
 
+        add_action_files(
+          DIRECTORY action
+          FILES MechanismManager.action
+        )
+
+        generate_messages(
+          DEPENDENCIES actionlib_msgs std_msgs  # Or other packages containing msgs
+        )
+
 	###################################
 	## catkin specific configuration ##
 	###################################
@@ -67,7 +78,7 @@ else()
 	catkin_package(
 	  INCLUDE_DIRS include
 	  LIBRARIES ${PROJECT_NAME}
-          #CATKIN_DEPENDS roscpp roslib rospy std_msgs toolbox virtual_mechanism
+          CATKIN_DEPENDS actionlib_msgs
           #DEPENDS system_lib boost dmpbbo yaml-cpp
           DEPENDS boost
 	)
@@ -104,7 +115,10 @@ else()
 
 endif(NO_ROS_LIBS)
 
-set(ALL_SRC src/mechanism_manager.cpp include/${PROJECT_NAME}/mechanism_manager.h)
+set(ALL_SRC src/mechanism_manager_server.cpp
+            include/${PROJECT_NAME}/mechanism_manager_server.h
+            src/mechanism_manager.cpp
+            include/${PROJECT_NAME}/mechanism_manager.h)
 
 ###########
 ## Build ##
@@ -117,20 +131,15 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
-    ${ALL_SRC}
+add_library(${PROJECT_NAME} ${SHARED_OR_STATIC} ${ALL_SRC})
+
+add_dependencies(
+  ${PROJECT_NAME}
+  ${mechanism_manager_EXPORTED_TARGETS}
 )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
-
-target_include_directories(${PROJECT_NAME} PUBLIC
-    # The location of the headers before installation
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-     # The location of the headers after installation
-    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
-
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}

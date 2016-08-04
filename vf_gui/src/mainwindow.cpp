@@ -3,13 +3,14 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    ac_("mechanism_manager", true)
 {
     ui->setupUi(this);
 
-
-
     startTimer(1000);
+
+    ac_.waitForServer(ros::Duration(2.0));
 }
 
 
@@ -17,12 +18,12 @@ void MainWindow::timerEvent(QTimerEvent *event)
 {
 
 Q_UNUSED(event);
-/*if (mm_->isValid())
+
+if (ac_.isServerConnected())
     ui->label->setText("connected");
 else
     ui->label->setText("disconnected");
 
-    */
 }
 
 MainWindow::~MainWindow()
@@ -37,9 +38,10 @@ void MainWindow::on_quitButton_clicked()
 
 void MainWindow::on_deleteButton_clicked()
 {
+    mechanism_manager::MechanismManagerGoal goal;
 
-    //mm_->Delete();
-
+    goal.delete_guide_idx = 0;
+    ac_.sendGoal(goal);
 }
 
 void MainWindow::on_insertButton_clicked()

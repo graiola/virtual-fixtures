@@ -30,7 +30,7 @@
 namespace mechanism_manager
 {
 
-class MechanismManagerInterface;
+class MechanismManagerServer;
 
 typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
@@ -221,8 +221,9 @@ class MechanismManager
 
 
 #ifdef INCLUDE_ROS_CODE
+    tool_box::RosNode ros_node_;
+    MechanismManagerServer* mm_server_;
     #ifdef USE_ROS_RT_PUBLISHER
-        tool_box::RosNode ros_node_;
         tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
     #endif
 #endif

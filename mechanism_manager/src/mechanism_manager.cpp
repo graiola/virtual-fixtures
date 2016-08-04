@@ -1,5 +1,5 @@
 #include "mechanism_manager/mechanism_manager.h"
-#include "mechanism_manager/mechanism_manager_interface.h"
+#include "mechanism_manager/mechanism_manager_server.h"
 
 ////////// Function Approximator
 #include <functionapproximators/FunctionApproximatorGMR.hpp>
@@ -480,7 +480,10 @@ MechanismManager::MechanismManager()
     }
 #endif
 
+
+    mm_server_ = new MechanismManagerServer(this,ros_node_.GetNode());
 }
+
 
 MechanismManager::~MechanismManager()
 {
@@ -494,6 +497,8 @@ MechanismManager::~MechanismManager()
       delete async_thread_delete_;
       delete async_thread_update_;
       delete async_thread_save_;
+
+      delete mm_server_;
 }
 
 void MechanismManager::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)

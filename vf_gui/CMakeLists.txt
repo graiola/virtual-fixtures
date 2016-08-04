@@ -9,7 +9,8 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Boost COMPONENTS system REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS mechanism_manager)
+find_package(catkin REQUIRED COMPONENTS roscpp roslib actionlib
+                                        actionlib_msgs mechanism_manager)
 
 # Find the QtWidgets library
 find_package(Qt5Widgets)
@@ -35,6 +36,11 @@ add_executable(vf_gui ui_mainwindow.h include/mainwindow.h src/mainwindow.cpp sr
 
 # Use the Widgets and DBus modules from Qt 5.
 target_link_libraries(vf_gui Qt5::Widgets Qt5::DBus ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+
+add_dependencies(
+  vf_gui
+  ${mechanism_manager_EXPORTED_TARGETS}
+)
 
 # Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME} vf_gui

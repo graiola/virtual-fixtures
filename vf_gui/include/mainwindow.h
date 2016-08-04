@@ -1,14 +1,22 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+/// QT
 #include <QMainWindow>
-//#include <mechanism_manager/mechanism_manager_interface.h>
+
+/// ROS
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <mechanism_manager/MechanismManagerAction.h>
+
 
 namespace Ui {
 class MainWindow;
 class button;
 class label;
 }
+
+typedef actionlib::SimpleActionClient<mechanism_manager::MechanismManagerAction> ac_t;
 
 class MainWindow : public QMainWindow
 {
@@ -25,10 +33,10 @@ private slots:
 
 protected:
     void timerEvent(QTimerEvent *event);
+    ac_t ac_;
 
 private:
     Ui::MainWindow *ui;
-    //org::VirtualFixture::MechanismManager::Interface* mm_;
 };
 
 #endif // MAINWINDOW_H
