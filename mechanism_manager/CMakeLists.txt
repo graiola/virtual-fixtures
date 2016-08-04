@@ -113,10 +113,12 @@ else()
 	  FILES_MATCHING PATTERN "*.txt"
 	) 
 
+        set(ALL_SRC src/mechanism_manager_server.cpp
+                    include/${PROJECT_NAME}/mechanism_manager_server.h)
+
 endif(NO_ROS_LIBS)
 
-set(ALL_SRC src/mechanism_manager_server.cpp
-            include/${PROJECT_NAME}/mechanism_manager_server.h
+set(ALL_SRC ${ALL_SRC}
             src/mechanism_manager.cpp
             include/${PROJECT_NAME}/mechanism_manager.h)
 
@@ -133,13 +135,14 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC} ${ALL_SRC})
 
+## Specify libraries to link a library or executable target against
+target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+
+## Advise cmake to wait for the exported targets to be compiled before processing the project target
 add_dependencies(
   ${PROJECT_NAME}
   ${mechanism_manager_EXPORTED_TARGETS}
 )
-
-## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
