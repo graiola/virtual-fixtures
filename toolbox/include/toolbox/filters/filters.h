@@ -37,10 +37,10 @@ namespace filters
 */
 
 #define MAXFILTERTERMS 3000
-	class M3DFilter
+    class Filter
 	{
 		public:
-            M3DFilter(const int type_id):_a(MAXFILTERTERMS,0.0),_b(MAXFILTERTERMS,0.0),_x(MAXFILTERTERMS,0.0),_y(MAXFILTERTERMS,0.0),Nterms(MAXFILTERTERMS),order(2),buffer_idx(0),T(1.0/1000) // FIXME 1000 is the rt frequency
+            Filter(const int type_id):_a(MAXFILTERTERMS,0.0),_b(MAXFILTERTERMS,0.0),_x(MAXFILTERTERMS,0.0),_y(MAXFILTERTERMS,0.0),Nterms(MAXFILTERTERMS),order(2),buffer_idx(0),T(1.0/1000) // FIXME 1000 is the rt frequency
 			{
 			  
                 switch (type_id) // FIXME port the others
@@ -99,7 +99,7 @@ namespace filters
                     case IDENTITY:
                     return x_0;*/
                     default:
-                        //M3_ERR ( "M3DFilter Step error: Not a valid type.\n" );
+                        //ROS_ERR ( "Filter Step error: Not a valid type.\n" );
                         break;
                     }
                 return 0.0;
@@ -142,7 +142,7 @@ namespace filters
                         Identity_Filter();
                         break;*/
                     default:
-                        //M3_ERR ( "M3DFilter UpdateParams error: Not a valid type.\n" );
+                        //ROS_ERR ( "Filter UpdateParams error: Not a valid type.\n" );
                         break;
                     }
                 return;
@@ -156,7 +156,7 @@ namespace filters
 			void SetN(int N){
 			  if(N>MAXFILTERTERMS){
 			    N = MAXFILTERTERMS;
-			    //M3_INFO("N set to max (%d)",MAXFILTERTERMS);
+                //ROS_INFO("N set to max (%d)",MAXFILTERTERMS);
 			  }
 			  Nterms = N;
 			  UpdateFilter();}
@@ -222,7 +222,7 @@ namespace filters
 
                     }
                 else {
-                    //M3_INFO ( "Invalid order %d for Butterworth filter\n",order );
+                    //ROS_INFO ( "Invalid order %d for Butterworth filter\n",order );
                     return ; //
                     }
                 //Coefficients(order+1,a,b);
@@ -281,7 +281,7 @@ namespace filters
                     _b[0] = -scale;
                     }
                 else {
-                    //M3_INFO ( "Incorrect M3DFilter configuration for Diff_Butterworth_Filter\n" );
+                    //ROS_INFO ( "Incorrect Filter configuration for Diff_Butterworth_Filter\n" );
                     }
                 //Coefficients(order+1,a,b);
                 }

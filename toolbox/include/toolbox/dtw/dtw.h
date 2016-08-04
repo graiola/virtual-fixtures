@@ -2,24 +2,6 @@
 #define DTW_H_
 
 #include <eigen3/Eigen/Core>
-/*
-namespace dtw
-{
-
-double dist(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, int i, int j);
-
-double dtw(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, Eigen::MatrixXd& D, int w = -1);
-
-double dtw(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, int w = -1);
-
-void align_idx(const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, Eigen::VectorXi& idx, int w = -1);
-
-void align_phase(Eigen::VectorXd& phase1, const Eigen::VectorXd& phase2, const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, int w = -1);
-
-void align_phase(Eigen::MatrixXd& phase1, const Eigen::MatrixXd& phase2, const Eigen::MatrixXd& sig1, const Eigen::MatrixXd& sig2, int w = -1);
-
-} // namespace
-*/
 
 namespace{
 
