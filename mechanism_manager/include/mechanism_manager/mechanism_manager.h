@@ -14,7 +14,7 @@
 #endif
 
 ////////// YAML-CPP
-#include <yaml-cpp/yaml.h>
+//#include <yaml-cpp/yaml.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -36,7 +36,7 @@ typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism_interface::VirtualMechanismInterface vm_t;
 enum prob_mode_t {HARD,POTENTIAL,SOFT};
 
-template <typename _T >
+/*template <typename _T >
 void operator >>(const YAML::Node& input, _T& value)
 {
       value = input.as<_T>();
@@ -46,7 +46,7 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 {
       for(unsigned i = 0; i < node.size(); i++)
 	      v.push_back(node[i].as<_T>());
-}
+}*/
 
 class VirtualMechanismAutom
 {

@@ -12,6 +12,9 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 
+////////// YAML-CPP
+#include <yaml-cpp/yaml.h>
+
 namespace tool_box
 {
 
@@ -272,7 +275,7 @@ inline void WriteTxtFile(const char* filename, Eigen::MatrixXd& values ) {
 }
 
 /// YAML backport to use the old operators >>
-/*template <typename _T >
+template <typename _T >
 void operator >>(const YAML::Node& input, _T& value) {
     value = input.as<_T>();
 }
@@ -282,7 +285,7 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
     for(unsigned i = 0; i < node.size(); i++){
         v.push_back(node[i].as<_T>());
     }
-}*/
+}
 
 
 } // namespace
