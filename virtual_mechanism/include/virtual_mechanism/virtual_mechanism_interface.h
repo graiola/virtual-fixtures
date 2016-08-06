@@ -11,8 +11,6 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 #include <boost/concept_check.hpp>
-//#include <eigen3/Eigen/SVD>
-//#include <eigen3/Eigen/Geometry>
 
 ////////// BOOST
 #include <boost/shared_ptr.hpp>
@@ -22,14 +20,13 @@
 	
 namespace virtual_mechanism_interface 
 {
-
     typedef Eigen::Quaternion<double> quaternion_t;
     
 class VirtualMechanismInterface
 {
 	public:
       VirtualMechanismInterface(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),r_(0.0),p_(0.0),p_dot_integrated_(0.0),exec_time_(10.0),clamp_(1.0),adapt_gains_(false),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),move_forward_(true),dt_(0.001)
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),exec_time_(10.0),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),dt_(0.001)
 	  {
           assert(state_dim_ == 2 || state_dim_ == 3);
           assert(K.size() == static_cast<unsigned int>(state_dim_));
@@ -44,7 +41,7 @@ class VirtualMechanismInterface
           assert(fade_gain_ > 0.0);
 
 	      // Initialize/resize the attributes
-	      // NOTE We assume that the phase has dim 1x1
+          // NOTE We assume that the phase has dim 1x1
           state_.resize(state_dim);
           state_dot_.resize(state_dim);
           displacement_.resize(state_dim);
@@ -71,27 +68,20 @@ class VirtualMechanismInterface
             B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
           }
 
-
-              // Default quaternions
-              //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-              //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-              //quaternion_ << 1.0,0.0,0.0,0.0;
-              
-          //adaptive_gain_ptr_ = new tool_box::AdaptiveGain(K_,K_/100,0.01); //double gain_at_zero, double gain_at_inf = 0.0, double zero_slope_error_value = 0.0
+          // Default quaternions
+          //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+          //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+          //quaternion_ << 1.0,0.0,0.0,0.0;
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
-	   {
-          //if(ros_node_ptr_!=NULL)
-            //delete ros_node_ptr_;
-          //if(adaptive_gain_ptr_!=NULL)
-          //  delete adaptive_gain_ptr_;
-	   }
+      {
+      }
 	  
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
         assert(dt > 0.0);
-	    
+
         dt_ = dt;
 
 	    // Save the previous phase
@@ -102,7 +92,6 @@ class VirtualMechanismInterface
   
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
-	    //J_transp_ = J_.transpose();
 	    
 	    // Update the phase
 	    UpdatePhase(force,dt);
@@ -118,8 +107,7 @@ class VirtualMechanismInterface
             
         // Compute the new quaternion reference
         if (update_quaternion_)
-            UpdateQuaternion();
-            
+            UpdateQuaternion();  
 	  }
 	  
 	  virtual void ApplySaturation()
@@ -154,9 +142,6 @@ class VirtualMechanismInterface
 	    
           scale_ = scale;
 
-	      if(adapt_gains_) //FIXME
-            AdaptGains(pos,dt);
-	      
           //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
 
           displacement_.noalias() = state_ - pos;
@@ -170,40 +155,31 @@ class VirtualMechanismInterface
 	  
       // TO BE MOVED IN ANOTHER SUBCLASS!
       // FIXMEEEEEE
-      virtual double getDistance(const Eigen::VectorXd& pos)=0;
-      virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
-      virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
-      virtual bool SaveGMMToTxt(const std::string file_path){}
-      virtual double ComputeResponsability(const Eigen::MatrixXd& pos){}
-      virtual double GetResponsability(){}
-      inline void setWeightedDist(const bool activate){}
+      //virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
+      //virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
+      //virtual bool SaveGMMToTxt(const std::string file_path){}
+      //virtual double ComputeResponsability(const Eigen::MatrixXd& pos){}
+      //virtual double GetResponsability(){}
+      //inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
-      virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
-      virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001)=0;
+      //virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
+      //virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001)=0;
+      //virtual double ExponentialScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
+      //virtual double GaussianScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
 
-	  virtual void AdaptGains(const Eigen::VectorXd& pos, const double dt){}
-	  
-      virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;}
-      virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
-	  
-	  inline void setAdaptGains(const bool adapt_gains) {adapt_gains_ = adapt_gains;}
-	  inline void setActive(const bool active) {active_ = active;}
-      inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
-
-      inline void moveBackward() {move_forward_ = false;}
-	  inline void moveForward() {move_forward_ = true;}
-	  
-	  inline double getTorque() const {return torque_(0,0);} // For test purpose
-	  inline double getFade() const {return fade_;} // For test purpose
-	  
+      virtual bool SaveModelToFile(const std::string file_path)=0;
+      virtual double getDistance(const Eigen::VectorXd& pos)=0;
+      virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0)=0;
+      inline double getTorque() const {return torque_(0,0);}
+      inline double getFade() const {return fade_;}
       inline double getPhaseDotDot() const {return phase_ddot_;}
-	  inline double getPhaseDot() const {return phase_dot_;}
-	  inline double getPhase() const {return phase_;}
+      inline double getPhaseDot() const {return phase_dot_;}
+      inline double getPhase() const {return phase_;}
       inline double getPhaseRef() const {return phase_ref_;}
       inline double getPhaseDotRef() const {return phase_dot_ref_;}
       inline double getPhaseDotDotRef() const {return phase_ddot_ref_;}
-      inline double getR()const {return r_;}
-      inline double getPDotIntegrated() const {return p_dot_integrated_;}
+      virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;}
+      virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::MatrixXd& jacobian) const {jacobian = J_;}
@@ -213,47 +189,48 @@ class VirtualMechanismInterface
               q(0) = quaternion_->w();
               q(1) = quaternion_->x();
               q(2) = quaternion_->y();
-              q(3) = quaternion_->z();
-              
-          }
-          inline double getKf() const {return Kf_;}
-          inline void getK(Eigen::MatrixXd& K) const {K = K_;}
-          inline void getB(Eigen::MatrixXd& B) const {B = B_;}
-          //inline void setK(const double& K){assert(K > 0.0); K_ = K;}
-          //inline void setB(const double& B){assert(B > 0.0); B_ = B;}
+              q(3) = quaternion_->z();  
+      }
+      inline double getKf() const {return Kf_;}
+      inline void getK(Eigen::MatrixXd& K) const {K = K_;}
+      inline void getB(Eigen::MatrixXd& B) const {B = B_;}
 
-          inline void Init()
-          {
-              // Initialize the attributes
-              UpdateJacobian();
-              UpdateState();
-              UpdateStateDot();
-              ComputeInitialState();
-              ComputeFinalState();
-          }
+      inline void setActive(const bool active) {active_ = active;}
+      inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
-          inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
-          {
-             assert(q_start.size() == 4);
-             assert(q_end.size() == 4);
+      inline void Init()
+      {
+          // Initialize the attributes
+          UpdateJacobian();
+          UpdateState();
+          UpdateStateDot();
+          ComputeInitialState();
+          ComputeFinalState();
+      }
 
-             q_start_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
-             q_end_.reset(new quaternion_t(q_end[0],q_end[1],q_end[2],q_end[3]));
+      inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
+      {
+         assert(q_start.size() == 4);
+         assert(q_end.size() == 4);
 
-             quaternion_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
+         q_start_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
+         q_end_.reset(new quaternion_t(q_end[0],q_end[1],q_end[2],q_end[3]));
 
-             update_quaternion_ = true;
+         quaternion_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
 
-             Init();
-          }
+         update_quaternion_ = true;
+
+         Init();
+      }
 	  
 	protected:
-	    
+
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
+      virtual bool LoadModelFromFile(const std::string file_path)=0;
 
       virtual inline void UpdateStateDot()
 	  {
@@ -264,9 +241,6 @@ class VirtualMechanismInterface
       {
           *quaternion_ = q_start_->slerp(phase_,*q_end_);
       }
-	  
-	  // Ros node
-      //tool_box::RosNode* ros_node_ptr_;
 	  
 	  // States
 	  double phase_;
@@ -298,41 +272,24 @@ class VirtualMechanismInterface
       Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
-      //Eigen::VectorXd J_vector_;
 
 	  // Gains
       Eigen::MatrixXd B_;
       Eigen::MatrixXd K_;
-	  
-	  // Clamping
-	  double clamp_;
-	  
-	  // To activate the gain adapting
-	  bool adapt_gains_;
 	  
 	  // Auto completion
 	  double Kf_;
       double Bf_;
 	  double fade_;
 	  bool active_;
-	  bool move_forward_;
-      //tool_box::AdaptiveGain* adaptive_gain_ptr_;
-
-      double dt_;
-      double r_;
-      double p_;
-      double p_dot_integrated_;
       double exec_time_;
-
-
-
+      double dt_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
-      //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181,
-      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 1.0, double epsilon = 10)://double Kf = 1.25
+      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 1.0, double epsilon = 10):
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
         assert(epsilon > 0.1);
@@ -364,53 +321,46 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 
 	      torque_.noalias() = J_transp_ * force;
 	      
-          if(active_) // NOTE: fade is used only when normalized... FIXME
+          if(active_)
             fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
 	      else
             fade_ = fade_gain_ * (-fade_) * dt + fade_;
 
-          phase_dot_ = num_/det_ * torque_(0,0) + fade_ * (Kf_ * (phase_ref_ - phase_) + Bf_ * phase_dot_ref_);
+          // Always keep the external torque
+          //phase_dot_ = num_/det_ * torque_(0,0) + fade_ * (Kf_ * (phase_ref_ - phase_) + Bf_ * phase_dot_ref_);
 
-          // Smooth
-          //phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_; // FIXME does it make sense to have it here?
+          // Switch between open and closed loop with the external torque
+          phase_dot_ = num_/det_ * torque_(0,0);
+          phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_;
 
 	      // Compute the new phase
-	      phase_ = phase_dot_ * dt + phase_prev_; // FIXME Switch to RungeKutta if possible
+          phase_ = phase_dot_ * dt + phase_prev_;
 
            // Compute phase_ddot
           phase_ddot_ = (phase_dot_ - phase_dot_prev_)/dt;
-
 	  }
 	  
 	protected:
-	  
 	  // Tmp variables
 	  double det_;
       double num_;
-	  
 	  double Bd_; // Damp term
 	  double Bd_max_; // Max damp term
-	  double epsilon_;
-	  
+      double epsilon_;
 };
 
 class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
-	  //double K = 300, double B = 34.641016, double K = 700, double B = 52.91502622129181, 900 60, 800 56.568542494923804
-      VirtualMechanismInterfaceSecondOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1, double Kr = 100.0, double Kfi = 0.01):
+      VirtualMechanismInterfaceSecondOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1):
       VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
 	  {
 	      
 	      assert(Bf > 0.0);
           assert(inertia > 0.0);
-          assert(Kr > 0.0);
-          assert(Kfi >= 0.0);
 	      
 	      Bf_ = Bf;
           inertia_ = inertia;
-          Kr_ = Kr;
-          Kfi_ = Kfi;
 
 	      // Resize the attributes
 	      phase_state_.resize(2); //phase_ and phase_dot
@@ -432,14 +382,9 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	      k4_.fill(0.0);
 
           control_ = 0.0;
-          error_integrated_ = 0.0;
-
-          r_ = 0.0;
 	  }
 	
       inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
-      inline void setKr(const double Kr) {assert(Kr > 0.0); Kr_ = Kr;}
-      inline void setKfi(const double Kfi) {assert(Kfi >= 0.0); Kfi_ = Kfi;}
 
 	protected:
 	    
@@ -502,20 +447,11 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           phase_state_(1) = phase_dot_;
 	        
           if(active_)
-          {
              fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-             //p_dot_integrated_ = p_dot_integrated_ + (inertia_ * phase_ddot_) * dt; // with tau
-             //p_dot_integrated_ = p_dot_integrated_ + (- inertia_ * phase_dot_ + control_) * dt; // without tau
-             error_integrated_ = Kfi_ * (error_integrated_ + (phase_ref_ - phase_) * dt);
-          }
           else
-          {
              fade_ = fade_gain_ * (-fade_) * dt + fade_;
-             //p_dot_integrated_ = p_;
-             error_integrated_ = 0.0;
-          }
 
-          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_) + error_integrated_);
+          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
 	      
           IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
 
@@ -524,34 +460,19 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
           phase_ddot_ = phase_state_dot_(1);
-
-          //p_ = inertia_ * phase_dot_;
-
-          //r_ = Kr_ * (p_ - p_dot_integrated_);
-
-          r_ = torque_(0)/J_transp_.norm();
 	  }
 	  
 	  Eigen::VectorXd phase_state_;
 	  Eigen::VectorXd phase_state_dot_;
 	  Eigen::VectorXd phase_state_integrated_;
-      //Eigen::VectorXd state_dot_;
- 
 	  Eigen::VectorXd k1_, k2_, k3_, k4_;
 
 	  // Fade system variables
 	  double Bf_;
       double inertia_;
       double control_;
-      double error_integrated_;
-      double Kr_;
-      double Kfi_;
-
 };
 
 }
 
 #endif
-
-
-
