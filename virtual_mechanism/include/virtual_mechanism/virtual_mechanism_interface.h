@@ -166,25 +166,6 @@ class VirtualMechanismInterface
             UpdateQuaternion();  
 	  }
 	  
-	  virtual void ApplySaturation()
-	  {
-	      // Saturations
-	      if(phase_ > 1.0)
-	      {
-            //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
-            phase_ = 1.0;
-            phase_dot_ = 0.0;
-            phase_ddot_ = 0.0;
-	      }
-	      else if (phase_ < 0.0)
-	      {
-            //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
-            phase_ = 0.0;
-            phase_dot_ = 0.0;
-            phase_ddot_ = 0.0;
-	      }
-	  }
-	  
       virtual void Stop()
       {
           phase_dot_ = 0.0;
@@ -256,6 +237,8 @@ class VirtualMechanismInterface
       inline void setActive(const bool active) {active_ = active;}
       inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
+   protected:
+
       inline void Init()
       {
           // Initialize the attributes
@@ -281,14 +264,31 @@ class VirtualMechanismInterface
          Init();
       }
 	  
-	protected:
-
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
       virtual bool LoadModelFromFile(const std::string file_path)=0;
+
+      virtual void ApplySaturation()
+      {
+          // Saturations
+          if(phase_ > 1.0)
+          {
+            //LINE_CLAMP(phase_,clamp_,0.9,1,1,0);
+            phase_ = 1.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
+          }
+          else if (phase_ < 0.0)
+          {
+            //LINE_CLAMP(phase_,clamp_,0,0.1,0,1);
+            phase_ = 0.0;
+            phase_dot_ = 0.0;
+            phase_ddot_ = 0.0;
+          }
+      }
 
       virtual inline void UpdateStateDot()
 	  {

@@ -54,6 +54,12 @@ catkin_add_gtest(test_spline
 if(TARGET test_spline)
   target_link_libraries(test_spline ${PROJECT_NAME})
 endif()
+catkin_add_gtest(test_virtual_mechanism
+  test/test_virtual_mechanism.cpp
+)
+if(TARGET test_virtual_mechanism)
+  target_link_libraries(test_virtual_mechanism ${PROJECT_NAME})
+endif()
 
 ###########
 ## Build ##
@@ -68,6 +74,7 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
+    include/${PROJECT_NAME}/virtual_mechanism_factory.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
     include/${PROJECT_NAME}/virtual_mechanism_spline.h
     src/virtual_mechanism_gmr.cpp

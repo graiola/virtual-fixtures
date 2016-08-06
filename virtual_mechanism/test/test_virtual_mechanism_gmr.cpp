@@ -1,32 +1,200 @@
-#include <gtest/gtest.h>
-#include "virtual_mechanism/virtual_mechanism_interface.h"
-#include "virtual_mechanism/virtual_mechanism_factory.h"
+#include <toolbox/debug.h>
+#include <toolbox/toolbox.h>
+#include <toolbox/dtw/dtw.h>
 
-using namespace virtual_mechanism_factory;
+#include <gtest/gtest.h>
+#include "virtual_mechanism/virtual_mechanism_gmr.h"
+
+////////// Function Approximator
+#include <functionapproximators/FunctionApproximatorGMR.hpp>
+#include <functionapproximators/ModelParametersGMR.hpp>
+#include <functionapproximators/MetaParametersGMR.hpp>
+
+////////// STD
+#include <iostream>
+#include <fstream> 
+#include <iterator>
+#include <boost/concept_check.hpp>
+
+////////// ROS
+#include <ros/ros.h>
+#include <ros/package.h>
+
+using namespace virtual_mechanism_interface;
+using namespace virtual_mechanism_gmr;
+using namespace Eigen;
+using namespace boost;
+using namespace DmpBbo;
+
+typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
+typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
 std::string file_path(pkg_path+"/test/test_gmm.txt");
+double dt = 0.001;
+int test_dim = 2;
 
-TEST(VirtualMechanism, Factory)
+TEST(VirtualMechanismGmrTest, InitializesCorrectlyFromFile)
+{
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t> vm1(file_path););
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t> vm2(file_path));
+
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(file_path));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(file_path));
+}
+
+TEST(VirtualMechanismGmrTest, InitializesCorrectlyFromData)
+{
+  int n_points = 50;
+  MatrixXd data(n_points,test_dim); // No phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t> vm1(data));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t> vm2(data));
+
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(data));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(data));
+
+  data.resize(n_points,test_dim+1); // With phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t> vm1(data));
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t> vm2(data));
+
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(data));
+  EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(data));
+}
+
+TEST(VirtualMechanismGmrTest, UpdateMethod)
+{
+  VirtualMechanismGmr<VMP_1ord_t> vm1(file_path);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(file_path);
+  
+  Eigen::VectorXd force(test_dim);
+  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd vel(test_dim);
+  force.fill(1.0);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  // Force input interface
+  EXPECT_NO_THROW(vm1.Update(force,dt));
+  EXPECT_NO_THROW(vm2.Update(force,dt));
+
+  // Cart input interface
+  EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
+  EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+}
+
+TEST(VirtualMechanismGmrTest, GetScale)
+{
+  VirtualMechanismGmr<VMP_1ord_t> vm1(file_path);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(file_path);
+
+  Eigen::VectorXd pos(test_dim);
+  pos.fill(1.0);
+
+  START_REAL_TIME_CRITICAL_CODE();
+
+  EXPECT_NO_THROW(vm1.getScale(pos));
+  EXPECT_NO_THROW(vm2.getScale(pos));
+
+  END_REAL_TIME_CRITICAL_CODE();
+}
+
+TEST(VirtualMechanismGmrTest, GetMethods)
 {
 
-    VirtualMechanismFactory vm_factory;
-    int order = 1;
-    std::string model_type = "gmr";
-    VirtualMechanismInterface* vm_ptr = NULL;
-    vm_ptr = vm_factory.Build(order,model_type,file_path);
+  VirtualMechanismGmr<VMP_1ord_t> vm1(file_path);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(file_path);
 
-    double dt = 0.01;
-    int test_dim = 2;
-    Eigen::VectorXd force(test_dim);
-    Eigen::VectorXd pos(test_dim);
-    Eigen::VectorXd vel(test_dim);
-    force.fill(1.0);
+  // State
+  Eigen::VectorXd state;
+  state.resize(test_dim);
+  EXPECT_NO_THROW(vm1.getState(state));
+  EXPECT_NO_THROW(vm2.getState(state));
 
-    vm_ptr->Update(pos,vel,dt);
-
-    delete vm_ptr;
+  // StateDot
+  Eigen::VectorXd state_dot;
+  state_dot.resize(test_dim);
+  EXPECT_NO_THROW(vm1.getStateDot(state_dot));
+  EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }
+
+TEST(VirtualMechanismGmrNormalizedTest, UpdateMethod)
+{
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(file_path);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(file_path);
+
+  Eigen::VectorXd force(test_dim);
+  Eigen::VectorXd pos(test_dim);
+  Eigen::VectorXd vel(test_dim);
+  force.fill(1.0);
+
+  START_REAL_TIME_CRITICAL_CODE();
+
+  // Force input interface
+  EXPECT_NO_THROW(vm1.Update(force,dt));
+  EXPECT_NO_THROW(vm2.Update(force,dt));
+
+  // Cart input interface
+  EXPECT_NO_THROW(vm1.Update(pos,vel,dt));
+  EXPECT_NO_THROW(vm2.Update(pos,vel,dt));
+
+  END_REAL_TIME_CRITICAL_CODE();
+
+}
+
+/*TEST(VirtualMechanismGmrTest, UpdateGuideNormalized)
+{
+  int n_points = 100;
+  MatrixXd data = MatrixXd::Random(n_points,test_dim); // No phase
+
+  //for (int i=0; i<data.cols(); i++)
+  //    data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(data);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(data);
+
+  EXPECT_NO_THROW(vm1.UpdateGuide(data));
+  EXPECT_NO_THROW(vm2.UpdateGuide(data));
+
+  data.resize(n_points,test_dim+1); // With phase
+
+  for (int i=0; i<data.cols(); i++)
+      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+  VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(data);
+  VirtualMechanismGmrNormalized<VMP_2ord_t> vm2(data);
+
+  EXPECT_NO_THROW(vm1.UpdateGuide(data));
+  EXPECT_NO_THROW(vm2.UpdateGuide(data));
+}*/
+
+/*TEST(VirtualMechanismGmrTest, GetGaussian)
+{
+  VirtualMechanismGmr<VMP_1ord_t> vm1(file_name_gmr);
+  VirtualMechanismGmr<VMP_2ord_t> vm2(file_name_gmr);
+  
+  Eigen::VectorXd pos(test_dim);
+  pos.fill(1.0);
+  
+  START_REAL_TIME_CRITICAL_CODE();
+  
+  EXPECT_NO_THROW(vm1.getGaussian(pos));
+  EXPECT_NO_THROW(vm2.getGaussian(pos));
+  
+  END_REAL_TIME_CRITICAL_CODE();
+}*/
+
+
+
 
 /*TEST(VirtualMechanismGmrTest, LoopUpdateMethod)
 {
@@ -78,6 +246,8 @@ TEST(VirtualMechanism, Factory)
   }
   EXPECT_NO_THROW(vm2.getStateDot(state_dot));
 }*/
+
+
 /*
 TEST(VirtualMechanismGmrTest, TestDtw)
 {
@@ -190,8 +360,8 @@ TEST(VirtualMechanismGmrTest, TestGMR)
   tool_box::WriteTxtFile(file_name_output.c_str(),output_vector);
 
 
-  //VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  //VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  //VirtualMechanismGmr<VMP_1ord_t> vm1(fa_ptr);
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(fa_ptr);
 
 
 }
@@ -271,8 +441,8 @@ TEST(VirtualMechanismGmrTest, TestGMR)
 
   delete fa_ptr_new;
 
-  //VirtualMechanismGmr<VMP_1ord_t> vm1(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
-  //VirtualMechanismGmr<VMP_2ord_t> vm2(test_dim,K,B,Kf,Bf,fade_gain,fa_ptr);
+  //VirtualMechanismGmr<VMP_1ord_t> vm1(fa_ptr);
+  //VirtualMechanismGmr<VMP_2ord_t> vm2(fa_ptr);
 }
 
 TEST(VirtualMechanismGmrTest, TestGMRLoadAndSave)
