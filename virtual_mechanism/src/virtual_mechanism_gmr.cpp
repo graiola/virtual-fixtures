@@ -224,7 +224,7 @@ VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
 }
 
 template <class VM_t>
-bool VirtualMechanismGmr<VM_t>::LoadGMMFromTxt(const string file_path) // LoadGMMFromTxt
+bool VirtualMechanismGmr<VM_t>::LoadModelFromFile(const string file_path)
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
     if(model_parameters_gmr!=NULL)
@@ -238,7 +238,7 @@ bool VirtualMechanismGmr<VM_t>::LoadGMMFromTxt(const string file_path) // LoadGM
 }
 
 template <class VM_t>
-bool VirtualMechanismGmr<VM_t>::SaveGMMToTxt(const string file_path)
+bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
 {
     const ModelParametersGMR* model_parameters_gmr = static_cast<const ModelParametersGMR*>(fa_->getModelParameters());
     if(model_parameters_gmr->saveGMMToMatrix(file_path, true)) // overwrite = true
@@ -260,7 +260,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, 
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-    if(LoadGMMFromTxt(file_path))
+    if(LoadModelFromFile(file_path))
         Init();
     else
         throw new invalid_argument("Impossible to load GMM from file.");
@@ -285,11 +285,6 @@ void VirtualMechanismGmr<VM_t>::Init()
     covariance_ = variance_.row(0).asDiagonal();
     covariance_inv_.fill(0.0);
     err_.fill(0.0);
-    prob_ = 0.0;
-    determinant_cov_ = 1.0;
-
-    // By default don't use the Mahalanobis distance
-    use_weighted_dist_ = false;
 
     // Initialize the state of the virtual mechanism
     VM_t::Init();
@@ -334,7 +329,6 @@ void VirtualMechanismGmr<VM_t>::UpdateJacobian()
   
   VM_t::J_transp_ = fa_output_dot_; // NOTE The output is transposed!
   VM_t::J_ = VM_t::J_transp_.transpose();
-
 }
 
 template<class VM_t>
@@ -343,82 +337,7 @@ void VirtualMechanismGmr<VM_t>::UpdateState()
   VM_t::state_ = fa_output_.transpose();
 }
 
-template<class VM_t>
-void VirtualMechanismGmr<VM_t>::getLocalKernel(VectorXd& mean_variance) const
-{
-  assert(mean_variance.size() == VM_t::state_dim_*2);
-  for(int i = 0; i < VM_t::state_dim_; i++)
-  {
-    mean_variance(i) = VM_t::state_(i);
-    mean_variance(i+3) = variance_(i);
-  }
-}
-
-template<class VM_t>
-void VirtualMechanismGmr<VM_t>::UpdateInvCov()
-{
-
-  for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
-      //covariance_inv_(i,i) = 1/(covariance_(i,i)); //0.001
-      if(use_weighted_dist_)
-      {
-        covariance_inv_(i,i) = 1/(covariance_(i,i)); //0.001
-      }
-      else
-      {
-        covariance_inv_(i,i) = 1.0;
-      }
-
-    //covariance_inv_ = covariance_.inverse();
-
-}
-
-template<class VM_t>
-double VirtualMechanismGmr<VM_t>::getGaussian(const VectorXd& pos, const double scaling_factor)
-{
-  UpdateInvCov();
-  
-  err_ = pos - VM_t::state_;
-  
-  // NOTE Since the covariance matrix is a diagonal matrix:
-  // output = exp(-0.5*err_.transpose()*covariance_inv_*err_);
-  // becomes:
-  prob_ = 0.0;
-  determinant_cov_ = 1.0;
-  for (int i = 0; i<VM_t::state_dim_; i++)
-  {
-    prob_ += err_(i)*err_(i)*covariance_inv_(i,i);
-    determinant_cov_ *= covariance_(i,i);
-  }
-  
-  prob_ = exp(-0.5*scaling_factor*prob_);
-
-  //prob_ = exp(-0.5*err_.transpose()*covariance_inv_*err_);
-  //determinant_cov_ = covariance_inv_.determinant();
-  
-  // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
-  // Hence the 1.0/covariance_inv_.determinant() below
-  //  ( (2\pi)^N*|\Sigma| )^(-1/2)
-
-  prob_ *= pow(pow(2*M_PI,VM_t::state_.size()) * determinant_cov_,-0.5);
-
-  return prob_;
-  
-  /*UpdateInvCov();
-   
-  double output = exp(-0.5*(pos - VM_t::state_).transpose()*covariance_inv_*(pos - VM_t::state_));
-  // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
-  // Hence the 1.0/covariance_inv_.determinant() below
-  //  ( (2\pi)^N*|\Sigma| )^(-1/2)
-
-  output *= pow(pow(2*M_PI,VM_t::state_.size())/covariance_inv_.determinant(),-0.5);
-  //std::cout<<output<<std::endl;
-  
-  return output;*/
-  
-}
-
-template<class VM_t>
+/*template<class VM_t>
 double VirtualMechanismGmr<VM_t>::PolynomScale(const VectorXd& pos, double w) //  0.001 [m]
 {
     err_ = pos - VM_t::state_;
@@ -428,12 +347,56 @@ double VirtualMechanismGmr<VM_t>::PolynomScale(const VectorXd& pos, double w) //
         return x*x*x*x - 2*x*x + 1;
     else
         return 0.0;
+}*/
+
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::UpdateInvCov()
+{
+  for (int i = 0; i<VM_t::state_dim_; i++) // NOTE We assume that is a diagonal matrix
+        covariance_inv_(i,i) = 1/(covariance_(i,i));
+        //covariance_inv_(i,i) = 1.0;
+
+  //covariance_inv_ = covariance_.inverse();
+}
+
+
+template<class VM_t>
+double VirtualMechanismGmr<VM_t>::ComputeProbability(const VectorXd& pos)
+{
+  UpdateInvCov();
+
+  err_ = pos - VM_t::state_;
+
+  // NOTE Since the covariance matrix is a diagonal matrix:
+  // output = exp(-0.5*err_.transpose()*covariance_inv_*err_);
+  // becomes:
+  double prob = 0.0;
+  double determinant_cov = 1.0;
+  for (int i = 0; i<VM_t::state_dim_; i++)
+  {
+    prob += err_(i)*err_(i)*covariance_inv_(i,i);
+    determinant_cov *= covariance_(i,i);
+  }
+
+  prob = exp(-0.5*prob);
+
+  //prob_ = exp(-0.5*err_.transpose()*covariance_inv_*err_);
+  //determinant_cov = covariance_inv_.determinant();
+
+  // For invertible matrices (which covar apparently was), det(A^-1) = 1/det(A)
+  // Hence the 1.0/covariance_inv_.determinant() below
+  //  ( (2\pi)^N*|\Sigma| )^(-1/2)
+
+  prob *= pow(pow(2*M_PI,VM_t::state_.size()) * determinant_cov,-0.5);
+
+  return prob;
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::setWeightedDist(const bool activate)
+double VirtualMechanismGmr<VM_t>::getScale(const VectorXd& pos, const double convergence_factor)
 {
-  use_weighted_dist_ = activate;
+  return  std::exp(-convergence_factor*getDistance(pos));
+  //return ComputeProbability(pos);
 }
 
 template<class VM_t>

@@ -10,7 +10,7 @@ namespace virtual_mechanism_spline
 {
 
 template <typename VM_t>
-void VirtualMechanismSpline<VM_t>::CreateSplineFromTxt(const string file_path)
+bool VirtualMechanismSpline<VM_t>::LoadModelFromFile(const string file_path)
 {
     vector<vector<double> > data; // abscissa phase x y z
     ReadTxtFile(file_path.c_str(),data);
@@ -36,22 +36,23 @@ void VirtualMechanismSpline<VM_t>::CreateSplineFromTxt(const string file_path)
 
     spline_phase_.set_points(abscissa,phase); // set_points(x,y) ----> z = f(s)
     spline_phase_inv_.set_points(phase,abscissa); // set_points(x,y) ----> s = g(z)
-}
 
+    return true;
+}
 
 template <typename VM_t>
 VirtualMechanismSpline<VM_t>::VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
     VM_t(state_dim,K,B,Kf,Bf,fade_gain)
 {
-    CreateSplineFromTxt(file_path);
+    LoadModelFromFile(file_path);
 
-     Jz_.resize(VM_t::state_dim_,1);
-     err_.resize(VM_t::state_dim_);
-     err_.fill(0.0);
+    Jz_.resize(VM_t::state_dim_,1);
+    err_.resize(VM_t::state_dim_);
+    err_.fill(0.0);
 
-     z_ = 0.0;
-     z_dot_ = 0.0;
-     z_dot_ref_ = 0.1;
+    z_ = 0.0;
+    z_dot_ = 0.0;
+    z_dot_ref_ = 0.1;
 }
 
 template <typename VM_t>
@@ -102,13 +103,12 @@ void VirtualMechanismSpline<VM_t>::UpdateStateDot()
 template<class VM_t>
 void VirtualMechanismSpline<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out)
 {
-  assert(phase_in <= 1.0);
-  assert(phase_in >= 0.0);
-  assert(state_out.size() == VM_t::state_dim_);
+   assert(phase_in <= 1.0);
+   assert(phase_in >= 0.0);
+   assert(state_out.size() == VM_t::state_dim_);
 
-
-  for(int i=0;i<VM_t::state_dim_;i++)
-      state_out(i) = splines_xyz_[i](phase_in);
+   for(int i=0;i<VM_t::state_dim_;i++)
+       state_out(i) = splines_xyz_[i](phase_in);
 }
 
 /*template<class VM_t>
@@ -141,32 +141,23 @@ void VirtualMechanismSpline<VM_t>::ComputeFinalState()
   ComputeStateGivenPhase(1.0,VM_t::final_state_);
 }
 
-template<class VM_t>
-double VirtualMechanismSpline<VM_t>::getGaussian(const VectorXd& pos)
+template <class VM_t>
+bool VirtualMechanismSpline<VM_t>::SaveModelToFile(const string file_path)
 {
-
-  err_ = pos - VM_t::state_;
-  double out = 0.0;
-  for (int i = 0; i<VM_t::state_dim_; i++)
-    out += err_(i)*err_(i);
-
-  out = exp(-0.5*out);
-
-  return out;
-
+     return true;
 }
-
-/*template<class VM_t>
-void VirtualMechanismSpline<VM_t>::setWeightedDist(const bool activate)
-{
-  //use_weighted_dist_ = activate;
-}*/
 
 template<class VM_t>
 double VirtualMechanismSpline<VM_t>::getDistance(const VectorXd& pos)
 {
   err_ = pos - VM_t::state_;
   return err_.norm();
+}
+
+template<class VM_t>
+double VirtualMechanismSpline<VM_t>::getScale(const VectorXd& pos, const double convergence_factor)
+{
+  return  std::exp(-convergence_factor*getDistance(pos));
 }
 
 // Explicitly instantiate the templates, and its member definitions

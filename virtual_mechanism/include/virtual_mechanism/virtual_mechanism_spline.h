@@ -4,10 +4,6 @@
 ////////// VirtualMechanismInterface
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 
-////////// BOOST
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-
 ////////// Toolbox
 #include "toolbox/spline/spline.h"
 
@@ -22,14 +18,13 @@ class VirtualMechanismSpline: public VM_t
       VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
-      //virtual void setWeightedDist(const bool activate); // FIXME: Fake function
-      virtual double getGaussian(const Eigen::VectorXd& pos);
+      virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
+      virtual bool SaveModelToFile(const std::string file_path);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
-      //void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
 	  
 	protected:
 
-      void CreateSplineFromTxt(const std::string file_path);
+      bool LoadModelFromFile(const std::string file_path);
 	  
       virtual void UpdateJacobian();
       virtual void UpdateState();
@@ -47,13 +42,8 @@ class VirtualMechanismSpline: public VM_t
 
        Eigen::MatrixXd Jz_;
        Eigen::VectorXd err_;
-
-
 };
 
 }
 
 #endif
-
-
-

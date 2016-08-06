@@ -32,28 +32,27 @@ class VirtualMechanismGmr: public VM_t
       ~VirtualMechanismGmr();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
-      virtual void setWeightedDist(const bool activate);
-      virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const;
-      virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0);
-      virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001); //  w [m]
+      virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
+      virtual bool SaveModelToFile(const std::string file_path);
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
+
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
-      bool SaveGMMToTxt(const std::string file_path);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       virtual double GetResponsability();
 	  
 	protected:
 	  
       void Init();
-      bool LoadGMMFromTxt(const std::string file_path);
+      bool LoadModelFromFile(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
 	  virtual void ComputeFinalState();
-	  void UpdateInvCov();
 
-      //boost::shared_ptr<fa_t> fa_ptr_;
+      void UpdateInvCov();
+      double ComputeProbability(const Eigen::VectorXd& pos);
+
       fa_t* fa_; // Function Approximator
 
 	  Eigen::MatrixXd fa_input_;
@@ -64,10 +63,6 @@ class VirtualMechanismGmr: public VM_t
       Eigen::MatrixXd covariance_inv_;
 	  
 	  Eigen::VectorXd err_;
-
-	  double determinant_cov_;
-	  double prob_;
-	  bool use_weighted_dist_;
 };
 
 template <typename VM_t>
