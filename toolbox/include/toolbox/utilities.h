@@ -117,7 +117,6 @@ inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double 
 
 /// Text file manipulation
 template<typename Scalar, int RowsAtCompileTime, int ColsAtCompileTime>
-inline bool ReadTxtFile(std::string filename, Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>& m)
 inline void ReadTxtFile(std::string filename, Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>& m)
 {
 
