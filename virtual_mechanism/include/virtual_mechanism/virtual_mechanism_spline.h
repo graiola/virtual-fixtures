@@ -15,7 +15,7 @@ class VirtualMechanismSpline: public VM_t
 {
 	public:
 
-      VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
+      VirtualMechanismSpline(const std::string file_path);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
@@ -32,16 +32,16 @@ class VirtualMechanismSpline: public VM_t
       virtual void ComputeInitialState();
       virtual void ComputeFinalState();
 
-       std::vector<tk::spline > splines_xyz_;
-       tk::spline spline_phase_;
-       tk::spline spline_phase_inv_;
+      std::vector<tk::spline > splines_xyz_;
+      tk::spline spline_phase_;
+      tk::spline spline_phase_inv_;
 
-       double z_;
-       double z_dot_;
-       double z_dot_ref_;
+      double z_;
+      double z_dot_;
+      double z_dot_ref_;
 
-       Eigen::MatrixXd Jz_;
-       Eigen::VectorXd err_;
+      Eigen::MatrixXd Jz_;
+      Eigen::VectorXd err_;
 };
 
 }

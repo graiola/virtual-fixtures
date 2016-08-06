@@ -41,8 +41,8 @@ bool VirtualMechanismSpline<VM_t>::LoadModelFromFile(const string file_path)
 }
 
 template <typename VM_t>
-VirtualMechanismSpline<VM_t>::VirtualMechanismSpline(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
-    VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+VirtualMechanismSpline<VM_t>::VirtualMechanismSpline(const string file_path):
+    VM_t()
 {
     LoadModelFromFile(file_path);
 

@@ -27,8 +27,8 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
-      VirtualMechanismGmr(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const std::string file_path);
-      VirtualMechanismGmr(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const Eigen::MatrixXd& data);
+      VirtualMechanismGmr(const std::string file_path);
+      VirtualMechanismGmr(const Eigen::MatrixXd& data);
       ~VirtualMechanismGmr();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
@@ -39,7 +39,7 @@ class VirtualMechanismGmr: public VM_t
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
-      virtual double GetResponsability();
+      double GetResponsability();
 	  
 	protected:
 	  
@@ -70,8 +70,8 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
-      VirtualMechanismGmrNormalized(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain,  const std::string file_path);
-      VirtualMechanismGmrNormalized(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain, const Eigen::MatrixXd& data);
+      VirtualMechanismGmrNormalized(const std::string file_path);
+      VirtualMechanismGmrNormalized(const Eigen::MatrixXd& data);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
       void UpdateGuide(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);

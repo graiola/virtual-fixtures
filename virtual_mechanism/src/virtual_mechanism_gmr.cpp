@@ -12,16 +12,16 @@ namespace virtual_mechanism_gmr
 {
 
 template <class VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path):
-    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,file_path)
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const string file_path):
+    VirtualMechanismGmr<VM_t>(file_path)
 {
     Init();
     Normalize();
 }
 
 template <class VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const MatrixXd& data):
-    VirtualMechanismGmr<VM_t>(state_dim,K,B,Kf,Bf,fade_gain,data)
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const MatrixXd& data):
+    VirtualMechanismGmr<VM_t>(data)
 {
     Init();
     Normalize();
@@ -248,7 +248,7 @@ bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
 }
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const MatrixXd& data): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data): VM_t()
 {
     int n_gaussians = 10; //FIXME
     MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians); // input/phase dimension is 1
@@ -258,7 +258,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, 
 }
 
 template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(int state_dim, vector<double> K, vector<double> B, double Kf, double Bf, double fade_gain, const string file_path): VM_t(state_dim,K,B,Kf,Bf,fade_gain)
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const string file_path): VM_t()
 {
     if(LoadModelFromFile(file_path))
         Init();
@@ -358,7 +358,6 @@ void VirtualMechanismGmr<VM_t>::UpdateInvCov()
 
   //covariance_inv_ = covariance_.inverse();
 }
-
 
 template<class VM_t>
 double VirtualMechanismGmr<VM_t>::ComputeProbability(const VectorXd& pos)

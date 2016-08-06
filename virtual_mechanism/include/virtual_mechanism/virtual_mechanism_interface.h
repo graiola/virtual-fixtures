@@ -1,11 +1,9 @@
 #ifndef VIRTUAL_MECHANISM_INTERFACE_H
 #define VIRTUAL_MECHANISM_INTERFACE_H
 
-////////// Toolbox
-#include "toolbox/toolbox.h"
-
 ////////// ROS
-//#include <ros/ros.h>
+#include <ros/ros.h>
+#include <ros/package.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -16,18 +14,83 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+////////// Toolbox
+#include "toolbox/toolbox.h"
+
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
-	
+
 namespace virtual_mechanism_interface 
 {
     typedef Eigen::Quaternion<double> quaternion_t;
+    using namespace tool_box; // We need this in order to use the yaml operator defined in toolbox
     
 class VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterface(int state_dim, std::vector<double> K, std::vector<double> B, double Kf, double Bf, double fade_gain):state_dim_(state_dim),update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_ddot_(0.0),scale_(1.0),exec_time_(10.0),Kf_(Kf),Bf_(Bf),fade_gain_(fade_gain),fade_(0.0),active_(false),dt_(0.001)
+      VirtualMechanismInterface():update_quaternion_(false),phase_(0.0),
+          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
+          phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
+          phase_ddot_(0.0),scale_(1.0),exec_time_(10.0),
+          fade_(0.0),active_(false),dt_(0.001)
 	  {
+          pkg_path_ = ros::package::getPath("virtual_mechanism");
+          config_folder_path_ = pkg_path_+"/config/";
+          file_name_ = "VirtualMechanismInterface.yml";
+          std::string complete_path(config_folder_path_+file_name_);
+          if(ReadConfig(complete_path))
+          {
+            //ROS_INFO("Loaded config file: %s",complete_path.c_str());
+          }
+          else
+          {
+            ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+          }
+
+	      // Initialize/resize the attributes
+          // NOTE We assume that the phase has dim 1x1
+          state_.resize(state_dim_);
+          state_dot_.resize(state_dim_);
+          displacement_.resize(state_dim_);
+	      torque_.resize(1);
+          force_.resize(state_dim_);
+          force_pos_.resize(state_dim_);
+          force_vel_.resize(state_dim_);
+          final_state_.resize(state_dim_);
+          initial_state_.resize(state_dim_);
+          J_.resize(state_dim_,1);
+          J_transp_.resize(1,state_dim_);
+          BxJ_.resize(state_dim_,1);
+          JtxBxJ_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
+
+          // Default quaternions
+          //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+          //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
+          //quaternion_ << 1.0,0.0,0.0,0.0;
+	  }
+	
+	  virtual ~VirtualMechanismInterface()
+      {
+      }
+	  
+      inline bool ReadConfig(std::string file_path)
+      {
+          YAML::Node main_node;
+
+          try
+          {
+              main_node = YAML::LoadFile(file_path);
+          }
+          catch(...)
+          {
+              return false;
+          }
+
+          std::vector<double> K,B;
+          // Retrain basic parameters for all the virtual mechanisms
+          main_node["position_dim"] >> state_dim_;
+          main_node["K"] >> K;
+          main_node["B"] >> B;
+
           assert(state_dim_ == 2 || state_dim_ == 3);
           assert(K.size() == static_cast<unsigned int>(state_dim_));
           assert(B.size() == K.size());
@@ -36,26 +99,7 @@ class VirtualMechanismInterface
             assert(K[i] > 0.0);
             assert(B[i] > 0.0);
           }
-          assert(Kf_ >= 0.0);
-          assert(Bf_ >= 0.0);
-          assert(fade_gain_ > 0.0);
 
-	      // Initialize/resize the attributes
-          // NOTE We assume that the phase has dim 1x1
-          state_.resize(state_dim);
-          state_dot_.resize(state_dim);
-          displacement_.resize(state_dim);
-	      torque_.resize(1);
-          force_.resize(state_dim);
-          force_pos_.resize(state_dim);
-          force_vel_.resize(state_dim);
-	      final_state_.resize(state_dim);
-	      initial_state_.resize(state_dim);
-	      J_.resize(state_dim,1);
-	      J_transp_.resize(1,state_dim);
-          BxJ_.resize(state_dim,1);
-          JtxBxJ_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
-	      
           // Create a diagonal gain matrix
           if(K.size() == 2)
           {
@@ -68,16 +112,28 @@ class VirtualMechanismInterface
             B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
           }
 
-          // Default quaternions
-          //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-          //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-          //quaternion_ << 1.0,0.0,0.0,0.0;
-	  }
-	
-	  virtual ~VirtualMechanismInterface()
-      {
+          if (const YAML::Node& active_guide_node = main_node["active_guide"])
+          {
+              active_guide_node["execution_time"] >> exec_time_;
+              active_guide_node["Kf"] >> Kf_;
+              active_guide_node["Bf"] >> Bf_;
+              active_guide_node["fade_gain"] >> fade_gain_;
+              active_ = true;
+              assert(Kf_ >= 0.0);
+              assert(Bf_ >= 0.0);
+              assert(fade_gain_ > 0.0);
+          }
+          else
+          {
+              Kf_ = 0.0;
+              Bf_ = 0.0;
+              fade_gain_ = 1.0;
+              active_ = false;
+          }
+
+          return true;
       }
-	  
+
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
         assert(dt > 0.0);
@@ -170,6 +226,7 @@ class VirtualMechanismInterface
       virtual bool SaveModelToFile(const std::string file_path)=0;
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0)=0;
+
       inline double getTorque() const {return torque_(0,0);}
       inline double getFade() const {return fade_;}
       inline double getPhaseDotDot() const {return phase_ddot_;}
@@ -183,6 +240,7 @@ class VirtualMechanismInterface
 	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::MatrixXd& jacobian) const {jacobian = J_;}
+
 	  inline void getQuaternion(Eigen::VectorXd& q) const 
 	  {
               assert(q.size() == 4); 
@@ -284,21 +342,55 @@ class VirtualMechanismInterface
 	  bool active_;
       double exec_time_;
       double dt_;
+
+      // Config
+      std::string pkg_path_;
+      std::string config_folder_path_;
+      std::string file_name_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterfaceFirstOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 100, double Bf = 0.1, double fade_gain = 10.0, double Bd_max = 1.0, double epsilon = 10):
-      VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
+      VirtualMechanismInterfaceFirstOrder():
+      VirtualMechanismInterface()
 	  {
-        assert(epsilon > 0.1);
-        epsilon_ = epsilon;
-	    Bd_ = 0.0;
-	    Bd_max_ = Bd_max;
+
+        file_name_ = "VirtualMechanismInterfaceFirstOrder.yml";
+        std::string complete_path(config_folder_path_+file_name_);
+        if(ReadConfig(complete_path))
+        {
+          //ROS_INFO("Loaded config file: %s",complete_path.c_str());
+        }
+        else
+        {
+          ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+        }
+
 	    det_ = 1.0;
         num_ = -1.0;
 	  }
+
+      inline bool ReadConfig(std::string file_path)
+      {
+          YAML::Node main_node;
+
+          try
+          {
+              main_node = YAML::LoadFile(file_path);
+          }
+          catch(...)
+          {
+              return false;
+          }
+
+          //main_node["Bd_max"] >> Bd_max_;
+          //main_node["epsilon"] >> epsilon_;
+          //assert(epsilon > 0.1);
+          main_node["Bd"] >> Bd_;
+
+          return true;
+      }
 
 	protected:
 	    
@@ -341,26 +433,30 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	  }
 	  
 	protected:
-	  // Tmp variables
+
 	  double det_;
       double num_;
 	  double Bd_; // Damp term
-	  double Bd_max_; // Max damp term
-      double epsilon_;
+      //double Bd_max_; // Max damp term
+      //double epsilon_;
 };
 
 class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterfaceSecondOrder(int state_dim, std::vector<double> K, std::vector<double> B, double Kf = 20, double Bf = 8.94427190999916, double fade_gain = 10.0, double inertia = 0.1):
-      VirtualMechanismInterface(state_dim,K,B,Kf,Bf,fade_gain)
+      VirtualMechanismInterfaceSecondOrder():
+      VirtualMechanismInterface()
 	  {
-	      
-	      assert(Bf > 0.0);
-          assert(inertia > 0.0);
-	      
-	      Bf_ = Bf;
-          inertia_ = inertia;
+          file_name_ = "VirtualMechanismInterfaceSecondOrder.yml";
+          std::string complete_path(config_folder_path_+file_name_);
+          if(ReadConfig(complete_path))
+          {
+            //ROS_INFO("Loaded config file: %s",complete_path.c_str());
+          }
+          else
+          {
+            ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+          }
 
 	      // Resize the attributes
 	      phase_state_.resize(2); //phase_ and phase_dot
@@ -383,8 +479,27 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
           control_ = 0.0;
 	  }
+
+      inline bool ReadConfig(std::string file_path)
+      {
+          YAML::Node main_node;
+
+          try
+          {
+              main_node = YAML::LoadFile(file_path);
+          }
+          catch(...)
+          {
+              return false;
+          }
+
+          main_node["inertia"] >> inertia_;
+          assert(inertia_ > 0.0);
+
+          return true;
+      }
 	
-      inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
+      //inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
 
 	protected:
 	    
@@ -419,10 +534,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  
       inline void DynSystem(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state)
 	  {
+         phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1 + input2); // Old version with damping
+         phase_state_dot_(0) = phase_state(1);
 
          //phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1); // Old version with damping
-         phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1 + input2); // Old version with damping
-
          //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
          //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
          //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
@@ -430,9 +545,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
          //phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
          //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
          //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
-
          //phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
-         phase_state_dot_(0) = phase_state(1);
          //phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
@@ -466,9 +579,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  Eigen::VectorXd phase_state_dot_;
 	  Eigen::VectorXd phase_state_integrated_;
 	  Eigen::VectorXd k1_, k2_, k3_, k4_;
-
-	  // Fade system variables
-	  double Bf_;
       double inertia_;
       double control_;
 };
