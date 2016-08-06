@@ -8,73 +8,52 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
-if(TEST_ENABLED)
-    set(BIN_TEST_NAME test_${PROJECT_NAME})
-endif(TEST_ENABLED)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  toolbox
+  roslib
+)
 
-if(NO_ROS_LIBS)
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+ INCLUDE_DIRS include
+ LIBRARIES ${PROJECT_NAME}
+ CATKIN_DEPENDS toolbox
+ DEPENDS system_lib boost dmpbbo
+)
 
-	set(INCLUDE_INSTALL_DIR ${PROJECT_INCLUDE_DIR}/${PROJECT_NAME})
-	set(INCLUDE_PATHS ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
-	set(LINK_LIBS ${DMP_LIBRARIES} ${Boost_LIBRARIES})
-	set(ARCHIVE_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
-	set(LIBRARY_DESTINATION ${PROJECT_LIBRARY_OUTPUT_DIRECTORY})
-	set(RUNTIME_DESTINATION ${PROJECT_RUNTIME_OUTPUT_DIRECTORY})
+set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
+set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
+set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-        ## Add gtest based cpp test target and link libraries
-        enable_testing()
-        find_package(GTest)
-        if(GTEST_FOUND AND TEST_ENABLED)
-            include_directories(${GTEST_INCLUDE_DIRS})
-            add_executable(${BIN_TEST_NAME}
-                test/test_virtual_mechanism_gmr.cpp)
-            target_link_libraries(${BIN_TEST_NAME} ${GTEST_BOTH_LIBRARIES} ${PROJECT_NAME})
-        endif(GTEST_FOUND AND TEST_ENABLED)
+#add_definitions(-DINCLUDE_ROS_CODE)
 
-else()
-	## Find catkin macros and libraries
-	## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-	## is used, also find other catkin packages
-	find_package(catkin REQUIRED COMPONENTS
-	  toolbox
-	)
-
-	###################################
-	## catkin specific configuration ##
-	###################################
-	## The catkin_package macro generates cmake config files for your package
-	## Declare things to be passed to dependent projects
-	## INCLUDE_DIRS: uncomment this if you package contains header files
-	## LIBRARIES: libraries you create in this project that dependent projects also need
-	## CATKIN_DEPENDS: catkin_packages dependent projects also need
-	## DEPENDS: system dependencies of this project that dependent projects also need
-	catkin_package(
-	 INCLUDE_DIRS include
-	 LIBRARIES ${PROJECT_NAME}
-	 CATKIN_DEPENDS toolbox
-	 DEPENDS system_lib boost dmpbbo
-	)
-
-	set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-	set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
-	set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES})
-	set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-	set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-	set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-	add_definitions(-DINCLUDE_ROS_CODE)
-
-        if(TEST_ENABLED)
-            ## Add gtest based cpp test target and link libraries
-            catkin_add_gtest(${BIN_TEST_NAME}
-              test/test_virtual_mechanism_gmr.cpp                
-            )
-            if(TARGET ${BIN_TEST_NAME})
-              target_link_libraries(${BIN_TEST_NAME} ${PROJECT_NAME})
-            endif()
-        endif(TEST_ENABLED)
-
-endif(NO_ROS_LIBS)
+## Add gtest based cpp test target and link libraries
+catkin_add_gtest(test_gmr
+  test/test_virtual_mechanism_gmr.cpp
+)
+if(TARGET test_gmr)
+  target_link_libraries(test_gmr ${PROJECT_NAME})
+endif()
+catkin_add_gtest(test_spline
+  test/test_virtual_mechanism_spline.cpp
+)
+if(TARGET test_spline)
+  target_link_libraries(test_spline ${PROJECT_NAME})
+endif()
 
 ###########
 ## Build ##
@@ -111,3 +90,9 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
+
+## Visualize the folders src and include in QtCreator
+FILE(GLOB_RECURSE include_files "include/*.h")
+add_custom_target(headers SOURCES ${include_files})
+FILE(GLOB_RECURSE src_files "src/*.cpp")
+add_custom_target(src SOURCES ${src_files})
