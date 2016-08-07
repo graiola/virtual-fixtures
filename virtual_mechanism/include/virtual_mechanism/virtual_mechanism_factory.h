@@ -2,10 +2,8 @@
 #define VIRTUAL_MECHANISM_FACTORY_H
 
 #include "virtual_mechanism/virtual_mechanism_interface.h"
-#include "virtual_mechanism/virtual_mechanism_gmr.h"
-#include "virtual_mechanism/virtual_mechanism_spline.h"
 
-namespace virtual_mechanism_factory
+namespace virtual_mechanism_interface
 {
 
 enum order_t {FIRST,SECOND};

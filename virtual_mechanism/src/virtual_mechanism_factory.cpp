@@ -1,4 +1,6 @@
 #include "virtual_mechanism/virtual_mechanism_factory.h"
+#include "virtual_mechanism/virtual_mechanism_gmr.h"
+#include "virtual_mechanism/virtual_mechanism_spline.h"
 
 using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
@@ -9,7 +11,7 @@ using namespace std;
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
-namespace virtual_mechanism_factory
+namespace virtual_mechanism_interface
 {
 
 VirtualMechanismInterface* VirtualMechanismFactory::Build(const order_t order, const model_type_t model_type, const MatrixXd& data)

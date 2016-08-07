@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
-#include "virtual_mechanism/virtual_mechanism_interface.h"
 #include "virtual_mechanism/virtual_mechanism_factory.h"
 
-using namespace virtual_mechanism_factory;
+using namespace virtual_mechanism_interface;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
 std::string file_path(pkg_path+"/test/test_gmm.txt");

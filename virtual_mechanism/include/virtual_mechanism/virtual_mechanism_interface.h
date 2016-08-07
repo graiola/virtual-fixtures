@@ -339,7 +339,6 @@ class VirtualMechanismInterface
       double Bf_;
 	  double fade_;
 	  bool active_;
-      //double exec_time_;
       double dt_;
 
       // Config
