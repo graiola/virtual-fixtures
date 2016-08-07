@@ -8,10 +8,6 @@
 namespace virtual_mechanism_factory
 {
 
-using namespace virtual_mechanism_interface;
-using namespace virtual_mechanism_gmr;
-using namespace virtual_mechanism_spline;
-
 enum order_t {FIRST,SECOND};
 enum model_type_t {GMR,GMR_NORMALIZED,SPLINE};
 

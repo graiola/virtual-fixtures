@@ -114,7 +114,6 @@ class VirtualMechanismInterface
 
           if (const YAML::Node& active_guide_node = main_node["active_guide"])
           {
-              //active_guide_node["execution_time"] >> exec_time_;
               active_guide_node["Kf"] >> Kf_;
               active_guide_node["Bf"] >> Bf_;
               active_guide_node["fade_gain"] >> fade_gain_;
@@ -130,7 +129,6 @@ class VirtualMechanismInterface
               fade_gain_ = 1.0;
               active_ = false;
           }
-
           return true;
       }
 
@@ -178,9 +176,7 @@ class VirtualMechanismInterface
 	      assert(vel.size() == state_dim_);
 	    
           scale_ = scale;
-
           //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
-
           displacement_.noalias() = state_ - pos;
           force_pos_.noalias() = K_ * displacement_;
           force_vel_.noalias() = B_ * vel;
@@ -234,6 +230,7 @@ class VirtualMechanismInterface
               q(3) = quaternion_->z();  
       }
       inline double getKf() const {return Kf_;}
+      inline double getBf() const {return Bf_;}
       inline void getK(Eigen::MatrixXd& K) const {K = K_;}
       inline void getB(Eigen::MatrixXd& B) const {B = B_;}
 
@@ -272,7 +269,6 @@ class VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
-      //virtual bool LoadModelFromFile(const std::string file_path)=0;
 
       virtual void ApplySaturation()
       {
