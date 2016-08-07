@@ -39,8 +39,6 @@ set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-#add_definitions(-DINCLUDE_ROS_CODE)
-
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(test_gmr
   test/test_virtual_mechanism_gmr.cpp
@@ -86,11 +84,11 @@ add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
-  ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
-  LIBRARY DESTINATION ${LIBRARY_DESTINATION}
-  RUNTIME DESTINATION ${RUNTIME_DESTINATION}
-)
+#install(TARGETS ${PROJECT_NAME} ${BIN_TEST_NAME}
+#  ARCHIVE DESTINATION ${ARCHIVE_DESTINATION}
+#  LIBRARY DESTINATION ${LIBRARY_DESTINATION}
+#  RUNTIME DESTINATION ${RUNTIME_DESTINATION}
+#)
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
