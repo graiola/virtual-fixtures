@@ -36,7 +36,7 @@ int test_dim = 2;
 
 TEST(VirtualMechanismGmrTest, InitializesCorrectlyFromFile)
 {
-  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t> vm1(file_path););
+  EXPECT_NO_THROW(VirtualMechanismGmr<VMP_1ord_t> vm1(file_path));
   EXPECT_NO_THROW(VirtualMechanismGmr<VMP_2ord_t> vm2(file_path));
 
   EXPECT_NO_THROW(VirtualMechanismGmrNormalized<VMP_1ord_t> vm1(file_path));

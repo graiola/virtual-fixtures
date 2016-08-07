@@ -27,24 +27,26 @@ class VirtualMechanismGmr: public VM_t
 {
 	public:
 
+      VirtualMechanismGmr();
       VirtualMechanismGmr(const std::string file_path);
       VirtualMechanismGmr(const Eigen::MatrixXd& data);
       ~VirtualMechanismGmr();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
+      virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
+      virtual bool CreateModelFromFile(const std::string file_path);
       virtual bool SaveModelToFile(const std::string file_path);
-      void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
 
-      void UpdateGuide(const Eigen::MatrixXd& data);
+      void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
+      void TrainModel(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       double GetResponsability();
+      bool ReadConfig(std::string file_path);
 	  
 	protected:
 	  
-      void Init();
-      bool LoadModelFromFile(const std::string file_path);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
@@ -61,8 +63,9 @@ class VirtualMechanismGmr: public VM_t
 	  Eigen::MatrixXd variance_;
 	  Eigen::MatrixXd covariance_;
       Eigen::MatrixXd covariance_inv_;
-	  
 	  Eigen::VectorXd err_;
+
+      int n_gaussians_;
 };
 
 template <typename VM_t>
@@ -70,15 +73,18 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 {
     public:
 
+      VirtualMechanismGmrNormalized();
       VirtualMechanismGmrNormalized(const std::string file_path);
       VirtualMechanismGmrNormalized(const Eigen::MatrixXd& data);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
-      void UpdateGuide(const Eigen::MatrixXd& data);
+      void TrainModel(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
+      bool ReadConfig(std::string file_path);
+      virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
+      virtual bool CreateModelFromFile(const std::string file_path);
 
     protected:
 
-      void Init();
       virtual void UpdateJacobian();
       virtual void UpdateState();
       virtual void UpdateStateDot();
@@ -88,6 +94,8 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       tk::spline spline_phase_inv_;
       std::vector<tk::spline > splines_xyz_;
       bool use_spline_xyz_;
+      int n_points_splines_;
+      double exec_time_;
 
       double z_;
       double z_dot_;
@@ -101,6 +109,3 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 }
 
 #endif
-
-
-

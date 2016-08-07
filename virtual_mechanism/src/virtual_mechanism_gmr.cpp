@@ -11,27 +11,52 @@ using namespace dtw;
 namespace virtual_mechanism_gmr
 {
 
-template <class VM_t>
-VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const string file_path):
-    VirtualMechanismGmr<VM_t>(file_path)
+template<class VM_t>
+bool VirtualMechanismGmrNormalized<VM_t>::CreateModelFromData(const MatrixXd& data)
 {
-    Init();
+    VirtualMechanismGmr<VM_t>::CreateModelFromData(data);
     Normalize();
+}
+
+template<class VM_t>
+bool VirtualMechanismGmrNormalized<VM_t>::CreateModelFromFile(const std::string file_path)
+{
+    VirtualMechanismGmr<VM_t>::CreateModelFromFile(file_path);
+    Normalize();
+}
+
+template <class VM_t>
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const std::string file_path):
+    VirtualMechanismGmrNormalized()
+{
+    CreateModelFromFile(file_path);
+    VM_t::Init();
 }
 
 template <class VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const MatrixXd& data):
-    VirtualMechanismGmr<VM_t>(data)
+    VirtualMechanismGmrNormalized()
 {
-    Init();
-    Normalize();
+    CreateModelFromData(data);
+    VM_t::Init();
 }
 
 template <class VM_t>
-void VirtualMechanismGmrNormalized<VM_t>::Init()
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized():
+    VirtualMechanismGmr<VM_t>()
 {
-    Jz_.resize(VM_t::state_dim_,1);
+    VM_t::file_name_ = "VirtualMechanismGmrNormalized.yml";
+    std::string complete_path(VM_t::config_folder_path_+VM_t::file_name_);
+    if(ReadConfig(complete_path))
+    {
+      //ROS_INFO("Loaded config file: %s",complete_path.c_str());
+    }
+    else
+    {
+      ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+    }
 
+    Jz_.resize(VM_t::state_dim_,1);
     loopCnt = 0;
     z_ = 0.0;
     z_dot_ = 0.0;
@@ -41,21 +66,18 @@ void VirtualMechanismGmrNormalized<VM_t>::Init()
 template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 {
-    const int n_points = 1000; // FIXME
-    use_spline_xyz_ = true; // FIXME
-
     spline_phase_.clear(); // spline::clear()
     spline_phase_inv_.clear(); // spline::clear()
     splines_xyz_.clear(); // std::vector::clear()
 
-    std::vector<double> phase_for_spline(n_points);
-    std::vector<double> abscisse_for_spline(n_points);
+    std::vector<double> phase_for_spline(n_points_splines_);
+    std::vector<double> abscisse_for_spline(n_points_splines_);
 
-    Eigen::MatrixXd input_phase(n_points,1);
-    Eigen::MatrixXd output_position(n_points,VM_t::state_dim_);
+    Eigen::MatrixXd input_phase(n_points_splines_,1);
+    Eigen::MatrixXd output_position(n_points_splines_,VM_t::state_dim_);
     //Eigen::MatrixXd output_position_dot(n_points,VM_t::state_dim_);
-    Eigen::MatrixXd position_diff(n_points-1,VM_t::state_dim_);
-    input_phase.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+    Eigen::MatrixXd position_diff(n_points_splines_-1,VM_t::state_dim_);
+    input_phase.col(0) = VectorXd::LinSpaced(n_points_splines_, 0.0, 1.0);
 
     // Get xyz from GMR using a linspaced phase [0,1], preserve the rhythme
     this->fa_->predict(input_phase,output_position);
@@ -63,10 +85,10 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 
     if(use_spline_xyz_)
     {
-        vector<vector<double> > xyz(VM_t::state_dim_, vector<double>(n_points));
+        vector<vector<double> > xyz(VM_t::state_dim_, vector<double>(n_points_splines_));
         splines_xyz_.resize(VM_t::state_dim_);
         // Copy to std vectors
-        for(int i=0;i<n_points;i++)
+        for(int i=0;i<n_points_splines_;i++)
         {
             phase_for_spline[i] = input_phase(i,0);
             for(int j=0;j<VM_t::state_dim_;j++)
@@ -79,7 +101,7 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
     }
     else
     {
-        for(int i=0;i<n_points;i++)
+        for(int i=0;i<n_points_splines_;i++)
             phase_for_spline[i] = input_phase(i,0);
     }
 
@@ -94,7 +116,7 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
     // Normalize
     for(int i=0;i<abscisse_for_spline.size();i++)
     {
-        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[n_points-1];
+        abscisse_for_spline[i] = abscisse_for_spline[i]/abscisse_for_spline[n_points_splines_-1];
     }
 
     //tool_box::WriteTxtFile("abscisse.txt",abscisse_for_spline);
@@ -104,10 +126,33 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 }
 
 template<class VM_t>
-void VirtualMechanismGmrNormalized<VM_t>::UpdateGuide(const MatrixXd& data)
+bool VirtualMechanismGmrNormalized<VM_t>::ReadConfig(std::string file_path)
 {
-  VirtualMechanismGmr<VM_t>::UpdateGuide(data);
-  Normalize();
+    YAML::Node main_node;
+
+    try
+    {
+        main_node = YAML::LoadFile(file_path);
+    }
+    catch(...)
+    {
+        return false;
+    }
+
+    main_node["use_spline_xyz"] >> use_spline_xyz_;
+    main_node["n_points_splines"] >> n_points_splines_;
+    main_node["execution_time"] >> exec_time_;
+    assert(n_points_splines_ > 2);
+    assert(exec_time_ > 0);
+
+    return true;
+}
+
+template<class VM_t>
+void VirtualMechanismGmrNormalized<VM_t>::TrainModel(const MatrixXd& data)
+{
+    VirtualMechanismGmr<VM_t>::TrainModel(data);
+    Normalize();
 }
 
 template<class VM_t>
@@ -121,7 +166,7 @@ template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
 
-  z_dot_ref_ = 1.0/VM_t::exec_time_;
+  z_dot_ref_ = 1.0/exec_time_;
 
   z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
 
@@ -217,13 +262,8 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
     VM_t::state_dot_ = this->Jz_ * this->z_dot_; // Keep the velocities of the demonstrations
 }
 
-template <class VM_t>
-VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
-{
-    delete fa_;
-}
 
-template <class VM_t>
+/*template <class VM_t>
 bool VirtualMechanismGmr<VM_t>::LoadModelFromFile(const string file_path)
 {
     ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
@@ -235,7 +275,7 @@ bool VirtualMechanismGmr<VM_t>::LoadModelFromFile(const string file_path)
     }
     else
         return false;
-}
+}*/
 
 template <class VM_t>
 bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
@@ -248,25 +288,126 @@ bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
 }
 
 template<class VM_t>
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(): VM_t()
+{
+    VM_t::file_name_ = "VirtualMechanismGmr.yml";
+    std::string complete_path(VM_t::config_folder_path_+VM_t::file_name_);
+    if(ReadConfig(complete_path))
+    {
+      //ROS_INFO("Loaded config file: %s",complete_path.c_str());
+    }
+    else
+    {
+      ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+    }
+
+    fa_input_.resize(1,1);
+    fa_output_.resize(1,VM_t::state_dim_);
+    fa_output_dot_.resize(1,VM_t::state_dim_);
+    variance_.resize(1,VM_t::state_dim_);
+    covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
+    covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
+    err_.resize(VM_t::state_dim_);
+    variance_.fill(1.0);
+    covariance_ = variance_.row(0).asDiagonal();
+    covariance_inv_.fill(0.0);
+    err_.fill(0.0);
+    fa_ = NULL;
+}
+
+template <class VM_t>
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const std::string file_path) : VirtualMechanismGmr()
+{
+    if(!CreateModelFromFile(file_path))
+        ROS_ERROR("Can not create model from file: %s",file_path.c_str());
+
+     VM_t::Init();
+}
+
+template <class VM_t>
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data) : VirtualMechanismGmr()
+{
+    CreateModelFromData(data);
+
+    VM_t::Init();
+}
+
+template<class VM_t>
+bool VirtualMechanismGmr<VM_t>::ReadConfig(std::string file_path)
+{
+    YAML::Node main_node;
+
+    try
+    {
+        main_node = YAML::LoadFile(file_path);
+    }
+    catch(...)
+    {
+        return false;
+    }
+
+    main_node["n_gaussians"] >> n_gaussians_;
+    assert(n_gaussians_ > 0);
+
+    return true;
+}
+
+template<class VM_t>
+bool VirtualMechanismGmr<VM_t>::CreateModelFromData(const MatrixXd& data)
+{
+    MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians_); // input/phase dimension is 1
+    fa_ = new fa_t(meta_parameters_gmr);
+
+    TrainModel(data);
+
+    assert(fa_->isTrained());
+    assert(fa_->getExpectedInputDim() == 1);
+    assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
+
+    return true;
+}
+
+template<class VM_t>
+bool VirtualMechanismGmr<VM_t>::CreateModelFromFile(const std::string file_path)
+{
+    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
+    if(model_parameters_gmr!=NULL)
+    {
+        fa_ = new fa_t(model_parameters_gmr);
+        assert(fa_->getExpectedInputDim() == 1);
+        assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
+        return true;
+    }
+    else
+        return false;
+}
+
+/*template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data): VM_t()
 {
     int n_gaussians = 10; //FIXME
     MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians); // input/phase dimension is 1
     fa_ = new fa_t(meta_parameters_gmr);
-    UpdateGuide(data);
+    TrainModel(data);
     Init();
-}
+}*/
 
-template<class VM_t>
+/*template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const string file_path): VM_t()
 {
     if(LoadModelFromFile(file_path))
         Init();
     else
         throw new invalid_argument("Impossible to load GMM from file.");
+}*/
+
+template <class VM_t>
+VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
+{
+    delete fa_;
 }
 
-template<class VM_t>
+/*template<class VM_t>
 void VirtualMechanismGmr<VM_t>::Init()
 {
     assert(fa_->isTrained());
@@ -288,7 +429,7 @@ void VirtualMechanismGmr<VM_t>::Init()
 
     // Initialize the state of the virtual mechanism
     VM_t::Init();
-}
+}*/
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out) // Not for rt
@@ -406,7 +547,7 @@ double VirtualMechanismGmr<VM_t>::getDistance(const VectorXd& pos)
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::UpdateGuide(const MatrixXd& data)
+void VirtualMechanismGmr<VM_t>::TrainModel(const MatrixXd& data)
 {
   MatrixXd pos, phase;
 

@@ -48,12 +48,12 @@ catkin_add_gtest(test_gmr
 if(TARGET test_gmr)
   target_link_libraries(test_gmr ${PROJECT_NAME})
 endif()
-catkin_add_gtest(test_spline
-  test/test_virtual_mechanism_spline.cpp
-)
-if(TARGET test_spline)
-  target_link_libraries(test_spline ${PROJECT_NAME})
-endif()
+#catkin_add_gtest(test_spline
+#  test/test_virtual_mechanism_spline.cpp
+#)
+#if(TARGET test_spline)
+#  target_link_libraries(test_spline ${PROJECT_NAME})
+#endif()
 catkin_add_gtest(test_virtual_mechanism
   test/test_virtual_mechanism.cpp
 )
@@ -76,9 +76,9 @@ add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
     include/${PROJECT_NAME}/virtual_mechanism_factory.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
-    include/${PROJECT_NAME}/virtual_mechanism_spline.h
+    #include/${PROJECT_NAME}/virtual_mechanism_spline.h
     src/virtual_mechanism_gmr.cpp
-    src/virtual_mechanism_spline.cpp
+    #src/virtual_mechanism_spline.cpp
 )
 
 ## Specify libraries to link a library or executable target against
@@ -102,6 +102,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
 install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
   FILES_MATCHING PATTERN "*.yml"
+)
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+install(DIRECTORY test/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/test
+  FILES_MATCHING PATTERN "*.txt"
 )
 
 ## Visualize the folders src and include in QtCreator

@@ -5,22 +5,21 @@
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 #include "virtual_mechanism/virtual_mechanism_spline.h"
 
-namespace
+namespace virtual_mechanism_factory
 {
 
 using namespace virtual_mechanism_interface;
 using namespace virtual_mechanism_gmr;
 using namespace virtual_mechanism_spline;
 
-namespace virtual_mechanism_factory
-{
+enum order_t {FIRST,SECOND};
+enum model_type_t {GMR,GMR_NORMALIZED,SPLINE};
 
 class VirtualMechanismAbstractFactory
 {
 public:
-
-    virtual VirtualMechanismInterface* Build(const int order, const std::string& model_type, const Eigen::MatrixXd& data) = 0;
-    virtual VirtualMechanismInterface* Build(const int order, const std::string& model_type, const std::string& model_name) = 0;
+    virtual VirtualMechanismInterface* Build(const order_t order, const model_type_t model_type, const Eigen::MatrixXd& data) = 0;
+    virtual VirtualMechanismInterface* Build(const order_t order, const model_type_t model_type, const std::string& model_name) = 0;
 };
 
 class VirtualMechanismFactory : public VirtualMechanismAbstractFactory
@@ -30,44 +29,77 @@ class VirtualMechanismFactory : public VirtualMechanismAbstractFactory
 
 public:
 
-    virtual VirtualMechanismInterface* Build(const int order, const std::string& model_type, const Eigen::MatrixXd& data)
+    virtual VirtualMechanismInterface* Build(const order_t order, const model_type_t model_type, const Eigen::MatrixXd& data)
     {
         VirtualMechanismInterface* vm_ptr = NULL;
-
-        if(order == 1)
-            if(std::strcmp(model_type.c_str(),"gmr_normalized"))
-                vm_ptr = new VirtualMechanismGmrNormalized<VMP_1ord_t>(data);
-            else if(std::strcmp(model_type.c_str(),"gmr"))
-                vm_ptr = new VirtualMechanismGmr<VMP_1ord_t>(data);
-        else if(order == 2)
-            if(std::strcmp(model_type.c_str(),"gmr_normalized"))
-                vm_ptr = new VirtualMechanismGmrNormalized<VMP_2ord_t>(data);
-            else if(std::strcmp(model_type.c_str(),"gmr"))
-                vm_ptr = new VirtualMechanismGmr<VMP_2ord_t>(data);
-
+        try
+        {
+            vm_ptr = CreateEmptyMechanism(order,model_type);
+            vm_ptr->CreateModelFromData(data);
+            vm_ptr->Init();
+        }
+        catch(const std::runtime_error& e)
+        {
+           ROS_ERROR("Error in the factory: %s",e.what());
+        }
         return vm_ptr;
     }
 
-    VirtualMechanismInterface* Build(const int order, const std::string& model_type, const std::string& model_name)
+    VirtualMechanismInterface* Build(const order_t order, const model_type_t model_type, const std::string& model_name)
     {
         VirtualMechanismInterface* vm_ptr = NULL;
+        try
+        {
+            vm_ptr = CreateEmptyMechanism(order,model_type);
+            vm_ptr->CreateModelFromFile(model_name);
+            vm_ptr->Init();
+        }
+        catch(const std::runtime_error& e)
+        {
+           ROS_ERROR("Error in the factory: %s",e.what());
+        }
+        return vm_ptr;
+    }
 
-        if(order == 1)
-            if(std::strcmp(model_type.c_str(),"gmr_normalized"))
-                vm_ptr = new VirtualMechanismGmrNormalized<VMP_1ord_t>(model_name);
-            else if(std::strcmp(model_type.c_str(),"gmr"))
-                vm_ptr = new VirtualMechanismGmr<VMP_1ord_t>(model_name);
-        else if(order == 2)
-            if(std::strcmp(model_type.c_str(),"gmr_normalized"))
-                vm_ptr = new VirtualMechanismGmrNormalized<VMP_2ord_t>(model_name);
-            else if(std::strcmp(model_type.c_str(),"gmr"))
-                vm_ptr = new VirtualMechanismGmr<VMP_2ord_t>(model_name);
+protected:
 
+    VirtualMechanismInterface* CreateEmptyMechanism(const order_t order, const model_type_t model_type)
+    {
+         VirtualMechanismInterface* vm_ptr = NULL;
+
+         switch(order)
+         {
+           case FIRST:
+             vm_ptr = SelectModel<VMP_1ord_t>(model_type);
+             break;
+           case SECOND:
+             vm_ptr = SelectModel<VMP_2ord_t>(model_type);
+             break;
+           default:
+             vm_ptr = SelectModel<VMP_1ord_t>(model_type);
+             break;
+         }
+         return vm_ptr;
+    }
+
+    template<typename ORDER>  VirtualMechanismInterface* SelectModel(const model_type_t model_type)
+    {
+        VirtualMechanismInterface* vm_ptr = NULL;
+        switch(model_type)
+        {
+           case GMR:
+            vm_ptr = new VirtualMechanismGmr<ORDER>();
+            break;
+           case GMR_NORMALIZED:
+            vm_ptr = new VirtualMechanismGmrNormalized<ORDER>();
+            break;
+           default:
+            vm_ptr = new VirtualMechanismGmr<ORDER>();
+            break;
+        }
         return vm_ptr;
     }
 };
-
-} // namespace
 
 } // namespace
 

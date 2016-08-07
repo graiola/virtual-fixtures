@@ -7,23 +7,69 @@ using namespace virtual_mechanism_factory;
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
 std::string file_path(pkg_path+"/test/test_gmm.txt");
 
-TEST(VirtualMechanism, Factory)
+order_t order;
+model_type_t model_type;
+VirtualMechanismFactory vm_factory;
+
+
+TEST(VirtualMechanismFactory, BuildFromFile)
 {
-
-    VirtualMechanismFactory vm_factory;
-    int order = 1;
-    std::string model_type = "gmr";
     VirtualMechanismInterface* vm_ptr = NULL;
-    vm_ptr = vm_factory.Build(order,model_type,file_path);
 
-    double dt = 0.01;
+    // FROM FILE
+    order = FIRST;
+    model_type = GMR;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    order = SECOND;
+    model_type = GMR;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    order = FIRST;
+    model_type = GMR_NORMALIZED;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    order = SECOND;
+    model_type = GMR_NORMALIZED;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+
+    delete vm_ptr;
+}
+
+TEST(VirtualMechanismFactory, BuildFromData)
+{
+    VirtualMechanismInterface* vm_ptr = NULL;
+
+    int n_points = 50;
     int test_dim = 2;
+    Eigen::MatrixXd data(n_points,test_dim); // No phase
+
+    for (int i=0; i<data.cols(); i++)
+        data.col(i) = Eigen::VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+    // FROM DATA
+    order = FIRST;
+    model_type = GMR;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    order = SECOND;
+    model_type = GMR;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    order = FIRST;
+    model_type = GMR_NORMALIZED;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    order = SECOND;
+    model_type = GMR_NORMALIZED;
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+
+    /*double dt = 0.01;
     Eigen::VectorXd force(test_dim);
     Eigen::VectorXd pos(test_dim);
     Eigen::VectorXd vel(test_dim);
     force.fill(1.0);
 
     vm_ptr->Update(pos,vel,dt);
+
+    Eigen::VectorXd state(test_dim);
+    vm_ptr->getState(state);
+
+    std::cout << state << std::endl;*/
 
     delete vm_ptr;
 }

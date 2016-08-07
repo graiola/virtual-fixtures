@@ -30,7 +30,7 @@ class VirtualMechanismInterface
       VirtualMechanismInterface():update_quaternion_(false),phase_(0.0),
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
           phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
-          phase_ddot_(0.0),scale_(1.0),exec_time_(10.0),
+          phase_ddot_(0.0),scale_(1.0),
           fade_(0.0),active_(false),dt_(0.001)
 	  {
           pkg_path_ = ros::package::getPath("virtual_mechanism");
@@ -114,7 +114,7 @@ class VirtualMechanismInterface
 
           if (const YAML::Node& active_guide_node = main_node["active_guide"])
           {
-              active_guide_node["execution_time"] >> exec_time_;
+              //active_guide_node["execution_time"] >> exec_time_;
               active_guide_node["Kf"] >> Kf_;
               active_guide_node["Bf"] >> Bf_;
               active_guide_node["fade_gain"] >> fade_gain_;
@@ -204,7 +204,10 @@ class VirtualMechanismInterface
       //virtual double ExponentialScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
       //virtual double GaussianScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
 
+      virtual bool CreateModelFromData(const Eigen::MatrixXd& data)=0;
+      virtual bool CreateModelFromFile(const std::string file_path)=0;
       virtual bool SaveModelToFile(const std::string file_path)=0;
+
       virtual double getDistance(const Eigen::VectorXd& pos)=0;
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0)=0;
 
@@ -235,9 +238,7 @@ class VirtualMechanismInterface
       inline void getB(Eigen::MatrixXd& B) const {B = B_;}
 
       inline void setActive(const bool active) {active_ = active;}
-      inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
-
-   protected:
+      //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
       inline void Init()
       {
@@ -264,12 +265,14 @@ class VirtualMechanismInterface
          Init();
       }
 	  
+   protected:
+
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
-      virtual bool LoadModelFromFile(const std::string file_path)=0;
+      //virtual bool LoadModelFromFile(const std::string file_path)=0;
 
       virtual void ApplySaturation()
       {
@@ -340,7 +343,7 @@ class VirtualMechanismInterface
       double Bf_;
 	  double fade_;
 	  bool active_;
-      double exec_time_;
+      //double exec_time_;
       double dt_;
 
       // Config
