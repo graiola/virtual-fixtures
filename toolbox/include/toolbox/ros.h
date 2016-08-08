@@ -38,7 +38,7 @@ inline YAML::Node CreateYamlNodeFromPkgName(std::string pkg_name)
     {
         node = YAML::LoadFile(file_path);
     }
-    catch(std::runtime_error e)
+    catch(const std::runtime_error& e)
     {
         ROS_ERROR("Failed to create YAML Node, reason: %s",e.what());
     }
