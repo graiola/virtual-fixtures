@@ -25,43 +25,15 @@ TEST(MechanismManagerTest, InitializesCorrectly)
   
 }
 
-TEST(MechanismManagerTest, UpdateMethodWithOrientation)
-{
-  
-  MechanismManagerInterface* mm = new MechanismManagerInterface();
-  
-  int pos_dim = mm->GetPositionDim();
-
-  // Force input interface
-  Eigen::VectorXd rob_pos;
-  Eigen::VectorXd rob_vel;
-  Eigen::VectorXd f_out;
-  
-  rob_pos.resize(pos_dim+4); // position dim + orientation dim
-  rob_vel.resize(pos_dim);
-  f_out.resize(pos_dim+3); // position dim  + rpy
-  
-  rob_pos.fill(1.0);
-  rob_vel.fill(1.0);
-  f_out.fill(0.0);
-
-  START_REAL_TIME_CRITICAL_CODE();
-  EXPECT_NO_THROW(mm->Update(rob_pos,rob_vel,dt,f_out));
-  END_REAL_TIME_CRITICAL_CODE();
-
-  delete mm;
-}
-
 TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
-  
+
   prob_mode_t prob_mode;
   prob_mode = HARD;
-
   MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
-  
+
   // Force input interface
   Eigen::VectorXd rob_pos;
   Eigen::VectorXd rob_vel;
@@ -140,14 +112,6 @@ TEST(MechanismManagerTest, InsertVmMethod)
 
   delete mm;
 }
-
-/*TEST(MechanismManagerTest, UpdateGuideMethod)
-{
-  MechanismManager* mm = new MechanismManager();
-  EXPECT_NO_THROW(mm->InsertVM(model_name));
-
-  delete mm;
-}*/
 
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
@@ -236,16 +200,14 @@ TEST(MechanismManagerTest, LoopUpdate)
       EXPECT_NO_THROW(phase = mm.GetPhase(0));
       //END_REAL_TIME_CRITICAL_CODE();
 
-      /*if(i == 7)
+      if(i == 100)
       {
-        std::cout << "DeleteVM " << std::endl;
         EXPECT_NO_THROW(mm.DeleteVM(0));
-      }*/
-      /*if (i == 50)
+      }
+      if (i == 50)
       {
-          //std::cout << "InsertVM " << std::endl;
-          EXPECT_NO_THROW(mm.InsertVM(model_name2));
-      }*/
+          EXPECT_NO_THROW(mm.InsertVM(model_name));
+      }
 
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
       //getchar();

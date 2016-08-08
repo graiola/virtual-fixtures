@@ -27,7 +27,7 @@ class MechanismManager
 {
 
   public:
-    MechanismManager();
+    MechanismManager(int position_dim);
     ~MechanismManager();
 
     // NOTE: We can not copy mechanism manager because of the internal thread and the mutex
@@ -68,7 +68,6 @@ class MechanismManager
 
     virtual_mechanism::VirtualMechanismFactory vm_factory_;
 
-    Eigen::VectorXd f_;
     Eigen::VectorXd f_K_;
     Eigen::VectorXd f_B_;
     Eigen::VectorXd err_pos_;
@@ -89,7 +88,6 @@ class MechanismManager
 
     int position_dim_;
 
-    double dt_;
     double escape_factor_;
 
     std::string pkg_path_;

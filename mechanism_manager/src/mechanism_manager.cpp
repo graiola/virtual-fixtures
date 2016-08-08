@@ -25,7 +25,7 @@ void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
 
     vm_fades_.push_back(DynSystemFirstOrder(10.0));
 
-    /*PushBack(0.0,scales_);
+    PushBack(0.0,scales_);
     PushBack(0.0,scales_t_);
     PushBack(0.0,scales_hard_);
     PushBack(0.0,scales_soft_);
@@ -36,11 +36,11 @@ void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
     PushBack(0.0,phase_dot_ref_);
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
-    PushBack(0.0,r_);
-
+/*
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
-#endif*/
+#endif
+*/
 }
 
 void MechanismManager::InsertVM(std::string& model_name)
@@ -139,7 +139,7 @@ void MechanismManager::DeleteVM(const int idx)
        t_versor_.erase(t_versor_.begin()+idx);
        vm_fades_.erase(vm_fades_.begin()+idx);
 
-      /* Delete(idx,scales_);
+       Delete(idx,scales_);
        Delete(idx,scales_t_);
        Delete(idx,scales_hard_);
        Delete(idx,scales_soft_);
@@ -150,13 +150,13 @@ void MechanismManager::DeleteVM(const int idx)
        Delete(idx,phase_dot_ref_);
        Delete(idx,phase_ddot_ref_);
        Delete(idx,fade_);
-       Delete(idx,r_);*/
 
-       std::cout << "Delete of guide  number#"<< idx << " complete." << std::endl;
-
-/*#ifdef USE_ROS_RT_PUBLISHER
+       std::cout << "Delete of guide number#"<< idx << " complete." << std::endl;
+/*
+#ifdef USE_ROS_RT_PUBLISHER
        rt_publishers_vector_.RemoveAll(idx);
-#endif*/
+#endif
+*/
    }
    else
        std::cerr << "Impossible to remove guide number#"<< idx << std::endl;
@@ -193,13 +193,16 @@ bool MechanismManager::ReadConfig()
         return false;
 }
 
-MechanismManager::MechanismManager()
+MechanismManager::MechanismManager(int position_dim)
 {
 
       if(!ReadConfig())
       {
         throw new std::runtime_error("MechanismManager: Can not read config file");
       }
+
+      assert(position_dim == 1 || position_dim == 2);
+      position_dim_ = position_dim;
 
       // Resize
       f_K_.resize(position_dim_);
@@ -262,13 +265,13 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             vm_vector_[i]->Update(robot_position,robot_velocity,dt);
 
             // Retrain variables for plots
-            /*phase_(i) = vm_vector_[i]->getPhase();
+            phase_(i) = vm_vector_[i]->getPhase();
             phase_dot_(i) = vm_vector_[i]->getPhaseDot();
             phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
             phase_ref_(i) = vm_vector_[i]->getPhaseRef();
             phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
             phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
-            fade_(i) = vm_vector_[i]->getFade();*/
+            fade_(i) = vm_vector_[i]->getFade();
 
             // Retrain position/velocity and jacobian from the virtual mechanisms
             /*vm_vector_[i]->getState(vm_state_[i]);
@@ -306,6 +309,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             default:
               break;
           }
+
           err_pos_ = vm_vector_[i]->getState() - robot_position;
           f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
           err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
