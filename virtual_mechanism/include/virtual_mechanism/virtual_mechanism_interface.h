@@ -3,7 +3,6 @@
 
 ////////// ROS
 #include <ros/ros.h>
-//#include <ros/package.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -15,7 +14,7 @@
 #include <boost/make_shared.hpp>
 
 ////////// Toolbox
-#include "toolbox/toolbox.h"
+#include <toolbox/toolbox.h>
 
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
 
@@ -205,24 +204,33 @@ class VirtualMechanismInterface
       inline double getPhaseRef() const {return phase_ref_;}
       inline double getPhaseDotRef() const {return phase_dot_ref_;}
       inline double getPhaseDotDotRef() const {return phase_ddot_ref_;}
-      virtual void getInitialPos(Eigen::VectorXd& state) const{assert(state.size() == state_dim_); state = initial_state_;}
-      virtual void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
-	  inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
+
+      inline double getKf() const {return Kf_;}
+      inline double getBf() const {return Bf_;}
+
+      inline void getInitialPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = initial_state_;}
+      inline void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
+      inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
 	  inline void getStateDot(Eigen::VectorXd& state_dot) const {assert(state_dot.size() == state_dim_); state_dot = state_dot_;}
       inline void getJacobian(Eigen::MatrixXd& jacobian) const {jacobian = J_;}
-
-	  inline void getQuaternion(Eigen::VectorXd& q) const 
-	  {
-              assert(q.size() == 4); 
+      inline void getK(Eigen::MatrixXd& K) const {K = K_;}
+      inline void getB(Eigen::MatrixXd& B) const {B = B_;}
+      inline void getQuaternion(Eigen::VectorXd& q) const
+      {
+              assert(q.size() == 4);
               q(0) = quaternion_->w();
               q(1) = quaternion_->x();
               q(2) = quaternion_->y();
-              q(3) = quaternion_->z();  
+              q(3) = quaternion_->z();
       }
-      inline double getKf() const {return Kf_;}
-      inline double getBf() const {return Bf_;}
-      inline void getK(Eigen::MatrixXd& K) const {K = K_;}
-      inline void getB(Eigen::MatrixXd& B) const {B = B_;}
+
+      inline Eigen::VectorXd& getInitialPos() {return initial_state_;}
+      inline Eigen::VectorXd& getFinalPos() {return final_state_;}
+      inline Eigen::VectorXd& getState() {return state_;}
+      inline Eigen::VectorXd& getStateDot() {return state_dot_;}
+      inline Eigen::MatrixXd& getJacobian() {return J_;}
+      inline Eigen::MatrixXd& getK() {return K_;}
+      inline Eigen::MatrixXd& getB() {return B_;}
 
       inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
