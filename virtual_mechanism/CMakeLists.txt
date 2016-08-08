@@ -32,6 +32,9 @@ catkin_package(
  DEPENDS system_lib boost dmpbbo
 )
 
+## To find the yaml file related to the pkg
+add_definitions(-DROS_PKG_NAME="${PROJECT_NAME}")
+
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR})
 set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp)

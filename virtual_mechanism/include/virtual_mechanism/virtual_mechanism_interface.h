@@ -17,8 +17,6 @@
 ////////// Toolbox
 #include "toolbox/toolbox.h"
 
-#define ROS_PKG_NAME "virtual_mechanism"
-
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
 
 namespace virtual_mechanism
