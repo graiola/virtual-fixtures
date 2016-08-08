@@ -57,6 +57,9 @@ catkin_package(
   DEPENDS boost
 )
 
+## To find the yaml file related to the pkg
+add_definitions(-DROS_PKG_NAME="${PROJECT_NAME}")
+
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR} ${VIRTUAL_MECHANISM_INCLUDE_DIR})
 set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES} yaml-cpp)
@@ -85,8 +88,10 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/mechanism_manager_server.h
+    include/${PROJECT_NAME}/mechanism_manager_interface.h
     include/${PROJECT_NAME}/mechanism_manager.h
     src/mechanism_manager_server.cpp
+    src/mechanism_manager_interface.cpp
     src/mechanism_manager.cpp)
 
 ## Specify libraries to link a library or executable target against
