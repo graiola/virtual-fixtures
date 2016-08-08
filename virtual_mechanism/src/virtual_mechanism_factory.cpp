@@ -14,40 +14,12 @@ namespace virtual_mechanism
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
-/*virtual void VirtualMechanismFactory::FromStringToEnum(const std::string order, const std::string model_type,
-                                                       order_t& order_out, model_type_t& model_type_out)
+VirtualMechanismFactory::VirtualMechanismFactory()
 {
-    if (order == "first")
-        order_out = FIRST;
-    else if (order == "second")
-        order_out = SECOND;
-    else
-        order_out = FIRST; // Default
-
-    if (model_type == "gmr")
-        model_type_out = GMR;
-    else if (model_type == "gmr_normalized")
-        model_type_out = GMR_NORMALIZED;
-    else
-        model_type_out = GMR; // Default
+    default_order_ = FIRST;
+    default_model_type_ = GMR;
 }
 
-VirtualMechanismInterface* VirtualMechanismFactory::Build(const std::string order, const std::string model_type, const MatrixXd& data)
-{
-    order_t order_enum;
-    model_type_t model_type_enum;
-    FromStringToEnum(order,model_type,order_enum,model_type_enum);
-    return Build(order_enum,model_type_enum,data);
-}
-
-VirtualMechanismInterface* VirtualMechanismFactory::Build(const std::string order, const std::string model_type, const string model_name)
-{
-    order_t order_enum;
-    model_type_t model_type_enum;
-    FromStringToEnum(order,model_type,order_enum,model_type_enum);
-    return Build(order_enum,model_type_enum,model_name);
-}
-*/
 VirtualMechanismInterface* VirtualMechanismFactory::Build(const MatrixXd& data, const order_t order, const model_type_t model_type)
 {
     VirtualMechanismInterface* vm_ptr = NULL;
@@ -80,6 +52,39 @@ VirtualMechanismInterface* VirtualMechanismFactory::Build(const string model_nam
     return vm_ptr;
 }
 
+VirtualMechanismInterface* VirtualMechanismFactory::Build(const MatrixXd& data)
+{
+    return Build(data,default_order_,default_model_type_);
+}
+
+VirtualMechanismInterface* VirtualMechanismFactory::Build(const string model_name)
+{
+    return Build(model_name,default_order_,default_model_type_);
+}
+
+void VirtualMechanismFactory::SetDefaultPreferences(const order_t order, const model_type_t model_type)
+{
+    default_order_ = order;
+    default_model_type_ = model_type;
+}
+
+void VirtualMechanismFactory::SetDefaultPreferences(const string order, const string model_type)
+{
+    if (order == "first")
+        default_order_ = FIRST;
+    else if (order == "second")
+        default_order_ = SECOND;
+    else
+        throw new runtime_error("VirtualMechanismFactory: Wrong order.");
+
+    if (model_type == "gmr")
+        default_model_type_ = GMR;
+    else if (model_type == "gmr_normalized")
+        default_model_type_ = GMR_NORMALIZED;
+    else
+        throw new runtime_error("VirtualMechanismFactory: Wrong model_type.");
+}
+
 VirtualMechanismInterface* VirtualMechanismFactory::CreateEmptyMechanism(const order_t order, const model_type_t model_type)
 {
      VirtualMechanismInterface* vm_ptr = NULL;
@@ -91,9 +96,6 @@ VirtualMechanismInterface* VirtualMechanismFactory::CreateEmptyMechanism(const o
          break;
        case SECOND:
          vm_ptr = SelectModel<VMP_2ord_t>(model_type);
-         break;
-       default:
-         vm_ptr = SelectModel<VMP_1ord_t>(model_type);
          break;
      }
      return vm_ptr;
@@ -109,9 +111,6 @@ template<typename ORDER>  VirtualMechanismInterface* VirtualMechanismFactory::Se
         break;
        case GMR_NORMALIZED:
         vm_ptr = new VirtualMechanismGmrNormalized<ORDER>();
-        break;
-       default:
-        vm_ptr = new VirtualMechanismGmr<ORDER>();
         break;
     }
     return vm_ptr;
