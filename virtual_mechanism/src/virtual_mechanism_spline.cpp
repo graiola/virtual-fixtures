@@ -3,10 +3,9 @@
 using namespace std;
 using namespace Eigen;
 using namespace tool_box;
-using namespace virtual_mechanism_interface;
 using namespace tk;
 
-namespace virtual_mechanism_spline
+namespace virtual_mechanism
 {
 
 template <typename VM_t>

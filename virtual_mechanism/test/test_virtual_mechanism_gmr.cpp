@@ -20,8 +20,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 
-using namespace virtual_mechanism_interface;
-using namespace virtual_mechanism_gmr;
+using namespace virtual_mechanism;
 using namespace Eigen;
 using namespace boost;
 using namespace DmpBbo;

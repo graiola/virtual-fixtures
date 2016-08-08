@@ -3,7 +3,7 @@
 
 ////////// ROS
 #include <ros/ros.h>
-#include <ros/package.h>
+//#include <ros/package.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -17,13 +17,28 @@
 ////////// Toolbox
 #include "toolbox/toolbox.h"
 
+#define ROS_PKG_NAME "virtual_mechanism"
+
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
 
-namespace virtual_mechanism_interface 
+namespace virtual_mechanism
 {
     typedef Eigen::Quaternion<double> quaternion_t;
-    using namespace tool_box; // We need this in order to use the yaml operator defined in toolbox
-    
+
+inline YAML::Node CreateYamlNodeFromFile(std::string file)
+{
+    YAML::Node node; //tool_box::GetYamlFilePath(ROS_PKG_NAME)
+    try
+    {
+        node = YAML::LoadFile(file);
+    }
+    catch(std::runtime_error e)
+    {
+        ROS_ERROR("Failed to create YAML Node, reason: %s",e.what());
+    }
+    return node;
+}
+
 class VirtualMechanismInterface
 {
 	public:
@@ -33,17 +48,10 @@ class VirtualMechanismInterface
           phase_ddot_(0.0),scale_(1.0),
           fade_(0.0),active_(false),dt_(0.001)
 	  {
-          pkg_path_ = ros::package::getPath("virtual_mechanism");
-          config_folder_path_ = pkg_path_+"/config/";
-          file_name_ = "VirtualMechanismInterface.yml";
-          std::string complete_path(config_folder_path_+file_name_);
-          if(ReadConfig(complete_path))
+
+          if(!ReadConfig())
           {
-            //ROS_INFO("Loaded config file: %s",complete_path.c_str());
-          }
-          else
-          {
-            ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+            throw new std::runtime_error("VirtualMechanismInterface: Can not read config file");
           }
 
 	      // Initialize/resize the attributes
@@ -72,64 +80,58 @@ class VirtualMechanismInterface
       {
       }
 	  
-      inline bool ReadConfig(std::string file_path)
+      inline bool ReadConfig()
       {
-          YAML::Node main_node;
+          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          if (const YAML::Node& curr_node = main_node["virtual_mechanism_interface"])
+          {
+              std::vector<double> K,B;
+              curr_node["position_dim"] >> state_dim_;
+              curr_node["K"] >> K;
+              curr_node["B"] >> B;
 
-          try
-          {
-              main_node = YAML::LoadFile(file_path);
-          }
-          catch(...)
-          {
-              return false;
-          }
+              assert(state_dim_ == 2 || state_dim_ == 3);
+              assert(K.size() == static_cast<unsigned int>(state_dim_));
+              assert(B.size() == K.size());
+              for(unsigned int i=0; i<K.size(); i++)
+              {
+                assert(K[i] > 0.0);
+                assert(B[i] > 0.0);
+              }
 
-          std::vector<double> K,B;
-          // Retrain basic parameters for all the virtual mechanisms
-          main_node["position_dim"] >> state_dim_;
-          main_node["K"] >> K;
-          main_node["B"] >> B;
+              // Create a diagonal gain matrix
+              if(K.size() == 2)
+              {
+                K_ = Eigen::DiagonalMatrix<double,2>(K[0],K[1]);
+                B_ = Eigen::DiagonalMatrix<double,2>(B[0],B[1]);
+              }
+              else if(K.size() == 3)
+              {
+                K_ = Eigen::DiagonalMatrix<double,3>(K[0],K[1],K[2]);
+                B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
+              }
 
-          assert(state_dim_ == 2 || state_dim_ == 3);
-          assert(K.size() == static_cast<unsigned int>(state_dim_));
-          assert(B.size() == K.size());
-          for(unsigned int i=0; i<K.size(); i++)
-          {
-            assert(K[i] > 0.0);
-            assert(B[i] > 0.0);
-          }
-
-          // Create a diagonal gain matrix
-          if(K.size() == 2)
-          {
-            K_ = Eigen::DiagonalMatrix<double,2>(K[0],K[1]);
-            B_ = Eigen::DiagonalMatrix<double,2>(B[0],B[1]);
-          }
-          else if(K.size() == 3)
-          {
-            K_ = Eigen::DiagonalMatrix<double,3>(K[0],K[1],K[2]);
-            B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
-          }
-
-          if (const YAML::Node& active_guide_node = main_node["active_guide"])
-          {
-              active_guide_node["Kf"] >> Kf_;
-              active_guide_node["Bf"] >> Bf_;
-              active_guide_node["fade_gain"] >> fade_gain_;
-              active_ = true;
-              assert(Kf_ >= 0.0);
-              assert(Bf_ >= 0.0);
-              assert(fade_gain_ > 0.0);
+              if (const YAML::Node& active_guide_node = curr_node["active_guide"])
+              {
+                  active_guide_node["Kf"] >> Kf_;
+                  active_guide_node["Bf"] >> Bf_;
+                  active_guide_node["fade_gain"] >> fade_gain_;
+                  active_ = true;
+                  assert(Kf_ >= 0.0);
+                  assert(Bf_ >= 0.0);
+                  assert(fade_gain_ > 0.0);
+              }
+              else
+              {
+                  Kf_ = 0.0;
+                  Bf_ = 0.0;
+                  fade_gain_ = 1.0;
+                  active_ = false;
+              }
+              return true;
           }
           else
-          {
-              Kf_ = 0.0;
-              Bf_ = 0.0;
-              fade_gain_ = 1.0;
-              active_ = false;
-          }
-          return true;
+              return false;
       }
 
 	  virtual void Update(Eigen::VectorXd& force, const double dt)
@@ -342,9 +344,10 @@ class VirtualMechanismInterface
       double dt_;
 
       // Config
-      std::string pkg_path_;
-      std::string config_folder_path_;
-      std::string file_name_;
+      //std::string pkg_path_;
+      //std::string config_folder_path_;
+      //std::string file_name_;
+
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -354,40 +357,28 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
       VirtualMechanismInterface()
 	  {
 
-        file_name_ = "VirtualMechanismInterfaceFirstOrder.yml";
-        std::string complete_path(config_folder_path_+file_name_);
-        if(ReadConfig(complete_path))
+        if(!ReadConfig())
         {
-          //ROS_INFO("Loaded config file: %s",complete_path.c_str());
-        }
-        else
-        {
-          ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+          throw new std::runtime_error("VirtualMechanismInterfaceFirstOrder: Can not read config file");
         }
 
 	    det_ = 1.0;
         num_ = -1.0;
 	  }
 
-      inline bool ReadConfig(std::string file_path)
+      inline bool ReadConfig()
       {
-          YAML::Node main_node;
-
-          try
+          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          if (const YAML::Node& curr_node = main_node["first_order"])
           {
-              main_node = YAML::LoadFile(file_path);
+              //main_node["Bd_max"] >> Bd_max_;
+              //main_node["epsilon"] >> epsilon_;
+              //assert(epsilon > 0.1);
+              curr_node["Bd"] >> Bd_;
+              return true;
           }
-          catch(...)
-          {
+          else
               return false;
-          }
-
-          //main_node["Bd_max"] >> Bd_max_;
-          //main_node["epsilon"] >> epsilon_;
-          //assert(epsilon > 0.1);
-          main_node["Bd"] >> Bd_;
-
-          return true;
       }
 
 	protected:
@@ -444,16 +435,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	public:
       VirtualMechanismInterfaceSecondOrder():
       VirtualMechanismInterface()
-	  {
-          file_name_ = "VirtualMechanismInterfaceSecondOrder.yml";
-          std::string complete_path(config_folder_path_+file_name_);
-          if(ReadConfig(complete_path))
+      {
+          if(!ReadConfig())
           {
-            //ROS_INFO("Loaded config file: %s",complete_path.c_str());
-          }
-          else
-          {
-            ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+            throw new std::runtime_error("VirtualMechanismInterfaceSecondOrder: Can not read config file");
           }
 
 	      // Resize the attributes
@@ -478,23 +463,20 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           control_ = 0.0;
 	  }
 
-      inline bool ReadConfig(std::string file_path)
+      inline bool ReadConfig()
       {
-          YAML::Node main_node;
-
-          try
+          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          if (const YAML::Node& curr_node = main_node["second_order"])
           {
-              main_node = YAML::LoadFile(file_path);
+              curr_node["inertia"] >> inertia_;
+              assert(inertia_ > 0.0);
+              return true;
           }
-          catch(...)
-          {
+          else
               return false;
-          }
 
-          main_node["inertia"] >> inertia_;
-          assert(inertia_ > 0.0);
 
-          return true;
+
       }
 	
       //inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}

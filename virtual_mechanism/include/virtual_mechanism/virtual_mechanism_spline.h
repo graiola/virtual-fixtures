@@ -7,7 +7,7 @@
 ////////// Toolbox
 #include "toolbox/spline/spline.h"
 
-namespace virtual_mechanism_spline
+namespace virtual_mechanism
 { 
 
 template <class VM_t>  
@@ -15,7 +15,9 @@ class VirtualMechanismSpline: public VM_t
 {
 	public:
 
+      VirtualMechanismSpline();
       VirtualMechanismSpline(const std::string file_path);
+      VirtualMechanismSpline(const Eigen::MatrixXd& data);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);

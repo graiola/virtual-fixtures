@@ -17,7 +17,7 @@
 #include "toolbox/spline/spline.h"
 #include "toolbox/dtw/dtw.h"
 
-namespace virtual_mechanism_gmr
+namespace virtual_mechanism
 {
   
   typedef DmpBbo::FunctionApproximatorGMR fa_t;
@@ -43,7 +43,7 @@ class VirtualMechanismGmr: public VM_t
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       double GetResponsability();
-      bool ReadConfig(std::string file_path);
+      bool ReadConfig();
 	  
 	protected:
 	  
@@ -79,7 +79,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
       void TrainModel(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
-      bool ReadConfig(std::string file_path);
+      bool ReadConfig();
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
       virtual bool CreateModelFromFile(const std::string file_path);
 

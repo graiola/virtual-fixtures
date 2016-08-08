@@ -3,12 +3,11 @@
 using namespace std;
 using namespace Eigen;
 using namespace tool_box;
-using namespace virtual_mechanism_interface;
 using namespace DmpBbo;
 using namespace tk;
 using namespace dtw;
 
-namespace virtual_mechanism_gmr
+namespace virtual_mechanism
 {
 
 template<class VM_t>
@@ -45,15 +44,9 @@ template <class VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized():
     VirtualMechanismGmr<VM_t>()
 {
-    VM_t::file_name_ = "VirtualMechanismGmrNormalized.yml";
-    std::string complete_path(VM_t::config_folder_path_+VM_t::file_name_);
-    if(ReadConfig(complete_path))
+    if(!ReadConfig())
     {
-      //ROS_INFO("Loaded config file: %s",complete_path.c_str());
-    }
-    else
-    {
-      ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+      throw new std::runtime_error("VirtualMechanismGmrNormalized: Can not read config file");
     }
 
     Jz_.resize(VM_t::state_dim_,1);
@@ -126,26 +119,20 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 }
 
 template<class VM_t>
-bool VirtualMechanismGmrNormalized<VM_t>::ReadConfig(std::string file_path)
+bool VirtualMechanismGmrNormalized<VM_t>::ReadConfig()
 {
-    YAML::Node main_node;
-
-    try
+    YAML::Node main_node = CreateYamlNodeFromFile(GetYamlFilePath(ROS_PKG_NAME));
+    if (const YAML::Node& curr_node = main_node["gmr_normalized"])
     {
-        main_node = YAML::LoadFile(file_path);
+        curr_node["use_spline_xyz"] >> use_spline_xyz_;
+        curr_node["n_points_splines"] >> n_points_splines_;
+        curr_node["execution_time"] >> exec_time_;
+        assert(n_points_splines_ > 2);
+        assert(exec_time_ > 0);
+        return true;
     }
-    catch(...)
-    {
+    else
         return false;
-    }
-
-    main_node["use_spline_xyz"] >> use_spline_xyz_;
-    main_node["n_points_splines"] >> n_points_splines_;
-    main_node["execution_time"] >> exec_time_;
-    assert(n_points_splines_ > 2);
-    assert(exec_time_ > 0);
-
-    return true;
 }
 
 template<class VM_t>
@@ -290,15 +277,9 @@ bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
 template<class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(): VM_t()
 {
-    VM_t::file_name_ = "VirtualMechanismGmr.yml";
-    std::string complete_path(VM_t::config_folder_path_+VM_t::file_name_);
-    if(ReadConfig(complete_path))
+    if(!ReadConfig())
     {
-      //ROS_INFO("Loaded config file: %s",complete_path.c_str());
-    }
-    else
-    {
-      ROS_ERROR("Can not load config file: %s",complete_path.c_str());
+      throw new std::runtime_error("VirtualMechanismGmr: Can not read config file");
     }
 
     fa_input_.resize(1,1);
@@ -333,23 +314,17 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data) : VirtualMe
 }
 
 template<class VM_t>
-bool VirtualMechanismGmr<VM_t>::ReadConfig(std::string file_path)
+bool VirtualMechanismGmr<VM_t>::ReadConfig()
 {
-    YAML::Node main_node;
-
-    try
+    YAML::Node main_node = CreateYamlNodeFromFile(GetYamlFilePath(ROS_PKG_NAME));
+    if (const YAML::Node& curr_node = main_node["gmr"])
     {
-        main_node = YAML::LoadFile(file_path);
+        curr_node["n_gaussians"] >> n_gaussians_;
+        assert(n_gaussians_ > 0);
+        return true;
     }
-    catch(...)
-    {
+    else
         return false;
-    }
-
-    main_node["n_gaussians"] >> n_gaussians_;
-    assert(n_gaussians_ > 0);
-
-    return true;
 }
 
 template<class VM_t>

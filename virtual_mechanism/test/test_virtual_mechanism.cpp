@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_factory.h"
 
-using namespace virtual_mechanism_interface;
+using namespace virtual_mechanism;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
 std::string file_path(pkg_path+"/test/test_gmm.txt");
@@ -10,7 +10,6 @@ order_t order;
 model_type_t model_type;
 VirtualMechanismFactory vm_factory;
 
-
 TEST(VirtualMechanismFactory, BuildFromFile)
 {
     VirtualMechanismInterface* vm_ptr = NULL;
@@ -18,16 +17,16 @@ TEST(VirtualMechanismFactory, BuildFromFile)
     // FROM FILE
     order = FIRST;
     model_type = GMR;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path,order,model_type));
     order = SECOND;
     model_type = GMR;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path,order,model_type));
     order = FIRST;
     model_type = GMR_NORMALIZED;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path,order,model_type));
     order = SECOND;
     model_type = GMR_NORMALIZED;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,file_path));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path,order,model_type));
 
     delete vm_ptr;
 }
@@ -46,16 +45,16 @@ TEST(VirtualMechanismFactory, BuildFromData)
     // FROM DATA
     order = FIRST;
     model_type = GMR;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data,order,model_type));
     order = SECOND;
     model_type = GMR;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data,order,model_type));
     order = FIRST;
     model_type = GMR_NORMALIZED;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data,order,model_type));
     order = SECOND;
     model_type = GMR_NORMALIZED;
-    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(order,model_type,data));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data,order,model_type));
 
     /*double dt = 0.01;
     Eigen::VectorXd force(test_dim);
