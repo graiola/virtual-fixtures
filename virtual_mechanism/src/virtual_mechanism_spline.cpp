@@ -59,7 +59,7 @@ void VirtualMechanismSpline<VM_t>::UpdateJacobian()
 {
     z_dot_ref_ = 1.0/VM_t::exec_time_;
 
-    z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1.0-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
+    z_dot_ = VM_t::fade_ *  z_dot_ref_ + (VM_t::fade_sys_.GetRef()-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
 
     if(VM_t::active_)
         z_ = z_dot_ * VM_t::dt_ + z_;

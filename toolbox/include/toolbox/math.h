@@ -103,6 +103,11 @@ public:
         return state_;
     }
 
+    inline double GetRef() const
+    {
+        return ref_;
+    }
+
     inline void SetGain(double gain)
     {
          assert(gain >= 0.0);
