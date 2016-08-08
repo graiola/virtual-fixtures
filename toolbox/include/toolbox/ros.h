@@ -9,6 +9,7 @@
 
 ////////// ROS
 #include <ros/ros.h>
+#include <ros/package.h>
 #ifdef USE_ROS_RT_PUBLISHER
   #include <std_msgs/Float64MultiArray.h>
   #include <geometry_msgs/PoseStamped.h>
@@ -18,7 +19,13 @@
   #include <realtime_tools/realtime_publisher.h>
 #endif
 
-namespace tool_box{
+namespace tool_box
+{
+
+inline std::string GetYamlFilePath(std::string pkg_name)
+{
+    return ros::package::getPath(pkg_name) + "/config/cfg.yml";
+}
 
 class RosNode
 {
