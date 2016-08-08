@@ -23,20 +23,6 @@ namespace virtual_mechanism
 {
     typedef Eigen::Quaternion<double> quaternion_t;
 
-inline YAML::Node CreateYamlNodeFromFile(std::string file)
-{
-    YAML::Node node; //tool_box::GetYamlFilePath(ROS_PKG_NAME)
-    try
-    {
-        node = YAML::LoadFile(file);
-    }
-    catch(std::runtime_error e)
-    {
-        ROS_ERROR("Failed to create YAML Node, reason: %s",e.what());
-    }
-    return node;
-}
-
 class VirtualMechanismInterface
 {
 	public:
@@ -80,7 +66,7 @@ class VirtualMechanismInterface
 	  
       inline bool ReadConfig()
       {
-          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          YAML::Node main_node = tool_box::CreateYamlNodeFromPkgName(ROS_PKG_NAME);
           if (const YAML::Node& curr_node = main_node["virtual_mechanism_interface"])
           {
               std::vector<double> K,B;
@@ -366,7 +352,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 
       inline bool ReadConfig()
       {
-          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          YAML::Node main_node = tool_box::CreateYamlNodeFromPkgName(ROS_PKG_NAME);
           if (const YAML::Node& curr_node = main_node["first_order"])
           {
               //main_node["Bd_max"] >> Bd_max_;
@@ -463,7 +449,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
       inline bool ReadConfig()
       {
-          YAML::Node main_node = CreateYamlNodeFromFile(tool_box::GetYamlFilePath(ROS_PKG_NAME));
+          YAML::Node main_node = tool_box::CreateYamlNodeFromPkgName(ROS_PKG_NAME);
           if (const YAML::Node& curr_node = main_node["second_order"])
           {
               curr_node["inertia"] >> inertia_;

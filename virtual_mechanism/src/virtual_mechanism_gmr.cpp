@@ -121,7 +121,7 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 template<class VM_t>
 bool VirtualMechanismGmrNormalized<VM_t>::ReadConfig()
 {
-    YAML::Node main_node = CreateYamlNodeFromFile(GetYamlFilePath(ROS_PKG_NAME));
+    YAML::Node main_node = CreateYamlNodeFromPkgName(ROS_PKG_NAME);
     if (const YAML::Node& curr_node = main_node["gmr_normalized"])
     {
         curr_node["use_spline_xyz"] >> use_spline_xyz_;
@@ -316,7 +316,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data) : VirtualMe
 template<class VM_t>
 bool VirtualMechanismGmr<VM_t>::ReadConfig()
 {
-    YAML::Node main_node = CreateYamlNodeFromFile(GetYamlFilePath(ROS_PKG_NAME));
+    YAML::Node main_node = CreateYamlNodeFromPkgName(ROS_PKG_NAME);
     if (const YAML::Node& curr_node = main_node["gmr"])
     {
         curr_node["n_gaussians"] >> n_gaussians_;

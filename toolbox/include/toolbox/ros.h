@@ -19,12 +19,30 @@
   #include <realtime_tools/realtime_publisher.h>
 #endif
 
+////////// YAML-CPP
+#include <yaml-cpp/yaml.h>
+
 namespace tool_box
 {
 
 inline std::string GetYamlFilePath(std::string pkg_name)
 {
-    return ros::package::getPath(pkg_name) + "/config/cfg.yml";
+    return ros::package::getPath(pkg_name) + "/config/cfg.yml"; // FIXME folder and file name are hardcoded
+}
+
+inline YAML::Node CreateYamlNodeFromPkgName(std::string pkg_name)
+{
+    std::string file_path = GetYamlFilePath(pkg_name);
+    YAML::Node node;
+    try
+    {
+        node = YAML::LoadFile(file_path);
+    }
+    catch(std::runtime_error e)
+    {
+        ROS_ERROR("Failed to create YAML Node, reason: %s",e.what());
+    }
+    return node;
 }
 
 class RosNode
