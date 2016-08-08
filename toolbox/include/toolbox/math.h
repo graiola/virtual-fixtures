@@ -58,14 +58,29 @@ class DynSystemFirstOrder
 {
 
 public:
-    DynSystemFirstOrder(double dt, double gain, double ref = 1.0)
+    DynSystemFirstOrder()
+    {
+        state_ = 0.0;
+        gain_ = 0.0;
+    }
+
+    DynSystemFirstOrder(double gain, double dt = 0.001,  double ref = 1.0): DynSystemFirstOrder()
     {
         assert(dt > 0.0);
         dt_ = dt;
-        assert(gain > 0.0);
+        assert(gain >= 0.0);
         gain_ = gain;
         ref_ = ref;
-        state_ = 0.0;
+    }
+
+    inline double IntegrateForward(double dt)
+    {
+        return state_ = gain_ * (ref_ - state_) * dt + state_;
+    }
+
+    inline double IntegrateBackward(double dt)
+    {
+        return state_ = gain_ * (-state_) * dt + state_;
     }
 
     inline double IntegrateForward()
@@ -83,9 +98,20 @@ public:
         state_ = 0.0;
     }
 
-    inline double GetState()
+    inline double GetState() const
     {
         return state_;
+    }
+
+    inline void SetGain(double gain)
+    {
+         assert(gain >= 0.0);
+         gain_ = gain;
+    }
+
+    inline void SetRef(double ref)
+    {
+         ref_ = ref;
     }
 
 private:
