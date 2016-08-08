@@ -3,7 +3,7 @@
 
 //#include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <mechanism_manager/mechanism_manager.h>
+#include <mechanism_manager/mechanism_manager_interface.h>
 #include <mechanism_manager/MechanismManagerAction.h>
 #include <toolbox/toolbox.h>
 
@@ -13,9 +13,8 @@ namespace mechanism_manager{
 class MechanismManagerServer
 {
 
-
 public:
-    MechanismManagerServer(MechanismManager* mm, const ros::NodeHandle& nh);
+    MechanismManagerServer(MechanismManagerInterface* mm_interface, const ros::NodeHandle& nh);
     ~MechanismManagerServer();
 
     void Delete(const MechanismManagerGoalConstPtr &goal);
@@ -28,7 +27,7 @@ protected:
     mechanism_manager::MechanismManagerActionResult result_;
 
 private:
-    MechanismManager* mm_;
+    MechanismManagerInterface* mm_interface_;
     ros::AsyncSpinner* spinner_ptr_; // Used to keep alive the ros callbacks
 };
 

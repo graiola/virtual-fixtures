@@ -1,7 +1,7 @@
 #include <toolbox/debug.h>
 
 #include <gtest/gtest.h>
-#include "mechanism_manager/mechanism_manager.h"
+#include "mechanism_manager/mechanism_manager_interface.h"
 
 ////////// STD
 #include <iostream>
@@ -9,15 +9,9 @@
 #include <iterator>
 #include <boost/concept_check.hpp>
 
-////////// Function Approximator
-#include <functionapproximators/FunctionApproximatorGMR.hpp>
-#include <functionapproximators/MetaParametersGMR.hpp>
-#include <functionapproximators/ModelParametersGMR.hpp>
-
 using namespace mechanism_manager;
 using namespace Eigen;
 using namespace boost;
-using namespace DmpBbo;
 
 double dt = 0.001;
 std::string model_name = "test_gmm.txt";
@@ -27,14 +21,14 @@ TEST(MechanismManagerTest, InitializesCorrectly)
   
   ::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
   
-  EXPECT_NO_THROW(MechanismManager());
+  EXPECT_NO_THROW(MechanismManagerInterface());
   
 }
 
 TEST(MechanismManagerTest, UpdateMethodWithOrientation)
 {
   
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
   
   int pos_dim = mm->GetPositionDim();
 
@@ -64,7 +58,7 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
   prob_mode_t prob_mode;
   prob_mode = HARD;
 
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
   
@@ -90,7 +84,7 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 
 TEST(MechanismManagerTest, UpdateMethodRawVectors)
 {
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
 
@@ -108,7 +102,7 @@ TEST(MechanismManagerTest, UpdateMethodRawVectors)
 
 TEST(MechanismManagerTest, GetVmPositionAndVelocity)
 {
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
 
@@ -124,7 +118,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocity)
 
 TEST(MechanismManagerTest, GetVmPositionAndVelocityRawVectors)
 {
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
 
@@ -141,7 +135,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocityRawVectors)
 
 TEST(MechanismManagerTest, InsertVmMethod)
 {
-  MechanismManager* mm = new MechanismManager();
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
   EXPECT_NO_THROW(mm->InsertVM(model_name));
 
   delete mm;
@@ -157,7 +151,7 @@ TEST(MechanismManagerTest, InsertVmMethod)
 
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
-  MechanismManager mm;
+  MechanismManagerInterface mm;
 
   // Insert
   EXPECT_NO_THROW(mm.InsertVM(model_name));
@@ -208,7 +202,7 @@ TEST(MechanismManagerTest, LoopUpdate)
   int nthreads = Eigen::nbThreads( );
   std::cout << "EIGEN THREADS = " << nthreads <<std::endl;*/
 
-  MechanismManager mm;
+  MechanismManagerInterface mm;
   EXPECT_NO_THROW(mm.InsertVM(model_name));
 
   int pos_dim = mm.GetPositionDim();

@@ -2,14 +2,14 @@
 
 using namespace mechanism_manager;
 
-MechanismManagerServer::MechanismManagerServer(MechanismManager* mm, const ros::NodeHandle& nh)
+MechanismManagerServer::MechanismManagerServer(MechanismManagerInterface* mm_interface, const ros::NodeHandle& nh)
     : as_(nh, nh.getNamespace(), boost::bind(&MechanismManagerServer::Delete, this, _1), false),
       action_name_(nh.getNamespace()),
       spinner_ptr_(NULL)
 {
-    assert(mm!=NULL);
+    assert(mm_interface!=NULL);
 
-    mm_ = mm;
+    mm_interface_ = mm_interface;
 
     if(ros::master::check())
     {
@@ -35,7 +35,7 @@ MechanismManagerServer::~MechanismManagerServer()
 
 void MechanismManagerServer::Delete(const MechanismManagerGoalConstPtr &goal)
 {
-   mm_->DeleteVM(goal->delete_guide_idx);
+   mm_interface_->DeleteVM(goal->delete_guide_idx);
    as_.setSucceeded();
 }
 
