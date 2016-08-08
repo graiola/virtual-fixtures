@@ -54,10 +54,13 @@ class VirtualMechanismInterface
           BxJ_.resize(state_dim_,1);
           JtxBxJ_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
 
+          fade_sys_.SetRef(1.0);
+
           // Default quaternions
           //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
           //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
           //quaternion_ << 1.0,0.0,0.0,0.0;
+
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -97,21 +100,22 @@ class VirtualMechanismInterface
 
               if (const YAML::Node& active_guide_node = curr_node["active_guide"])
               {
+                  double fade_sys_gain;
                   active_guide_node["Kf"] >> Kf_;
                   active_guide_node["Bf"] >> Bf_;
-                  active_guide_node["fade_gain"] >> fade_gain_;
+                  active_guide_node["fade_sys_gain"] >> fade_sys_gain;
                   active_ = true;
                   assert(Kf_ >= 0.0);
                   assert(Bf_ >= 0.0);
-                  assert(fade_gain_ > 0.0);
+                  fade_sys_.SetGain(fade_sys_gain);
               }
               else
               {
                   Kf_ = 0.0;
                   Bf_ = 0.0;
-                  fade_gain_ = 1.0;
                   active_ = false;
               }
+
               return true;
           }
           else
@@ -294,11 +298,8 @@ class VirtualMechanismInterface
       double phase_ref_;
       double phase_dot_prev_;
       double phase_ddot_;
-      double fade_gain_;
       double scale_;
-
-	  int state_dim_;
-      bool update_quaternion_;
+      int state_dim_;
       Eigen::VectorXd displacement_;
       Eigen::VectorXd state_;
       Eigen::VectorXd state_dot_;
@@ -308,9 +309,6 @@ class VirtualMechanismInterface
       Eigen::VectorXd force_vel_;
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
-      boost::shared_ptr<quaternion_t > q_start_;
-      boost::shared_ptr<quaternion_t > q_end_;
-      boost::shared_ptr<quaternion_t > quaternion_;
       Eigen::MatrixXd BxJ_;
       Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;
@@ -319,6 +317,9 @@ class VirtualMechanismInterface
 	  // Gains
       Eigen::MatrixXd B_;
       Eigen::MatrixXd K_;
+
+      // Fade system
+      tool_box::DynSystemFirstOrder fade_sys_;
 	  
 	  // Auto completion
 	  double Kf_;
@@ -327,11 +328,11 @@ class VirtualMechanismInterface
 	  bool active_;
       double dt_;
 
-      // Config
-      //std::string pkg_path_;
-      //std::string config_folder_path_;
-      //std::string file_name_;
-
+      // Orientation
+      bool update_quaternion_;
+      boost::shared_ptr<quaternion_t > q_start_;
+      boost::shared_ptr<quaternion_t > q_end_;
+      boost::shared_ptr<quaternion_t > quaternion_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -387,9 +388,13 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	      torque_.noalias() = J_transp_ * force;
 	      
           if(active_)
-            fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-	      else
-            fade_ = fade_gain_ * (-fade_) * dt + fade_;
+              fade_sys_.IntegrateForward(dt);
+             //fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
+          else
+             fade_sys_.IntegrateBackward(dt);
+             //fade_ = fade_gain_ * (-fade_) * dt + fade_;
+
+          fade_ = fade_sys_.GetState();
 
           // Always keep the external torque
           //phase_dot_ = num_/det_ * torque_(0,0) + fade_ * (Kf_ * (phase_ref_ - phase_) + Bf_ * phase_dot_ref_);
@@ -524,9 +529,13 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           phase_state_(1) = phase_dot_;
 	        
           if(active_)
-             fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
+              fade_sys_.IntegrateForward(dt);
+             //fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
           else
-             fade_ = fade_gain_ * (-fade_) * dt + fade_;
+             fade_sys_.IntegrateBackward(dt);
+             //fade_ = fade_gain_ * (-fade_) * dt + fade_;
+
+          fade_ = fade_sys_.GetState();
 
           control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
 	      
