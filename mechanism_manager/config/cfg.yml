@@ -1,6 +1,9 @@
-use_weighted_dist: true
-position_dim: 2
-K: [2500.0,250.0] #2500.0
-B: [10.0,10.0] #20
-escape_factor: 150.0 #150.0
+mechanism_manager_interface:
+ position_dim: 2
+ phase_dot_th: 0.3
+ phase_dot_preauto_th: 0.5
+mechanism_manager:
+ vm_order: first
+ vm_model_type: gmr
+ escape_factor: 150.0
 
