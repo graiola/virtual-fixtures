@@ -1,3 +1,4 @@
+#include <toolbox/debug.h>
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_factory.h"
 
@@ -9,6 +10,7 @@ std::string file_path(pkg_path+"/test/test_gmm.txt");
 order_t order;
 model_type_t model_type;
 VirtualMechanismFactory vm_factory;
+
 
 TEST(VirtualMechanismFactory, BuildFromFile)
 {
@@ -68,6 +70,28 @@ TEST(VirtualMechanismFactory, BuildFromData)
     vm_ptr->getState(state);
 
     std::cout << state << std::endl;*/
+
+    delete vm_ptr;
+}
+
+TEST(VirtualMechanismFactory, BuildDefault)
+{
+    VirtualMechanismInterface* vm_ptr = NULL;
+
+    int n_points = 50;
+    int test_dim = 2;
+    Eigen::MatrixXd data(n_points,test_dim); // No phase
+
+    for (int i=0; i<data.cols(); i++)
+        data.col(i) = Eigen::VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+    order = FIRST;
+    model_type = GMR;
+
+    // DEFAULT
+    vm_factory.SetDefaultPreferences(order,model_type);
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data));
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path));
 
     delete vm_ptr;
 }
