@@ -16,7 +16,7 @@
 namespace mechanism_manager
 {
 
-enum prob_mode_t {HARD,POTENTIAL,SOFT};
+enum scale_mode_t {HARD,POTENTIAL,SOFT};
 class MechanismManagerServer;
 class MechanismManager;
 
@@ -50,8 +50,8 @@ class MechanismManagerInterface
     //MechanismManagerInterface& operator=( const MechanismManagerInterface& ) = delete; // non copyable
 
     /// Real time loop
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const prob_mode_t prob_mode = SOFT);
-    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode = SOFT);
+    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode = SOFT);
+    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode = SOFT);
 
     /// Non real time services
     void InsertVM(std::string& model_name);

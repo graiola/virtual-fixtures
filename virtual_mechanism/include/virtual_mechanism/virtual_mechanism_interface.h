@@ -48,6 +48,7 @@ class VirtualMechanismInterface
           force_vel_.resize(state_dim_);
           final_state_.resize(state_dim_);
           initial_state_.resize(state_dim_);
+          t_versor_.resize(state_dim_);
           J_.resize(state_dim_,1);
           J_transp_.resize(1,state_dim_);
           BxJ_.resize(state_dim_,1);
@@ -72,12 +73,12 @@ class VirtualMechanismInterface
           if (const YAML::Node& curr_node = main_node["virtual_mechanism_interface"])
           {
               std::vector<double> K,B;
-              curr_node["position_dim"] >> state_dim_;
               curr_node["K"] >> K;
               curr_node["B"] >> B;
 
+              state_dim_ = K.size();
               assert(state_dim_ == 2 || state_dim_ == 3);
-              assert(K.size() == static_cast<unsigned int>(state_dim_));
+              //assert(K.size() == static_cast<unsigned int>(state_dim_));
               assert(B.size() == K.size());
               for(unsigned int i=0; i<K.size(); i++)
               {
@@ -150,7 +151,10 @@ class VirtualMechanismInterface
             
         // Compute the new quaternion reference
         if (update_quaternion_)
-            UpdateQuaternion();  
+            UpdateQuaternion();
+
+        // Compute the jacobian versor (used to avoid the lock in the manager)
+        ComputeJacobianVersor();
 	  }
 	  
       virtual void Stop()
@@ -208,6 +212,7 @@ class VirtualMechanismInterface
       inline double getKf() const {return Kf_;}
       inline double getBf() const {return Bf_;}
 
+      inline void getJacobianVersor(Eigen::VectorXd& t_versor) const {assert(t_versor.size() == state_dim_); t_versor = t_versor_;}
       inline void getInitialPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = initial_state_;}
       inline void getFinalPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = final_state_;}
       inline void getState(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = state_;}
@@ -224,6 +229,7 @@ class VirtualMechanismInterface
               q(3) = quaternion_->z();
       }
 
+      inline Eigen::VectorXd& getJacobianVersor() {return t_versor_;}
       inline Eigen::VectorXd& getInitialPos() {return initial_state_;}
       inline Eigen::VectorXd& getFinalPos() {return final_state_;}
       inline Eigen::VectorXd& getState() {return state_;}
@@ -243,6 +249,7 @@ class VirtualMechanismInterface
           UpdateStateDot();
           ComputeInitialState();
           ComputeFinalState();
+          ComputeJacobianVersor();
       }
 
       inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
@@ -267,6 +274,12 @@ class VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
+
+      inline void ComputeJacobianVersor()
+      {
+          // Jacobian versor
+          t_versor_ = J_/J_.norm();
+      }
 
       virtual void ApplySaturation()
       {
@@ -313,10 +326,12 @@ class VirtualMechanismInterface
       Eigen::VectorXd state_dot_;
 	  Eigen::VectorXd torque_;
       Eigen::VectorXd force_;
+      Eigen::VectorXd force_out_;
       Eigen::VectorXd force_pos_;
       Eigen::VectorXd force_vel_;
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
+      Eigen::VectorXd t_versor_;
       Eigen::MatrixXd BxJ_;
       Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;

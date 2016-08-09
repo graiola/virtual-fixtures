@@ -193,7 +193,7 @@ void MechanismManagerInterface::DeleteVM(const int idx)
     async_thread_delete_->Trigger();
 }
 
-void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const prob_mode_t prob_mode)
+void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)
 {
     assert(dt > 0.0);
 
@@ -203,12 +203,12 @@ void MechanismManagerInterface::Update(const double* robot_position_ptr, const d
     //if(use_active_guide_)
     //    CheckForGuideActivation(i);
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,prob_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_;
 }
 
-void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const prob_mode_t prob_mode)
+void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
 {
     assert(dt > 0.0);
 
@@ -221,7 +221,7 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
     //if(use_active_guide_)
     //    CheckForGuideActivation(i);
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,prob_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
 
     f_out = f_;
 }

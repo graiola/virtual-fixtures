@@ -13,15 +13,8 @@ void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
     //MatrixXd empty_mat_NxN(position_dim_,position_dim_);
     //MatrixXd empty_mat_Nx1(position_dim_,1);
 
-    //vm_state_.push_back(empty_vect_N);
-    //vm_state_dot_.push_back(empty_vect_N);
-    //vm_K_.push_back(empty_mat_NxN);
-    //vm_B_.push_back(empty_mat_NxN);
     vm_vector_.push_back(vm_tmp_ptr);
-
-    //vm_jacobian_.push_back(empty_mat_Nx1);
-    f_vm_.push_back(empty_vect_N);
-    t_versor_.push_back(empty_vect_N);
+    //f_vm_.push_back(empty_vect_N);
 
     vm_fades_.push_back(DynSystemFirstOrder(10.0));
 
@@ -135,8 +128,7 @@ void MechanismManager::DeleteVM(const int idx)
        //vm_K_.erase(vm_K_.begin()+idx);
        //vm_B_.erase(vm_B_.begin()+idx);
        //vm_jacobian_.erase(vm_jacobian_.begin()+idx);
-       f_vm_.erase(f_vm_.begin()+idx);
-       t_versor_.erase(t_versor_.begin()+idx);
+       //f_vm_.erase(f_vm_.begin()+idx);
        vm_fades_.erase(vm_fades_.begin()+idx);
 
        Delete(idx,scales_);
@@ -207,6 +199,7 @@ MechanismManager::MechanismManager(int position_dim)
       // Resize
       f_K_.resize(position_dim_);
       f_B_.resize(position_dim_);
+      f_vm_.resize(position_dim_);
       err_pos_.resize(position_dim_);
       err_vel_.resize(position_dim_);
       f_prev_.resize(position_dim_);
@@ -214,6 +207,7 @@ MechanismManager::MechanismManager(int position_dim)
       // Clear
       f_K_.fill(0.0);
       f_B_.fill(0.0);
+      f_vm_.fill(0.0);
       err_pos_.fill(0.0);
       err_vel_.fill(0.0);
       f_prev_.fill(0.0);
@@ -254,15 +248,19 @@ MechanismManager::~MechanismManager()
         delete vm_vector_[i];
 }
 
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const prob_mode_t prob_mode)
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
-        // Update the virtual mechanisms states, compute single probabilities
+
         for(int i=0; i<vm_vector_.size();i++)
         {
+            // Update the virtual mechanisms states
             vm_vector_[i]->Update(robot_position,robot_velocity,dt);
+
+            // Compute the scale for each mechanism
+            scales_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
 
             // Retrain variables for plots
             phase_(i) = vm_vector_[i]->getPhase();
@@ -272,25 +270,15 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
             phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
             fade_(i) = vm_vector_[i]->getFade();
-
-            // Retrain position/velocity and jacobian from the virtual mechanisms
-            /*vm_vector_[i]->getState(vm_state_[i]);
-            vm_vector_[i]->getStateDot(vm_state_dot_[i]);
-            vm_vector_[i]->getK(vm_K_[i]);
-            vm_vector_[i]->getB(vm_B_[i]);
-            vm_vector_[i]->getJacobian(vm_jacobian_[i]);*/
-
-            // Compute the scale for each mechanism
-            scales_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
         }
 
         f_out.fill(0.0); // Reset the force
         double sum = scales_.sum();
 
+        // Compute the global scales
         for(int i=0; i<vm_vector_.size();i++)
         {
-          // Compute the probabilities
-          switch(prob_mode)
+          switch(scale_mode)
           {
             case HARD:
                 scales_soft_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
@@ -309,17 +297,12 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             default:
               break;
           }
-
-          err_pos_ = vm_vector_[i]->getState() - robot_position;
-          f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
-          err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
-          f_B_.noalias() = vm_vector_[i]->getB() * err_vel_;
-
-          // Jacobian versor
-          t_versor_[i] = vm_vector_[i]->getJacobian()/vm_vector_[i]->getJacobian().norm();
-
+          //err_pos_ = vm_vector_[i]->getState() - robot_position;
+          //f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
+          //err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
+          //f_B_.noalias() = vm_vector_[i]->getB() * err_vel_;
           // Sum spring force + damping force for each vm
-          f_vm_[i] = f_K_ + f_B_;
+          //f_vm_[i] = f_K_ + f_B_;
         }
 
         // For each mechanism that is not active (low scale value), remove the force component tangent to
@@ -333,13 +316,22 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
                     else
                         scales_t_(j) = vm_fades_[j].IntegrateBackward();
 
+        // Compute the force for each mechanism, remove the antagonist force components
         for(int i=0; i<vm_vector_.size();i++)
         {
-            f_out += scales_(i) * f_vm_[i];
+            err_pos_ = vm_vector_[i]->getState() - robot_position;
+            f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
+            err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
+            f_B_.noalias() = vm_vector_[i]->getB() * err_vel_;
+
+            // Sum spring force + damping force for the current mechanism
+            f_vm_ = f_K_ + f_B_;
+
+            f_out += scales_(i) * f_vm_;
             for(int j=0; j<vm_vector_.size();j++)
             {
                 if(j!=i)
-                    f_out -= scales_(i) * scales_t_(i) * t_versor_[j] * f_vm_[i].dot(t_versor_[j]);
+                    f_out -= scales_(i) * scales_t_(i) * vm_vector_[j]->getJacobianVersor() * f_vm_.dot(vm_vector_[j]->getJacobianVersor());
             }
         }
 

@@ -36,7 +36,7 @@ class MechanismManager
     //MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
   
     // Loop Update Interface
-    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const prob_mode_t prob_mode);
+    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode);
 
     // Mechanism Manager external interface
     void InsertVM(std::string& model_name);
@@ -68,8 +68,10 @@ class MechanismManager
 
     virtual_mechanism::VirtualMechanismFactory vm_factory_;
 
+    // For computations
     Eigen::VectorXd f_K_;
     Eigen::VectorXd f_B_;
+    Eigen::VectorXd f_vm_;
     Eigen::VectorXd err_pos_;
     Eigen::VectorXd err_vel_;
     Eigen::VectorXd robot_position_;
@@ -77,7 +79,8 @@ class MechanismManager
     Eigen::VectorXd scales_;
     Eigen::VectorXd scales_hard_;
     Eigen::VectorXd scales_soft_;
-
+    Eigen::VectorXd scales_t_;
+    // For plots
     Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd phase_ddot_;
@@ -92,11 +95,6 @@ class MechanismManager
 
     std::string pkg_path_;
 
-    /*std::vector<Eigen::VectorXd> vm_state_;
-    std::vector<Eigen::VectorXd> vm_state_dot_;
-    std::vector<Eigen::MatrixXd> vm_K_;
-    std::vector<Eigen::MatrixXd> vm_B_;
-    std::vector<Eigen::MatrixXd> vm_jacobian_;*/
     std::vector<tool_box::DynSystemFirstOrder> vm_fades_;
     std::vector<vm_t*> vm_vector_;
 
@@ -107,11 +105,6 @@ class MechanismManager
     Eigen::VectorXd f_prev_;
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom
-
-    // Lock stuff
-    std::vector<Eigen::VectorXd> f_vm_;
-    std::vector<Eigen::VectorXd> t_versor_;
-    Eigen::VectorXd scales_t_;
 };
 
 }

@@ -28,8 +28,8 @@ TEST(MechanismManagerTest, InitializesCorrectly)
 TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
 
-  prob_mode_t prob_mode;
-  prob_mode = HARD;
+  scale_mode_t scale_mode;
+  scale_mode = HARD;
   MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
@@ -48,7 +48,7 @@ TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
   f_out.fill(0.0);
   
   START_REAL_TIME_CRITICAL_CODE();
-  EXPECT_NO_THROW(mm->Update(rob_pos,rob_vel,dt,f_out,prob_mode));
+  EXPECT_NO_THROW(mm->Update(rob_pos,rob_vel,dt,f_out,scale_mode));
   END_REAL_TIME_CRITICAL_CODE();
 
   delete mm;
