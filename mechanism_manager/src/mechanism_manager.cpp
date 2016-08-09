@@ -9,13 +9,11 @@ namespace mechanism_manager
   
 void MechanismManager::InitGuide(vm_t* const vm_tmp_ptr)
 {
-    VectorXd empty_vect_N(position_dim_);
+    //VectorXd empty_vect_N(position_dim_);
     //MatrixXd empty_mat_NxN(position_dim_,position_dim_);
     //MatrixXd empty_mat_Nx1(position_dim_,1);
 
     vm_vector_.push_back(vm_tmp_ptr);
-    //f_vm_.push_back(empty_vect_N);
-
     vm_fades_.push_back(DynSystemFirstOrder(10.0));
 
     PushBack(0.0,scales_);
@@ -83,11 +81,8 @@ void MechanismManager::InsertVM()
     InsertVM(model_name);
 }
 
-void MechanismManager::SaveVM(const int idx)
+void MechanismManager::SaveVM(const int idx, std::string& model_name)
 {
-    std::string model_name;
-    std::cout << "Insert model name: " << std::endl;
-    std::cin >> model_name;
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
     std::cout << "Saving guide number#"<< idx << " to " << model_complete_path << std::endl;
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -96,16 +91,25 @@ void MechanismManager::SaveVM(const int idx)
     {
         std::cout << "Saving..." << std::endl;
         if(vm_vector_[idx]->SaveModelToFile(model_complete_path))
+        {
             std::cout << "...DONE!" << std::endl;
+        }
         else
             std::cerr << "Impossible to save the file " << model_complete_path << std::endl;
     }
     else
     {
-        std::cout << "Guide number#" << idx << "not available..." << std::endl;
+        std::cout << "Guide number#" << idx << " not available..." << std::endl;
     }
     guard.unlock();
-    std::cout << "Saving of guide number#"<< idx << " complete." << std::endl;
+}
+
+void MechanismManager::SaveVM(const int idx)
+{
+    std::string model_name;
+    std::cout << "Insert model name: " << std::endl;
+    std::cin >> model_name;
+    SaveVM(idx,model_name);
 }
 
 void MechanismManager::DeleteVM(const int idx)
@@ -123,12 +127,6 @@ void MechanismManager::DeleteVM(const int idx)
 
        delete vm_vector_[idx];
        vm_vector_.erase(vm_vector_.begin()+idx);
-       //vm_state_.erase(vm_state_.begin()+idx);
-       //vm_state_dot_.erase(vm_state_dot_.begin()+idx);
-       //vm_K_.erase(vm_K_.begin()+idx);
-       //vm_B_.erase(vm_B_.begin()+idx);
-       //vm_jacobian_.erase(vm_jacobian_.begin()+idx);
-       //f_vm_.erase(f_vm_.begin()+idx);
        vm_fades_.erase(vm_fades_.begin()+idx);
 
        Delete(idx,scales_);
@@ -187,7 +185,6 @@ bool MechanismManager::ReadConfig()
 
 MechanismManager::MechanismManager(int position_dim)
 {
-
       if(!ReadConfig())
       {
         throw new std::runtime_error("MechanismManager: Can not read config file");
@@ -297,12 +294,6 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             default:
               break;
           }
-          //err_pos_ = vm_vector_[i]->getState() - robot_position;
-          //f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
-          //err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
-          //f_B_.noalias() = vm_vector_[i]->getB() * err_vel_;
-          // Sum spring force + damping force for each vm
-          //f_vm_[i] = f_K_ + f_B_;
         }
 
         // For each mechanism that is not active (low scale value), remove the force component tangent to

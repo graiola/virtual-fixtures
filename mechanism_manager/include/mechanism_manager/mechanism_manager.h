@@ -35,10 +35,10 @@ class MechanismManager
     //MechanismManager( const MechanismManager& other ) = delete; // non construction-copyable
     //MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
   
-    // Loop Update Interface
+    /// Loop Update Interface
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode);
 
-    // Mechanism Manager external interface
+    /// Mechanism Manager external interface
     void InsertVM(std::string& model_name);
     void InsertVM();
     void InsertVM(const Eigen::MatrixXd& data);
@@ -46,10 +46,11 @@ class MechanismManager
     void UpdateVM(Eigen::MatrixXd& data, const int idx);
     void ClusterVM(Eigen::MatrixXd& data);
     void SaveVM(const int idx);
+    void SaveVM(const int idx, std::string& model_name);
     void Stop();
     bool OnVm();
 
-    // Gets
+    /// Gets
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
@@ -68,7 +69,7 @@ class MechanismManager
 
     virtual_mechanism::VirtualMechanismFactory vm_factory_;
 
-    // For computations
+    /// For computations
     Eigen::VectorXd f_K_;
     Eigen::VectorXd f_B_;
     Eigen::VectorXd f_vm_;
@@ -80,7 +81,8 @@ class MechanismManager
     Eigen::VectorXd scales_hard_;
     Eigen::VectorXd scales_soft_;
     Eigen::VectorXd scales_t_;
-    // For plots
+
+    /// For plots
     Eigen::VectorXd phase_;
     Eigen::VectorXd phase_dot_;
     Eigen::VectorXd phase_ddot_;
@@ -98,10 +100,10 @@ class MechanismManager
     std::vector<tool_box::DynSystemFirstOrder> vm_fades_;
     std::vector<vm_t*> vm_vector_;
 
-    // Mutex
+    /// Mutex
     mutex_t mtx_;
 
-    // Cached values
+    /// Cached values
     Eigen::VectorXd f_prev_;
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom

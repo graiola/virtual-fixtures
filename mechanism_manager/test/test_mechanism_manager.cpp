@@ -113,6 +113,19 @@ TEST(MechanismManagerTest, InsertVmMethod)
   delete mm;
 }
 
+TEST(MechanismManagerTest, SaveVmMethod)
+{
+  MechanismManagerInterface* mm = new MechanismManagerInterface();
+
+  EXPECT_NO_THROW(mm->InsertVM(model_name));
+
+  getchar();
+
+  EXPECT_NO_THROW(mm->SaveVM(0,model_name));
+
+  delete mm;
+}
+
 TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most amazing name ever! :)
 {
   MechanismManagerInterface mm;

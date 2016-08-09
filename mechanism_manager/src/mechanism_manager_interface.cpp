@@ -90,7 +90,7 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 {
       //Eigen::initParallel();
 
-      // For now the services are not so many, but in the future I should create a pool of limited workers to
+      // For now the services are not so many, but in the future (if things get complicated) I should create a pool of limited workers to
       // handle the rpcs
       async_thread_insert_ = new AsyncThread();
       async_thread_delete_ = new AsyncThread();
@@ -184,6 +184,12 @@ void MechanismManagerInterface::InsertVM(std::string& model_name)
 void MechanismManagerInterface::SaveVM(const int idx)
 {
     async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx));
+    async_thread_save_->Trigger();
+}
+
+void MechanismManagerInterface::SaveVM(const int idx, std::string& model_name)
+{
+    async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
     async_thread_save_->Trigger();
 }
 

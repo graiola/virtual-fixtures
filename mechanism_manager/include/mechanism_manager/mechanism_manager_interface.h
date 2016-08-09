@@ -60,6 +60,7 @@ class MechanismManagerInterface
     void InsertVM();
     void DeleteVM(const int idx);
     void SaveVM(const int idx);
+    void SaveVM(const int idx, std::string& model_name);
 
     /// Stop the mechanisms
     void Stop();
