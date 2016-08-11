@@ -6,6 +6,7 @@
 
 ////////// ROS
 #include <ros/ros.h>
+#include <ros/console.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -13,29 +14,13 @@
 ////////// BOOST
 #include <boost/thread.hpp>
 
+
 namespace mechanism_manager
 {
 
 enum scale_mode_t {HARD,POTENTIAL,SOFT};
 class MechanismManagerServer;
 class MechanismManager;
-
-class VirtualMechanismAutom
-{
-
-public:
-    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
-
-    void Step(const double phase_dot,const double phase_dot_ref, bool collision_detected);
-    bool GetState();
-
-private:
-    enum state_t {MANUAL,PREAUTO,AUTO};
-    double phase_dot_preauto_th_;
-    double phase_dot_th_;
-    state_t state_;
-    long long loopCnt;
-};
 
 class MechanismManagerInterface
 {
@@ -95,12 +80,10 @@ class MechanismManagerInterface
     Eigen::VectorXd f_;
 
     int position_dim_;
-    double phase_dot_th_;
-    double phase_dot_preauto_th_;
     bool collision_detected_;
 
+    // Mechanism Manager
     MechanismManager* mm_;
-    std::vector<VirtualMechanismAutom* > vm_autom_;
 
     // Thread stuff
     tool_box::AsyncThread* async_thread_insert_;
@@ -110,9 +93,9 @@ class MechanismManagerInterface
     // Ros stuff
     tool_box::RosNode ros_node_;
     MechanismManagerServer* mm_server_;
-    #ifdef USE_ROS_RT_PUBLISHER
-        tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
-    #endif
+#ifdef USE_ROS_RT_PUBLISHER
+    tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
+#endif
 };
 
 }

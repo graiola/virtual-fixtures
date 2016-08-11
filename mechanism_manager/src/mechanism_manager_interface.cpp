@@ -8,84 +8,6 @@ namespace mechanism_manager
   using namespace tool_box;
   using namespace Eigen;
 
-VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th)
-{
-    assert(phase_dot_th > 0.0);
-    assert(phase_dot_preauto_th > phase_dot_th);
-    phase_dot_preauto_th_ = phase_dot_preauto_th;
-    phase_dot_th_ = phase_dot_th;
-    state_ = MANUAL;
-    loopCnt = 0;
-}
-
-void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, bool collision_detected)
-{
-    if(true)
-    {
-        switch(state_)
-        {
-            case MANUAL:
-                if(phase_dot >= phase_dot_preauto_th_)
-                    state_ = PREAUTO;
-                break;
-            case PREAUTO:
-                if(phase_dot <= (phase_dot_ref + phase_dot_th_))
-                    state_ = AUTO;
-                break;
-            case AUTO:
-                if(collision_detected)
-                    state_ = MANUAL;
-                break;
-        }
-    }
-    else // Two states version
-    {
-            if((phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
-                state_ = AUTO;
-            else
-                state_ = MANUAL;
-    }
-}
-
-bool VirtualMechanismAutom::GetState()
-{
-    bool activate_vm;
-    switch(state_)
-    {
-        case MANUAL:
-            activate_vm = false;
-            break;
-        case PREAUTO:
-            activate_vm = false;
-            break;
-        case AUTO:
-            activate_vm = true;
-            break;
-    }
-
-    if(loopCnt%1000==0)
-    {
-        switch(state_)
-        {
-            case MANUAL:
-                std::cout << "****" <<std::endl;
-                std::cout << "MANUAL" <<std::endl;
-                break;
-            case PREAUTO:
-                std::cout << "****" <<std::endl;
-                std::cout << "PREAUTO" <<std::endl;
-                break;
-            case AUTO:
-                std::cout << "****" <<std::endl;
-                std::cout << "AUTO" <<std::endl;
-                break;
-        }
-    }
-    loopCnt++;
-
-    return activate_vm;
-}
-
 MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NULL)
 {
       //Eigen::initParallel();
@@ -117,8 +39,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
       collision_detected_ = true; // Let's start not active
 
-      mm_ = new MechanismManager(position_dim_);
-
       try
       {
           ros_node_.Init(ROS_PKG_NAME);
@@ -126,23 +46,23 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       }
       catch(const std::runtime_error& e)
       {
-         ROS_ERROR("Failed to create the MechanismManagerServer: %s",e.what());
+          ROS_ERROR("Failed to create the MechanismManagerServer: %s",e.what());
       }
+
+      mm_ = new MechanismManager(position_dim_);
+
 }
 
 MechanismManagerInterface::~MechanismManagerInterface()
 {
-      for(int i=0;i<vm_autom_.size();i++)
-        delete vm_autom_[i];
+    delete async_thread_insert_;
+    delete async_thread_delete_;
+    delete async_thread_save_;
 
-      delete async_thread_insert_;
-      delete async_thread_delete_;
-      delete async_thread_save_;
+    if(mm_server_!=NULL)
+      delete mm_server_;
 
-      if(mm_server_!=NULL)
-        delete mm_server_;
-
-      delete mm_;
+    delete mm_;
 }
 
 bool MechanismManagerInterface::ReadConfig()
@@ -151,11 +71,7 @@ bool MechanismManagerInterface::ReadConfig()
     if (const YAML::Node& curr_node = main_node["mechanism_manager_interface"])
     {
         curr_node["position_dim"] >> position_dim_;
-        curr_node["phase_dot_th"] >> phase_dot_th_;
-        curr_node["phase_dot_preauto_th"] >> phase_dot_preauto_th_;
         assert(position_dim_ == 1 || position_dim_ == 2);
-        assert(phase_dot_th_ > 0.0);
-        assert(phase_dot_preauto_th_ > phase_dot_th_);
 
         return true;
     }
