@@ -46,14 +46,14 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>toolbox</build_depend>
   <build_depend>virtual_mechanism</build_depend>
-  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>roslib</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>toolbox</run_depend>
   <run_depend>virtual_mechanism</run_depend>
-  <run_depend>actionlib_msgs</run_depend>	
+  <run_depend>message_runtime</run_depend>
 
 
 

@@ -78,7 +78,7 @@ class RosNode
 
         ~RosNode(){if(ros_nh_ptr_!=NULL && init_ == true){ros_nh_ptr_->shutdown(); delete ros_nh_ptr_;}}
 
-        const ros::NodeHandle& GetNode()
+        ros::NodeHandle& GetNode()
         {
           if(init_ == true)
             return *ros_nh_ptr_;

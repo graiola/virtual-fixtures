@@ -1,8 +1,0 @@
-#goal definition
-int32 delete_guide_idx
----
-#result definition
-bool delete_guide_done
----
-#feedback
-bool delete_guide_done

@@ -10,8 +10,10 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "vf_gui");
 
+    ros::NodeHandle nh;
+
     QApplication a(argc, argv);
-    MainWindow w;
+    MainWindow w(nh);
     w.show();
     return a.exec();
 

@@ -16,8 +16,7 @@ find_package(catkin
   std_msgs
   toolbox
   virtual_mechanism
-  actionlib
-  actionlib_msgs
+  message_generation
   COMPONENTS
   sensor_msgs
   geometry_msgs
@@ -31,14 +30,10 @@ if(realtime_tools_FOUND AND sensor_msgs_FOUND)
    message(STATUS "Realtime tools found")
 endif()
 
-add_action_files(
-  DIRECTORY action
-  FILES MechanismManager.action
-)
+add_service_files(FILES
+  MechanismManagerServices.srv)
 
-generate_messages(
-  DEPENDENCIES actionlib_msgs std_msgs  # Or other packages containing msgs
-)
+generate_messages()
 
 ###################################
 ## catkin specific configuration ##
@@ -52,7 +47,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS actionlib_msgs
+  CATKIN_DEPENDS message_runtime
   #DEPENDS system_lib boost dmpbbo yaml-cpp
   DEPENDS boost
 )

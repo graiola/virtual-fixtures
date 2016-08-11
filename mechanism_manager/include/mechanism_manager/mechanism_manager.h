@@ -14,7 +14,7 @@
 ////////// VIRTUAL_MECHANISM
 #include <virtual_mechanism/virtual_mechanism_factory.h>
 
-// It is here just for the prob enum
+///////// MECHANISM_MANAGER
 #include "mechanism_manager/mechanism_manager_interface.h"
 
 namespace mechanism_manager
@@ -22,6 +22,23 @@ namespace mechanism_manager
 
 typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism::VirtualMechanismInterface vm_t;
+
+class VirtualMechanismAutom
+{
+
+public:
+    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
+
+    void Step(const double phase_dot,const double phase_dot_ref, bool collision_detected);
+    bool GetState();
+
+private:
+    enum state_t {MANUAL,PREAUTO,AUTO};
+    double phase_dot_preauto_th_;
+    double phase_dot_th_;
+    state_t state_;
+    long long loopCnt;
+};
 
 class MechanismManager
 {
@@ -61,7 +78,7 @@ class MechanismManager
   protected:
 
     bool ReadConfig();
-    void InitGuide(vm_t* const vm_tmp_ptr);
+    void ExpandVectors(vm_t* const vm_tmp_ptr);
 
   private:   
     
@@ -99,6 +116,9 @@ class MechanismManager
 
     std::vector<tool_box::DynSystemFirstOrder> vm_fades_;
     std::vector<vm_t*> vm_vector_;
+    std::vector<VirtualMechanismAutom* > vm_autom_;
+    double phase_dot_th_;
+    double phase_dot_preauto_th_;
 
     /// Mutex
     mutex_t mtx_;
@@ -107,6 +127,11 @@ class MechanismManager
     Eigen::VectorXd f_prev_;
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom
+
+/*#ifdef USE_ROS_RT_PUBLISHER
+    tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
+#endif*/
+
 };
 
 }

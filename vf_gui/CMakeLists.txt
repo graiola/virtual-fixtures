@@ -9,8 +9,8 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Boost COMPONENTS system REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS roscpp roslib actionlib
-                                        actionlib_msgs mechanism_manager)
+find_package(catkin REQUIRED COMPONENTS roscpp roslib
+                                        mechanism_manager)
 
 # Find the QtWidgets library
 find_package(Qt5Widgets)

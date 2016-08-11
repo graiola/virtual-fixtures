@@ -3,11 +3,11 @@
 
 /// QT
 #include <QMainWindow>
+#include <QStringListModel>
 
 /// ROS
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
-#include <mechanism_manager/MechanismManagerAction.h>
+#include <ros/ros.h>
+#include <mechanism_manager/MechanismManagerServices.h>
 
 
 namespace Ui {
@@ -16,14 +16,12 @@ class button;
 class label;
 }
 
-typedef actionlib::SimpleActionClient<mechanism_manager::MechanismManagerAction> ac_t;
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(ros::NodeHandle& nh, QWidget *parent = 0);
     ~MainWindow();
 
 private slots:
@@ -33,7 +31,9 @@ private slots:
 
 protected:
     void timerEvent(QTimerEvent *event);
-    ac_t ac_;
+    ros::ServiceClient sc_;
+    QStringListModel* NamesModel_;
+    QStringList NamesList_;
 
 private:
     Ui::MainWindow *ui;

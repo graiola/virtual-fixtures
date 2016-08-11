@@ -1,20 +1,21 @@
 #include "mechanism_manager/mechanism_manager_server.h"
 
 using namespace mechanism_manager;
+using namespace ros;
 
-MechanismManagerServer::MechanismManagerServer(MechanismManagerInterface* mm_interface, const ros::NodeHandle& nh)
-    : as_(nh, nh.getNamespace(), boost::bind(&MechanismManagerServer::Delete, this, _1), false),
-      action_name_(nh.getNamespace()),
-      spinner_ptr_(NULL)
+MechanismManagerServer::MechanismManagerServer(MechanismManagerInterface* mm_interface, NodeHandle& nh)
+    : spinner_ptr_(NULL)
 {
     assert(mm_interface!=NULL);
 
     mm_interface_ = mm_interface;
 
-    if(ros::master::check())
+    if(master::check())
     {
-        as_.start();
-        spinner_ptr_ = new ros::AsyncSpinner(1); // Use one thread to keep the ros magic alive
+        ss_ = nh.advertiseService("mechanism_manager_interaction",
+                                  &MechanismManagerServer::CallBack, this);
+
+        spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
         spinner_ptr_->start();
     }
     else
@@ -28,15 +29,21 @@ MechanismManagerServer::~MechanismManagerServer()
 {
     if(spinner_ptr_!=NULL)
         delete spinner_ptr_;
-    as_.shutdown();
 }
 
 
 
-void MechanismManagerServer::Delete(const MechanismManagerGoalConstPtr &goal)
+bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
+                                      MechanismManagerServices::Response &res)
 {
-   mm_interface_->DeleteVM(goal->delete_guide_idx);
-   as_.setSucceeded();
+
+    if(std::strcmp(req.request_command.c_str(), "delete") == 0)
+    {
+        mm_interface_->DeleteVM(req.selected_guide);
+    }
+
+    return true;
+   //mm_interface_->DeleteVM(goal->delete_guide_idx);
 }
 
 /*void MechanismManagerInterface::Insert()
