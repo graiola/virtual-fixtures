@@ -330,8 +330,13 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
 template<class VM_t>
 bool VirtualMechanismGmr<VM_t>::CreateModelFromData(const MatrixXd& data)
 {
-    MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians_); // input/phase dimension is 1
-    fa_ = new fa_t(meta_parameters_gmr);
+
+    // If the function approximator already exists, re-train, otherwise create a new function approximator
+    if(fa_==NULL)
+    {
+        MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians_); // input/phase dimension is 1
+        fa_ = new fa_t(meta_parameters_gmr);
+    }
 
     TrainModel(data);
 

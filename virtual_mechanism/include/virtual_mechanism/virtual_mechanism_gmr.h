@@ -39,7 +39,6 @@ class VirtualMechanismGmr: public VM_t
       virtual bool SaveModelToFile(const std::string file_path);
 
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
-      void TrainModel(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       double GetResponsability();
@@ -47,6 +46,7 @@ class VirtualMechanismGmr: public VM_t
 	  
 	protected:
 	  
+      void TrainModel(const Eigen::MatrixXd& data);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
@@ -77,7 +77,6 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       VirtualMechanismGmrNormalized(const std::string file_path);
       VirtualMechanismGmrNormalized(const Eigen::MatrixXd& data);
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
-      void TrainModel(const Eigen::MatrixXd& data);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       bool ReadConfig();
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
@@ -85,6 +84,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 
     protected:
 
+      void TrainModel(const Eigen::MatrixXd& data);
       virtual void UpdateJacobian();
       virtual void UpdateState();
       virtual void UpdateStateDot();

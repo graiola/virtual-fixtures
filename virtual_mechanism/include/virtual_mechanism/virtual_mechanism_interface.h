@@ -184,8 +184,6 @@ class VirtualMechanismInterface
       //virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
       //virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
       //virtual bool SaveGMMToTxt(const std::string file_path){}
-      //virtual double ComputeResponsability(const Eigen::MatrixXd& pos){}
-      //virtual double GetResponsability(){}
       //inline void setWeightedDist(const bool activate){}
       //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
       //virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
@@ -193,6 +191,8 @@ class VirtualMechanismInterface
       //virtual double ExponentialScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
       //virtual double GaussianScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
 
+      virtual double ComputeResponsability(const Eigen::MatrixXd& pos){ROS_ERROR("ComputeResponsability has not been defined.");}
+      virtual double GetResponsability(){ROS_ERROR("GetResponsability has not been defined.");}
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data)=0;
       virtual bool CreateModelFromFile(const std::string file_path)=0;
       virtual bool SaveModelToFile(const std::string file_path)=0;
@@ -439,7 +439,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
       double num_;
 	  double Bd_; // Damp term
       //double Bd_max_; // Max damp term
-      //double epsilon_;
+      //double epsilon_;      
 };
 
 class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
