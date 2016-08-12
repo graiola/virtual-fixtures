@@ -14,9 +14,11 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
       // For now the services are not so many, but in the future (if things get complicated) I should create a pool of limited workers to
       // handle the rpcs
-      async_thread_insert_ = new AsyncThread();
-      async_thread_delete_ = new AsyncThread();
-      async_thread_save_   = new AsyncThread();
+      //async_thread_insert_ = new AsyncThread();
+      //async_thread_delete_ = new AsyncThread();
+      //async_thread_save_   = new AsyncThread();
+
+      async_threads_pool_ = new AsyncThreadsPool(4); // Create 4 workers
 
       if(!ReadConfig())
       {
@@ -55,9 +57,11 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
 MechanismManagerInterface::~MechanismManagerInterface()
 {
-    delete async_thread_insert_;
-    delete async_thread_delete_;
-    delete async_thread_save_;
+    //delete async_thread_insert_;
+    //delete async_thread_delete_;
+    //delete async_thread_save_;
+
+    delete async_threads_pool_;
 
     if(mm_server_!=NULL)
       delete mm_server_;
@@ -81,38 +85,44 @@ bool MechanismManagerInterface::ReadConfig()
 
 void MechanismManagerInterface::InsertVM()
 {
-    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM, mm_));
-    async_thread_insert_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(&MechanismManager::InsertVM, mm_));
+    //async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM, mm_));
+    //async_thread_insert_->Trigger();
 }
 
 void MechanismManagerInterface::InsertVM(MatrixXd& data)
 {
-    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
-    async_thread_insert_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
+    //async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
+    //async_thread_insert_->Trigger();
 }
 
 void MechanismManagerInterface::InsertVM(std::string& model_name)
 {
-    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
-    async_thread_insert_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
+    //async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
+    //async_thread_insert_->Trigger();
 }
 
 void MechanismManagerInterface::SaveVM(const int idx)
 {
-    async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx));
-    async_thread_save_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(&MechanismManager::SaveVM, mm_, idx));
+    //async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx));
+    //async_thread_save_->Trigger();
 }
 
 void MechanismManagerInterface::SaveVM(const int idx, std::string& model_name)
 {
-    async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
-    async_thread_save_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
+    //async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
+    //async_thread_save_->Trigger();
 }
 
 void MechanismManagerInterface::DeleteVM(const int idx)
 {
-    async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
-    async_thread_delete_->Trigger();
+    async_threads_pool_->DoWork(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
+    //async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
+    //async_thread_delete_->Trigger();
 }
 
 void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)

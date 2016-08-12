@@ -86,9 +86,10 @@ class MechanismManagerInterface
     MechanismManager* mm_;
 
     // Thread stuff
-    tool_box::AsyncThread* async_thread_insert_;
-    tool_box::AsyncThread* async_thread_delete_;
-    tool_box::AsyncThread* async_thread_save_;
+    tool_box::AsyncThreadsPool* async_threads_pool_;
+    //tool_box::AsyncThread* async_thread_insert_;
+    //tool_box::AsyncThread* async_thread_delete_;
+    //tool_box::AsyncThread* async_thread_save_;
 
     // Ros stuff
     tool_box::RosNode ros_node_;
