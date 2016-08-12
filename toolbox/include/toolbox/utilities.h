@@ -40,11 +40,11 @@ class AsyncThread
         {
             trigger_ = false;
             stop_loop_ = false;
+            busy_ = false;
             loop_ = boost::thread(boost::bind(&AsyncThread::Loop, this));
         }
         ~AsyncThread()
         {
-            //std::cout << "Destroy" << std::endl;
             stop_loop_ = true;
             callback_.join();
             loop_.join();
@@ -55,8 +55,8 @@ class AsyncThread
         }
         inline void Trigger()
         {
-            //std::cout << "Set the Trigger" << std::endl;
             trigger_ = true;
+            busy_ = true; // I am going to do amazing stuff!
         }
         inline void Loop()
         {
@@ -66,24 +66,76 @@ class AsyncThread
                 {
                     if(!f_.empty())
                     {
-                        //std::cout << "Launching the Callback" << std::endl;
                         trigger_ = false;
                         callback_ =  boost::thread(f_);
                         callback_.join();
                     }
                     else
                         std::cerr << "No Callback function" << std::endl;
+                    busy_ = false; // Work done!
                 }
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             }
             return;
         }
+
+        boost::atomic<bool> busy_;
+
     private:
         funct_t f_;
         boost::atomic<bool> trigger_;
         boost::atomic<bool> stop_loop_;
         boost::thread loop_;
         boost::thread callback_;
+};
+
+class AsyncThreadsPool
+{
+    typedef boost::function<void ()> funct_t;
+    public:
+        AsyncThreadsPool(int n_threads)
+        {
+            for(int i = 0; i<n_threads; i++)
+                pool_.push_back(new AsyncThread());
+        }
+        ~AsyncThreadsPool()
+        {
+            for(int i = 0; i<pool_.size(); i++)
+                delete pool_[i];
+        }
+
+        inline void DoWork(funct_t f)
+        {
+           polling_thread_ = boost::thread(boost::bind(&AsyncThreadsPool::AssignWork, this, f));
+        }
+
+    private:
+        inline void AssignWork(funct_t f) // Async Call
+        {
+            int i = 0;
+            do
+            {
+                if(pool_[i]->busy_)
+                {
+                    i++;
+                    boost::this_thread::sleep(boost::posix_time::milliseconds(100)); // Dodo for a little
+                }
+                else
+                {
+                    pool_[i]->AddHandler(f);
+                    pool_[i]->Trigger();
+                    break;
+                }
+                if(i == pool_.size())
+                    i = 0;
+            }
+            while(true);
+
+        }
+
+        std::vector<AsyncThread* > pool_;
+        boost::thread polling_thread_;
+
 };
 
 /// Eigen containers manipulation
