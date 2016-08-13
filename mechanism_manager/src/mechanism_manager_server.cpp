@@ -40,10 +40,17 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
     if(std::strcmp(req.request_command.c_str(), "delete") == 0)
     {
         mm_interface_->DeleteVM(req.selected_guide);
+        res.response_command = req.request_command;
+    }
+
+    std::string name;
+    for (int i = 0; i<mm_interface_->GetNbVms(); i++)
+    {
+       mm_interface_->GetVmName(i,name);
+       res.list_guides.push_back(name);
     }
 
     return true;
-   //mm_interface_->DeleteVM(goal->delete_guide_idx);
 }
 
 /*void MechanismManagerInterface::Insert()
