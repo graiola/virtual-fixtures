@@ -125,6 +125,12 @@ void MechanismManagerInterface::DeleteVM(const int idx)
     //async_thread_delete_->Trigger();
 }
 
+void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
+{
+    //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
+    mm_->GetVmName(idx,name);
+}
+
 void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)
 {
     assert(dt > 0.0);

@@ -66,6 +66,7 @@ class MechanismManager
     void SaveVM(const int idx, std::string& model_name);
     void Stop();
     bool OnVm();
+    void GetVmName(const int idx, std::string& name);
 
     /// Gets
     inline int GetPositionDim() const {return position_dim_;}

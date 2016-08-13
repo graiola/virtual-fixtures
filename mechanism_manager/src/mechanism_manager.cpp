@@ -312,6 +312,14 @@ void MechanismManager::DeleteVM(const int idx)
    guard.unlock();
 }
 
+void MechanismManager::GetVmName(const int idx, std::string& name)
+{
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    name = vm_vector_[idx]->getName();
+    guard.unlock();
+}
+
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
