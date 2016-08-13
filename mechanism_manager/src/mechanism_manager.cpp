@@ -205,6 +205,7 @@ void MechanismManager::InsertVM(std::string& model_name)
     try
     {
         vm_tmp_ptr = vm_factory_.Build(model_complete_path);
+        vm_tmp_ptr->setName(model_name);
         ExpandVectors(vm_tmp_ptr);
         PRINT_INFO("Guide number#" << vm_vector_.size()-1 <<" created");
     }
@@ -224,6 +225,7 @@ void MechanismManager::InsertVM(const MatrixXd& data)
     try
     {
         vm_tmp_ptr = vm_factory_.Build(data);
+        vm_tmp_ptr->setName("guide_"+std::to_string(vm_vector_.size()-1));
         ExpandVectors(vm_tmp_ptr);
         PRINT_INFO("Guide number#"<< vm_vector_.size()-1 <<" created");
     }
