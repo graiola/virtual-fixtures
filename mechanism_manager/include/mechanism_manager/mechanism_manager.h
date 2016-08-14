@@ -23,6 +23,7 @@ namespace mechanism_manager
 typedef boost::recursive_mutex mutex_t;
 typedef virtual_mechanism::VirtualMechanismInterface vm_t;
 
+
 class VirtualMechanismAutom
 {
 
@@ -55,7 +56,7 @@ class MechanismManager
     /// Loop Update Interface
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode);
 
-    /// Mechanism Manager external interface
+    /// Non Real time safe methods, to be launched in seprated threads
     void InsertVM(std::string& model_name);
     void InsertVM();
     void InsertVM(const Eigen::MatrixXd& data);
@@ -64,17 +65,18 @@ class MechanismManager
     void ClusterVM(Eigen::MatrixXd& data);
     void SaveVM(const int idx);
     void SaveVM(const int idx, std::string& model_name);
-    void Stop();
-    bool OnVm();
     void GetVmName(const int idx, std::string& name);
 
-    /// Gets
+
+    /// Real time safe methods, they can be called in a real time loop
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     double GetPhase(const int idx);
     double GetScale(const int idx);
+    void Stop();
+    bool OnVm();
 
   protected:
 
@@ -128,11 +130,13 @@ class MechanismManager
     Eigen::VectorXd f_prev_;
     boost::atomic<bool> on_guide_prev_; // atom
     boost::atomic<int> nb_vm_prev_; // atom
+    std::vector<std::string> vm_names_; //FIXME It should be fused...
+    tool_box::SharedData<std::vector<std::string> > sd_;
+
 
 /*#ifdef USE_ROS_RT_PUBLISHER
     tool_box::RealTimePublishers<tool_box::RealTimePublisherVector> rt_publishers_vector_;
 #endif*/
-
 };
 
 }

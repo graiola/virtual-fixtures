@@ -32,6 +32,93 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 namespace tool_box
 {
 
+/*
+class SharedData
+{
+public:
+    inline void WriteLock(std::vector<std::string>& in)
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        Write(in);
+        guard.unlock();
+    }
+    inline std::vector<std::string>& ReadLock()
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        return Read();
+    }
+    inline void WriteTryLock(std::vector<std::string>& in)
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        if(guard.try_lock())
+        {
+            Write(in);
+        }
+    }
+    inline std::vector<std::string>& ReadTryLock()
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        if(guard.try_lock())
+            return Read();
+    }
+private:
+    boost::recursive_mutex mtx_;
+    std::vector<std::string> copy_;
+
+    inline void Write(std::vector<std::string>& original)
+    {
+        copy_.resize(original.size());
+        for(int i=0;i<original.size();i++)
+            copy_[i] = original[i];
+    }
+
+    inline std::vector<std::string>& Read()
+    {
+        return copy_;
+    }
+};
+*/
+
+template <class T>
+class SharedData: public T
+{
+    typedef boost::recursive_mutex mutex_t;
+public:
+    SharedData():obj_()
+    {
+    }
+    inline void WriteTryLock(T& obj)
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        if(mtx_.try_lock())
+            obj_ = obj;
+    }
+    inline T& ReadTryLock()
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        if(guard.try_lock())
+            return obj_;
+    }
+    inline void WriteLock(T& obj)
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        mtx_.lock();
+        obj_ = obj;
+        mtx_.unlock();
+    }
+    inline T& ReadLock()
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock();
+        return obj_;
+    }
+private:
+    mutex_t mtx_;
+    T obj_;
+};
+
 class AsyncThread
 {
     typedef boost::function<void ()> funct_t;
@@ -79,6 +166,15 @@ class AsyncThread
             return;
         }
 
+        inline void Wait()
+        {
+            //callback_.join();
+            while(busy_)
+            {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            }
+        }
+
         boost::atomic<bool> busy_;
 
     private:
@@ -89,28 +185,39 @@ class AsyncThread
         boost::thread callback_;
 };
 
-class AsyncThreadsPool
+class ThreadsPool
 {
     typedef boost::function<void ()> funct_t;
     public:
-        AsyncThreadsPool(int n_threads)
+        ThreadsPool(int n_threads)
         {
             for(int i = 0; i<n_threads; i++)
                 pool_.push_back(new AsyncThread());
         }
-        ~AsyncThreadsPool()
+        ~ThreadsPool()
         {
             for(int i = 0; i<pool_.size(); i++)
                 delete pool_[i];
+            //polling_thread_.join();
         }
 
-        inline void DoWork(funct_t f)
+        inline void DoAsyncWork(funct_t f) //Don't wait
         {
-           polling_thread_ = boost::thread(boost::bind(&AsyncThreadsPool::AssignWork, this, f));
+           //polling_thread_ = boost::thread(boost::bind(&ThreadsPool::AssignWork, this, f));
+           boost::thread(boost::bind(&ThreadsPool::AssignWork, this, f));
+        }
+
+        inline void DoSyncWork(funct_t f) //Wait
+        {
+           //polling_thread_ = boost::thread(boost::bind(&ThreadsPool::AssignWork, this, f));
+           //polling_thread_.join();
+           //boost::thread thread = boost::thread(boost::bind(&ThreadsPool::AssignWork, this, f));
+           //thread.join();
+           AssignWork(f);
         }
 
     private:
-        inline void AssignWork(funct_t f) // Async Call
+        inline void AssignWork(funct_t f)
         {
             int i = 0;
             do
@@ -124,6 +231,7 @@ class AsyncThreadsPool
                 {
                     pool_[i]->AddHandler(f);
                     pool_[i]->Trigger();
+                    pool_[i]->Wait();
                     break;
                 }
                 if(i == pool_.size())
@@ -134,7 +242,7 @@ class AsyncThreadsPool
         }
 
         std::vector<AsyncThread* > pool_;
-        boost::thread polling_thread_;
+        //boost::thread polling_thread_;
 
 };
 

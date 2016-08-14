@@ -201,7 +201,7 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   double scale, phase;
 
-  int n_steps = 10000000; // Give enough time to test stuff
+  int n_steps = 1000000000; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
@@ -215,17 +215,31 @@ TEST(MechanismManagerTest, LoopUpdate)
 
       if(i == 100)
       {
-        EXPECT_NO_THROW(mm.DeleteVM(0));
+        //EXPECT_NO_THROW(mm.DeleteVM(0));
       }
       if (i == 50)
       {
           EXPECT_NO_THROW(mm.InsertVM(model_name));
       }
 
+      if (i == 500)
+      {
+          EXPECT_NO_THROW(mm.InsertVM(model_name));
+      }
+
+      if (i == 1000)
+      {
+          EXPECT_NO_THROW(mm.InsertVM(model_name));
+      }
+
+      /*if (i == 2000)
+      {
+          EXPECT_NO_THROW(mm.SaveVM(2,model_name));
+      }*/
+
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
       //getchar();
   }
-
 }
 
 int main(int argc, char** argv)

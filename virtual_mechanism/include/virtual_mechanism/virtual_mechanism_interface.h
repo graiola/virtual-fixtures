@@ -29,7 +29,7 @@ class VirtualMechanismInterface
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
           phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
           phase_ddot_(0.0),scale_(1.0),
-          fade_(0.0),active_(false),dt_(0.001)
+          fade_(0.0),active_(false),dt_(0.001),name_("")
 	  {
 
           if(!ReadConfig())
@@ -60,7 +60,6 @@ class VirtualMechanismInterface
           //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
           //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
           //quaternion_ << 1.0,0.0,0.0,0.0;
-
 	  }
 	
 	  virtual ~VirtualMechanismInterface()
@@ -179,20 +178,10 @@ class VirtualMechanismInterface
 	      Update(force_,dt);
 	  }
 	  
-      // TO BE MOVED IN ANOTHER SUBCLASS!
-      // FIXMEEEEEE
-      //virtual void UpdateGuide(const Eigen::MatrixXd& data)=0;
-      //virtual void AlignAndUpateGuide(const Eigen::MatrixXd& data)=0;
-      //virtual bool SaveGMMToTxt(const std::string file_path){}
-      //inline void setWeightedDist(const bool activate){}
-      //virtual void getLocalKernel(Eigen::VectorXd& mean_variance) const=0;
-      //virtual double getGaussian(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
-      //virtual double PolynomScale(const Eigen::VectorXd& pos, double w = 0.001)=0;
-      //virtual double ExponentialScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
-      //virtual double GaussianScale(const Eigen::VectorXd& pos, const double scaling_factor = 1.0)=0;
-
+      // Here to no break the polymorphism
       virtual double ComputeResponsability(const Eigen::MatrixXd& pos){ROS_ERROR("ComputeResponsability has not been defined.");}
       virtual double GetResponsability(){ROS_ERROR("GetResponsability has not been defined.");}
+
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data)=0;
       virtual bool CreateModelFromFile(const std::string file_path)=0;
       virtual bool SaveModelToFile(const std::string file_path)=0;
@@ -237,7 +226,9 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getJacobian() {return J_;}
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
+      inline const std::string& getName() const {return name_;}
 
+      inline void setName(const std::string name) {name_ = name;}
       inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
@@ -356,6 +347,9 @@ class VirtualMechanismInterface
       boost::shared_ptr<quaternion_t > q_start_;
       boost::shared_ptr<quaternion_t > q_end_;
       boost::shared_ptr<quaternion_t > quaternion_;
+
+      // Cute name
+      std::string name_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface

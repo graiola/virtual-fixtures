@@ -145,14 +145,17 @@ MechanismManager::~MechanismManager()
 
 void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
 {
-    //VectorXd empty_vect_N(position_dim_);
-    //MatrixXd empty_mat_NxN(position_dim_,position_dim_);
-    //MatrixXd empty_mat_Nx1(position_dim_,1);
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock(); // Lock
 
-    vm_vector_.push_back(vm_tmp_ptr);
+    vm_vector_.push_back(vm_tmp_ptr); // This is equivalent to pass a new pointer, it should be a fast operation
+
+    vm_names_.push_back(vm_tmp_ptr->getName());
+    sd_.WriteLock(vm_names_);
+
+    // FIXME They should be moved to the single vm! (Same in DeleteVM)
     vm_fades_.push_back(DynSystemFirstOrder(10.0));
     vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_));
-
     PushBack(0.0,scales_);
     PushBack(0.0,scales_t_);
     PushBack(0.0,scales_hard_);
@@ -164,6 +167,9 @@ void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
     PushBack(0.0,phase_dot_ref_);
     PushBack(0.0,phase_ddot_ref_);
     PushBack(0.0,fade_);
+
+    guard.unlock(); // Unlock
+
 /*
 #ifdef USE_ROS_RT_PUBLISHER
     rt_publishers_vector_.PushBackEmptyAll();
@@ -197,43 +203,36 @@ bool MechanismManager::ReadConfig()
 void MechanismManager::InsertVM(std::string& model_name)
 {
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
-    //std::cout << "Creating the guide from file... "<< model_complete_path << std::endl;
     PRINT_INFO("Creating the guide from file... " << model_complete_path);
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock(); // Lock
     vm_t* vm_tmp_ptr = NULL;
     try
     {
         vm_tmp_ptr = vm_factory_.Build(model_complete_path);
         vm_tmp_ptr->setName(model_name);
         ExpandVectors(vm_tmp_ptr);
-        PRINT_INFO("Guide number#" << vm_vector_.size()-1 <<" created");
     }
     catch(...)
     {
         PRINT_ERROR("Impossible to create the guide... "<<model_complete_path);
     }
-    guard.unlock(); // Unlock
+    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVM(const MatrixXd& data)
 {
     PRINT_INFO("Creating the guide from data...");
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock(); // Lock
     vm_t* vm_tmp_ptr = NULL;
     try
     {
         vm_tmp_ptr = vm_factory_.Build(data);
-        vm_tmp_ptr->setName("guide_"+std::to_string(vm_vector_.size()-1));
+        vm_tmp_ptr->setName("new_guide");
         ExpandVectors(vm_tmp_ptr);
-        PRINT_INFO("Guide number#"<< vm_vector_.size()-1 <<" created");
     }
     catch(...)
     {
         PRINT_ERROR("Impossible to create the guide from data...");
     }
-    guard.unlock(); // Unlock
+    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVM()
@@ -248,18 +247,34 @@ void MechanismManager::SaveVM(const int idx, std::string& model_name)
 {
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
     PRINT_INFO("Saving guide number#"<<idx<<" to " << model_complete_path);
+    vm_t* vm_tmp_ptr = NULL;
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     if(idx < vm_vector_.size())
     {
-        if(!vm_vector_[idx]->SaveModelToFile(model_complete_path))
-            PRINT_ERROR("Impossible to save the file " << model_complete_path);
-    }
-    else
-    {
-        PRINT_INFO("Guide number#"<<idx<<" not available");
+         vm_tmp_ptr = vm_vector_[idx];
     }
     guard.unlock();
+
+    if(vm_tmp_ptr == NULL)
+        PRINT_WARNING("Guide number#"<<idx<<" not available");
+    else
+        if(!vm_tmp_ptr->SaveModelToFile(model_complete_path))//NOTE: it could happen that the guide got deleted...
+            PRINT_ERROR("Impossible to save the file " << model_complete_path);
+
+
+    //boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    //guard.lock();
+    //if(idx < vm_vector_.size())
+    //{
+    //    if(!vm_vector_[idx]->SaveModelToFile(model_complete_path))
+    //        PRINT_ERROR("Impossible to save the file " << model_complete_path);
+    //}
+    //else
+    //{
+    //    PRINT_INFO("Guide number#"<<idx<<" not available");
+    //}
+    //guard.unlock();
 }
 
 void MechanismManager::SaveVM(const int idx)
@@ -287,6 +302,11 @@ void MechanismManager::DeleteVM(const int idx)
        vm_vector_.erase(vm_vector_.begin()+idx);
        vm_fades_.erase(vm_fades_.begin()+idx);
 
+
+       vm_names_.erase(vm_names_.begin()+idx);
+       sd_.WriteLock(vm_names_);
+
+       // TO MOVE
        Delete(idx,scales_);
        Delete(idx,scales_t_);
        Delete(idx,scales_hard_);
@@ -314,10 +334,8 @@ void MechanismManager::DeleteVM(const int idx)
 
 void MechanismManager::GetVmName(const int idx, std::string& name)
 {
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock();
-    name = vm_vector_[idx]->getName();
-    guard.unlock();
+    std::vector<std::string> tmp = sd_.ReadLock();
+    name = tmp[idx];
 }
 
 void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
@@ -325,7 +343,6 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
     {
-
         for(int i=0; i<vm_vector_.size();i++)
         {
             // Update the virtual mechanisms states
@@ -405,6 +422,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     }
     else
         f_out = f_prev_; // Keep the previous force while the vectors are updating
+
 /*
 #ifdef USE_ROS_RT_PUBLISHER
    rt_publishers_vector_.PublishAll();
@@ -412,7 +430,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
 */
 }
 
-void MechanismManager::Stop()
+void MechanismManager::Stop() //FIX Should lock
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -422,7 +440,7 @@ void MechanismManager::Stop()
     }
 }
 
-void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
+void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position) // Shared
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -432,7 +450,7 @@ void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
     }
 }
 
-void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
+void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity) // Shared
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -442,7 +460,7 @@ void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
     }
 }
 
-double MechanismManager::GetPhase(const int idx)
+double MechanismManager::GetPhase(const int idx) // Shared
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -454,7 +472,7 @@ double MechanismManager::GetPhase(const int idx)
     }
 }
 
-double MechanismManager::GetScale(const int idx)
+double MechanismManager::GetScale(const int idx) // Shared
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -466,7 +484,7 @@ double MechanismManager::GetScale(const int idx)
     }
 }
 
-int MechanismManager::GetNbVms()
+int MechanismManager::GetNbVms() // Shared
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     if(guard.try_lock())
@@ -475,7 +493,7 @@ int MechanismManager::GetNbVms()
         return nb_vm_prev_;
 }
 
-bool MechanismManager::OnVm()
+bool MechanismManager::OnVm() // Shared
 {
     bool on_guide = false;
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);

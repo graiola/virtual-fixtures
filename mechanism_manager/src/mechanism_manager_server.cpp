@@ -42,6 +42,11 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         mm_interface_->DeleteVM(req.selected_guide);
         res.response_command = req.request_command;
     }
+    if(std::strcmp(req.request_command.c_str(), "save") == 0)
+    {
+        mm_interface_->SaveVM(req.selected_guide);
+        res.response_command = req.request_command;
+    }
 
     std::string name;
     for (int i = 0; i<mm_interface_->GetNbVms(); i++)

@@ -87,7 +87,7 @@ class MechanismManagerInterface
     MechanismManager* mm_;
 
     // Thread stuff
-    tool_box::AsyncThreadsPool* async_threads_pool_;
+    tool_box::ThreadsPool* threads_pool_;
     //tool_box::AsyncThread* async_thread_insert_;
     //tool_box::AsyncThread* async_thread_delete_;
     //tool_box::AsyncThread* async_thread_save_;
