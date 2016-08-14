@@ -119,9 +119,13 @@ TEST(MechanismManagerTest, SaveVmMethod)
 
   EXPECT_NO_THROW(mm->InsertVM(model_name));
 
+  std::cout << "Press to continue..." << std::endl;
   getchar();
 
-  EXPECT_NO_THROW(mm->SaveVM(0,model_name));
+  EXPECT_NO_THROW(mm->SaveVM(0));
+
+  std::cout << "Press to continue..." << std::endl;
+  getchar();
 
   delete mm;
 }
@@ -165,8 +169,14 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   EXPECT_NO_THROW(mm.GetVmVelocity(0,&vel_std[0])); // Get
   END_REAL_TIME_CRITICAL_CODE();
 
+  std::cout << "Press to continue..." << std::endl;
+  getchar();
+
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm.DeleteVM(0));
+
+  std::cout << "Press to continue..." << std::endl;
+  getchar();
 
 }
 

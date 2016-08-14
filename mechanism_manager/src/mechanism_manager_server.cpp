@@ -36,7 +36,6 @@ MechanismManagerServer::~MechanismManagerServer()
 bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
                                       MechanismManagerServices::Response &res)
 {
-
     if(std::strcmp(req.request_command.c_str(), "delete") == 0)
     {
         mm_interface_->DeleteVM(req.selected_guide);
@@ -48,12 +47,15 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         res.response_command = req.request_command;
     }
 
-    std::string name;
+    // Update the names list
+    mm_interface_->GetVmNames(res.list_guides);
+
+    /*std::string name;
     for (int i = 0; i<mm_interface_->GetNbVms(); i++)
     {
        mm_interface_->GetVmName(i,name);
        res.list_guides.push_back(name);
-    }
+    }*/
 
     return true;
 }

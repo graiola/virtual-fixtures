@@ -32,55 +32,6 @@ void operator >> (const YAML::Node &node, std::vector<_T> & v)
 namespace tool_box
 {
 
-/*
-class SharedData
-{
-public:
-    inline void WriteLock(std::vector<std::string>& in)
-    {
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        guard.lock();
-        Write(in);
-        guard.unlock();
-    }
-    inline std::vector<std::string>& ReadLock()
-    {
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        guard.lock();
-        return Read();
-    }
-    inline void WriteTryLock(std::vector<std::string>& in)
-    {
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        if(guard.try_lock())
-        {
-            Write(in);
-        }
-    }
-    inline std::vector<std::string>& ReadTryLock()
-    {
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        if(guard.try_lock())
-            return Read();
-    }
-private:
-    boost::recursive_mutex mtx_;
-    std::vector<std::string> copy_;
-
-    inline void Write(std::vector<std::string>& original)
-    {
-        copy_.resize(original.size());
-        for(int i=0;i<original.size();i++)
-            copy_[i] = original[i];
-    }
-
-    inline std::vector<std::string>& Read()
-    {
-        return copy_;
-    }
-};
-*/
-
 template <class T>
 class SharedData: public T
 {

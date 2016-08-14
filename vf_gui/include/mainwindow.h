@@ -29,7 +29,6 @@ private slots:
     void on_deleteButton_clicked();
     void on_insertButton_clicked();
     void on_refreshButton_clicked();
-
     void on_saveButton_clicked();
 
 protected:

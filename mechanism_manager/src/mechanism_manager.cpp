@@ -7,86 +7,11 @@ namespace mechanism_manager
   using namespace tool_box;
   using namespace Eigen;
 
-VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th)
-{
-    assert(phase_dot_th > 0.0);
-    assert(phase_dot_preauto_th > phase_dot_th);
-    phase_dot_preauto_th_ = phase_dot_preauto_th;
-    phase_dot_th_ = phase_dot_th;
-    state_ = MANUAL;
-    loopCnt = 0;
-}
-
-void VirtualMechanismAutom::Step(const double phase_dot,const double phase_dot_ref, bool collision_detected)
-{
-    if(true)
-    {
-        switch(state_)
-        {
-            case MANUAL:
-                if(phase_dot >= phase_dot_preauto_th_)
-                    state_ = PREAUTO;
-                break;
-            case PREAUTO:
-                if(phase_dot <= (phase_dot_ref + phase_dot_th_))
-                    state_ = AUTO;
-                break;
-            case AUTO:
-                if(collision_detected)
-                    state_ = MANUAL;
-                break;
-        }
-    }
-    else // Two states version
-    {
-            if((phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
-                state_ = AUTO;
-            else
-                state_ = MANUAL;
-    }
-}
-
-bool VirtualMechanismAutom::GetState()
-{
-    bool activate_vm;
-    switch(state_)
-    {
-        case MANUAL:
-            activate_vm = false;
-            break;
-        case PREAUTO:
-            activate_vm = false;
-            break;
-        case AUTO:
-            activate_vm = true;
-            break;
-    }
-
-    if(loopCnt%1000==0)
-    {
-        switch(state_)
-        {
-            case MANUAL:
-                PRINT_INFO("VirtualMechanismAutom: MANUAL");
-                break;
-            case PREAUTO:
-                PRINT_INFO("VirtualMechanismAutom: PREAUTO");
-                break;
-            case AUTO:
-                PRINT_INFO("VirtualMechanismAutom: AUTO");
-                break;
-        }
-    }
-    loopCnt++;
-
-    return activate_vm;
-}
-
 MechanismManager::MechanismManager(int position_dim)
 {
       if(!ReadConfig())
       {
-        throw new std::runtime_error("MechanismManager: Can not read config file");
+        PRINT_ERROR("MechanismManager: Can not read config file");
       }
 
       assert(position_dim == 1 || position_dim == 2);
@@ -98,7 +23,6 @@ MechanismManager::MechanismManager(int position_dim)
       f_vm_.resize(position_dim_);
       err_pos_.resize(position_dim_);
       err_vel_.resize(position_dim_);
-      f_prev_.resize(position_dim_);
 
       // Clear
       f_K_.fill(0.0);
@@ -106,41 +30,19 @@ MechanismManager::MechanismManager(int position_dim)
       f_vm_.fill(0.0);
       err_pos_.fill(0.0);
       err_vel_.fill(0.0);
-      f_prev_.fill(0.0);
-
-      // Chached
-      on_guide_prev_ = false;
-      nb_vm_prev_ = 0;
 
       loopCnt = 0;
 
       pkg_path_ = ros::package::getPath(ROS_PKG_NAME);
-/*
-#ifdef USE_ROS_RT_PUBLISHER
-      try
-      {
-          rt_publishers_vector_.AddPublisher(ros_node,"phase",&phase_);
-          rt_publishers_vector_.AddPublisher(ros_node,"phase_dot",&phase_dot_);
-          rt_publishers_vector_.AddPublisher(ros_node,"scale",&scales_);
-          rt_publishers_vector_.AddPublisher(ros_node,"scale_hard",&scales_hard_);
-          rt_publishers_vector_.AddPublisher(ros_node,"scale_soft",&scales_soft_);
-          rt_publishers_vector_.AddPublisher(ros_node,"scale_t",&scales_t_);
-          rt_publishers_vector_.AddPublisher(ros_node,"phase_dot_ref",&phase_dot_ref_);
-      }
-      catch(const std::runtime_error& e)
-      {
-        PRINT_ERROR("Failed to create the real time publishers: %s",e.what());
-      }
-#endif
-*/
+
+      rt_idx_ = 0;
+      no_rt_idx_ = 1;
 }
 
 MechanismManager::~MechanismManager()
 {
-      for(int i=0;i<vm_vector_.size();i++)
-        delete vm_vector_[i];
-      for(int i=0;i<vm_autom_.size();i++)
-        delete vm_autom_[i];
+    for(size_t i=0;i<2;i++)
+        vm_buffers_[i].clear();
 }
 
 void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
@@ -148,33 +50,28 @@ void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
 
-    vm_vector_.push_back(vm_tmp_ptr); // This is equivalent to pass a new pointer, it should be a fast operation
+    std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    no_rt_buffer.clear();
 
-    vm_names_.push_back(vm_tmp_ptr->getName());
-    sd_.WriteLock(vm_names_);
+    // Copy
+    for (size_t i = 0; i < rt_buffer.size(); i++)
+      no_rt_buffer.push_back(rt_buffer[i]); // FIXME possible problems in the copy!!! (fade)
 
-    // FIXME They should be moved to the single vm! (Same in DeleteVM)
-    vm_fades_.push_back(DynSystemFirstOrder(10.0));
-    vm_autom_.push_back(new VirtualMechanismAutom(phase_dot_preauto_th_,phase_dot_th_));
-    PushBack(0.0,scales_);
-    PushBack(0.0,scales_t_);
-    PushBack(0.0,scales_hard_);
-    PushBack(0.0,scales_soft_);
-    PushBack(0.0,phase_);
-    PushBack(0.0,phase_dot_);
-    PushBack(0.0,phase_ddot_);
-    PushBack(0.0,phase_ref_);
-    PushBack(0.0,phase_dot_ref_);
-    PushBack(0.0,phase_ddot_ref_);
-    PushBack(0.0,fade_);
+    GuideStruct new_guide;
+    new_guide.name = vm_tmp_ptr->getName();
+    new_guide.fade = DynSystemFirstOrder(10.0); // FIXME since it's a dynamic system, it should be a pointer or in the vm
+    new_guide.scale = 0.0;
+    new_guide.scale_t = 0.0;
+    new_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
+
+    no_rt_buffer.push_back(new_guide);
+
+    // Circular swap
+    rt_idx_ = (rt_idx_ + 1) % 2;
+    no_rt_idx_ = (no_rt_idx_ + 1) % 2;
 
     guard.unlock(); // Unlock
-
-/*
-#ifdef USE_ROS_RT_PUBLISHER
-    rt_publishers_vector_.PushBackEmptyAll();
-#endif
-*/
 }
 
 bool MechanismManager::ReadConfig()
@@ -186,10 +83,6 @@ bool MechanismManager::ReadConfig()
         curr_node["vm_order"] >> vm_order;
         curr_node["vm_model_type"] >> vm_model_type;
         curr_node["escape_factor"] >> escape_factor_;
-        curr_node["phase_dot_th"] >> phase_dot_th_;
-        curr_node["phase_dot_preauto_th"] >> phase_dot_preauto_th_;
-        assert(phase_dot_th_ > 0.0);
-        assert(phase_dot_preauto_th_ > phase_dot_th_);
         assert(escape_factor_ > 0.0);
 
         vm_factory_.SetDefaultPreferences(vm_order,vm_model_type);
@@ -235,286 +128,93 @@ void MechanismManager::InsertVM(const MatrixXd& data)
     PRINT_INFO("... Done!");
 }
 
-void MechanismManager::InsertVM()
-{
-    std::string model_name;
-    std::cout << "Insert model name: " << std::endl;
-    std::cin >> model_name;
-    InsertVM(model_name);
-}
-
-void MechanismManager::SaveVM(const int idx, std::string& model_name)
-{
-    std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
-    PRINT_INFO("Saving guide number#"<<idx<<" to " << model_complete_path);
-    vm_t* vm_tmp_ptr = NULL;
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock();
-    if(idx < vm_vector_.size())
-    {
-         vm_tmp_ptr = vm_vector_[idx];
-    }
-    guard.unlock();
-
-    if(vm_tmp_ptr == NULL)
-        PRINT_WARNING("Guide number#"<<idx<<" not available");
-    else
-        if(!vm_tmp_ptr->SaveModelToFile(model_complete_path))//NOTE: it could happen that the guide got deleted...
-            PRINT_ERROR("Impossible to save the file " << model_complete_path);
-
-
-    //boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    //guard.lock();
-    //if(idx < vm_vector_.size())
-    //{
-    //    if(!vm_vector_[idx]->SaveModelToFile(model_complete_path))
-    //        PRINT_ERROR("Impossible to save the file " << model_complete_path);
-    //}
-    //else
-    //{
-    //    PRINT_INFO("Guide number#"<<idx<<" not available");
-    //}
-    //guard.unlock();
-}
-
 void MechanismManager::SaveVM(const int idx)
 {
-    std::string model_name;
-    std::cout << "Insert model name: " << std::endl;
-    std::cin >> model_name;
-    SaveVM(idx,model_name);
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx<rt_buffer.size())
+    {
+        std::string model_complete_path(pkg_path_+"/models/gmm/"+rt_buffer[idx].name);
+        PRINT_INFO("Saving guide number#"<<idx<<" to " << model_complete_path);
+
+        if(!rt_buffer[idx].guide->SaveModelToFile(model_complete_path))
+            PRINT_ERROR("Impossible to save the file " << model_complete_path);
+        else
+             PRINT_INFO("Saving complete");
+    }
+    else
+        PRINT_WARNING("Guide number#"<<idx<<" not available");
+    guard.unlock();
 }
 
 void MechanismManager::DeleteVM(const int idx)
 {
+   PRINT_INFO("Deleting guide number#"<<idx);
+   bool delete_complete = false;
+
    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-   guard.lock();
-   if(idx < vm_autom_.size())
+   guard.lock(); // Lock
+
+   std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
+   std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+   no_rt_buffer.clear();
+
+   // Copy all the guides, except the one to delete
+   // It will be deleted from the no_rt_buffer at the next Delete or Insert
+   // thanks to the clear()
+   for (size_t i = 0; i < rt_buffer.size(); i++)
    {
-       delete vm_autom_[idx];
-       vm_autom_.erase(vm_autom_.begin()+idx);
+       if(i != idx)
+            no_rt_buffer.push_back(rt_buffer[i]);
+       else
+           delete_complete = true;
    }
-   if(idx < vm_vector_.size())
-   {
-       PRINT_INFO("Deleting guide number#"<<idx);
 
-       delete vm_vector_[idx];
-       vm_vector_.erase(vm_vector_.begin()+idx);
-       vm_fades_.erase(vm_fades_.begin()+idx);
-
-
-       vm_names_.erase(vm_names_.begin()+idx);
-       sd_.WriteLock(vm_names_);
-
-       // TO MOVE
-       Delete(idx,scales_);
-       Delete(idx,scales_t_);
-       Delete(idx,scales_hard_);
-       Delete(idx,scales_soft_);
-       Delete(idx,phase_);
-       Delete(idx,phase_dot_);
-       Delete(idx,phase_ddot_);
-       Delete(idx,phase_ref_);
-       Delete(idx,phase_dot_ref_);
-       Delete(idx,phase_ddot_ref_);
-       Delete(idx,fade_);
-
-       PRINT_INFO("Delete of guide number#"<<idx<<" complete");
-/*
-#ifdef USE_ROS_RT_PUBLISHER
-       rt_publishers_vector_.RemoveAll(idx);
-#endif
-*/
-   }
-   else
-       PRINT_WARNING("Impossible to remove guide number#"<<idx);
+   // Circular swap
+   rt_idx_ = (rt_idx_ + 1) % 2;
+   no_rt_idx_ = (no_rt_idx_ + 1) % 2;
 
    guard.unlock();
+
+   if(delete_complete)
+        PRINT_INFO("Delete of guide number#"<<idx<<" complete");
+   else
+       PRINT_WARNING("Impossible to remove guide number#"<<idx);
 }
 
 void MechanismManager::GetVmName(const int idx, std::string& name)
 {
-    std::vector<std::string> tmp = sd_.ReadLock();
-    name = tmp[idx];
-}
-
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
-{
+    PRINT_INFO("Get name of guide number#"<<idx);
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
+    guard.lock();
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx<rt_buffer.size())
     {
-        for(int i=0; i<vm_vector_.size();i++)
-        {
-            // Update the virtual mechanisms states
-            vm_vector_[i]->Update(robot_position,robot_velocity,dt);
-
-            // Compute the scale for each mechanism
-            scales_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
-
-            // Retrain variables for plots
-            phase_(i) = vm_vector_[i]->getPhase();
-            phase_dot_(i) = vm_vector_[i]->getPhaseDot();
-            phase_ddot_(i) = vm_vector_[i]->getPhaseDotDot();
-            phase_ref_(i) = vm_vector_[i]->getPhaseRef();
-            phase_dot_ref_(i) = vm_vector_[i]->getPhaseDotRef();
-            phase_ddot_ref_(i) = vm_vector_[i]->getPhaseDotDotRef();
-            fade_(i) = vm_vector_[i]->getFade();
-        }
-
-        f_out.fill(0.0); // Reset the force
-        double sum = scales_.sum();
-
-        // Compute the global scales
-        for(int i=0; i<vm_vector_.size();i++)
-        {
-          switch(scale_mode)
-          {
-            case HARD:
-                scales_soft_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
-                scales_hard_(i) = scales_(i)/sum;
-                scales_(i) =  scales_hard_(i);
-                break;
-            case POTENTIAL:
-                scales_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
-                break;
-            case SOFT:
-                scales_soft_(i) = vm_vector_[i]->getScale(robot_position,escape_factor_);
-                //scales_hard_(i) = scales_(i)/(sum + std::numeric_limits<double>::epsilon()); // To avoid numerical issues
-                scales_hard_(i) = scales_(i)/sum;
-                scales_(i) =  scales_soft_(i) * scales_hard_(i);
-                break;
-            default:
-              break;
-          }
-        }
-
-        // For each mechanism that is not active (low scale value), remove the force component tangent to
-        // the active mechanism jacobian. In this way we avoid to be locked if one or more guide overlap in a certain area.
-        // Use a first order filter to gently remove these components.
-        for(int i=0; i<vm_vector_.size();i++)
-            if(scales_hard_(i) > 1.0/static_cast<double>(vm_vector_.size()))
-                for(int j=0; j<vm_vector_.size();j++)
-                    if(j!=i)
-                        scales_t_(j) = vm_fades_[j].IntegrateForward();
-                    else
-                        scales_t_(j) = vm_fades_[j].IntegrateBackward();
-
-        // Compute the force for each mechanism, remove the antagonist force components
-        for(int i=0; i<vm_vector_.size();i++)
-        {
-            err_pos_ = vm_vector_[i]->getState() - robot_position;
-            f_K_ .noalias() = vm_vector_[i]->getK() * err_pos_;
-            err_vel_ = vm_vector_[i]->getStateDot() - robot_velocity;
-            f_B_.noalias() = vm_vector_[i]->getB() * err_vel_;
-
-            // Sum spring force + damping force for the current mechanism
-            f_vm_ = f_K_ + f_B_;
-
-            f_out += scales_(i) * f_vm_;
-            for(int j=0; j<vm_vector_.size();j++)
-            {
-                if(j!=i)
-                    f_out -= scales_(i) * scales_t_(i) * vm_vector_[j]->getJacobianVersor() * f_vm_.dot(vm_vector_[j]->getJacobianVersor());
-            }
-        }
-        f_prev_ = f_out;
-        nb_vm_prev_ = vm_vector_.size();
+        name = rt_buffer[idx].name;
     }
     else
-        f_out = f_prev_; // Keep the previous force while the vectors are updating
-
-/*
-#ifdef USE_ROS_RT_PUBLISHER
-   rt_publishers_vector_.PublishAll();
-#endif
-*/
+        PRINT_WARNING("Guide number#"<<idx<<" not available");
+    guard.unlock();
 }
 
-void MechanismManager::Stop() //FIX Should lock
+void MechanismManager::GetVmNames(std::vector<std::string>& names)
 {
+    PRINT_INFO("Get the guides name");
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
+    guard.lock();
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    names.resize(rt_buffer.size());
+    for(size_t i=0;i<rt_buffer.size();i++)
     {
-        for(int i=0;i<vm_vector_.size();i++)
-          vm_vector_[i]->Stop();
+        names[i] = rt_buffer[i].name;
     }
-}
-
-void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position) // Shared
-{
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-    {
-        if(idx < vm_vector_.size())
-            vm_vector_[idx]->getState(position);
-    }
-}
-
-void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity) // Shared
-{
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-    {
-        if(idx < vm_vector_.size())
-            vm_vector_[idx]->getStateDot(velocity);
-    }
-}
-
-double MechanismManager::GetPhase(const int idx) // Shared
-{
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-    {
-        if(idx < vm_vector_.size())
-            return vm_vector_[idx]->getPhase();
-        else
-            return 0.0;
-    }
-}
-
-double MechanismManager::GetScale(const int idx) // Shared
-{
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-    {
-        if(idx < vm_vector_.size())
-            return scales_(idx);
-        else
-            return 0.0;
-    }
-}
-
-int MechanismManager::GetNbVms() // Shared
-{
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-        return vm_vector_.size();
-    else
-        return nb_vm_prev_;
-}
-
-bool MechanismManager::OnVm() // Shared
-{
-    bool on_guide = false;
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    if(guard.try_lock())
-    {
-        for(int i=0;i<scales_.size();i++)
-        {
-            if(scales_(i) > 0.9) // We are on a guide if it's scale is ... (so that we are on it)
-                on_guide = true;
-        }
-    }
-    else
-        on_guide = on_guide_prev_;
-
-    on_guide_prev_ = on_guide;
-    return on_guide;
+    guard.unlock();
 }
 
 void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
 {
-        std::cout << "Updating guide number#"<< idx << std::endl;
+        /*std::cout << "Updating guide number#"<< idx << std::endl;
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock();
         if(idx < vm_vector_.size())
@@ -531,7 +231,7 @@ void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
         }
 
         guard.unlock();
-        std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;
+        std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;*/
 }
 /*
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
@@ -544,7 +244,7 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
 void MechanismManager::ClusterVM(MatrixXd& data)
 {
     //std::string file_path = "/home/sybot/gennaro_output/cropped_data_" + std::to_string(loopCnt++); zzz
-    std::cout << "Crop incoming data" << std::endl;
+    /*std::cout << "Crop incoming data" << std::endl;
     if(CropData(data))
     {
         //tool_box::WriteTxtFile(file_path.c_str(),data);
@@ -602,7 +302,7 @@ void MechanismManager::ClusterVM(MatrixXd& data)
         std::cout << "Clustering complete" << std::endl;
     }
     else
-        std::cerr << "Impossible to update guide, data is empty" << std::endl;
+        std::cerr << "Impossible to update guide, data is empty" << std::endl;*/
 }
 
 /*void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
@@ -610,5 +310,138 @@ void MechanismManager::ClusterVM(MatrixXd& data)
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     ClusterVM_no_rt(mat);
 }*/
+
+///// RT METHODS
+
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+
+    double sum = 0.0;
+    for(int i=0; i<rt_buffer.size();i++)
+    {
+        // Update the virtual mechanisms states
+        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt);
+        // Compute the scale for each mechanism
+        rt_buffer[i].scale = rt_buffer[i].guide->getScale(robot_position,escape_factor_);
+        sum += rt_buffer[i].scale;
+    }
+
+    f_out.fill(0.0); // Reset the force
+
+    // Compute the global scales
+    for(int i=0; i<rt_buffer.size();i++)
+    {
+      rt_buffer[i].scale_hard = rt_buffer[i].scale/sum;
+      switch(scale_mode)
+      {
+        case HARD:
+            rt_buffer[i].scale =  rt_buffer[i].scale_hard;
+            break;
+        case SOFT:
+            rt_buffer[i].scale =  rt_buffer[i].scale * rt_buffer[i].scale_hard;
+            break;
+        default:
+          PRINT_ERROR("Wrong scale_mode.");
+          break;
+      }
+    }
+
+    // For each mechanism that is not active (low scale value), remove the force component tangent to
+    // the active mechanism jacobian. In this way we avoid to be locked if one or more guide overlap in a certain area.
+    // Use a first order filter to gently remove these components.
+    for(int i=0; i<rt_buffer.size();i++)
+        if(rt_buffer[i].scale_hard > 1.0/static_cast<double>(rt_buffer.size()))
+            for(int j=0; j<rt_buffer.size();j++)
+                if(j!=i)
+                    rt_buffer[j].scale_t = rt_buffer[j].fade.IntegrateForward();
+                else
+                    rt_buffer[j].scale_t = rt_buffer[j].fade.IntegrateBackward();
+
+    // Compute the force for each mechanism, remove the antagonist force components
+    for(int i=0; i<rt_buffer.size();i++)
+    {
+        err_pos_ = rt_buffer[i].guide->getState() - robot_position;
+        f_K_ .noalias() = rt_buffer[i].guide->getK() * err_pos_;
+        err_vel_ = rt_buffer[i].guide->getStateDot() - robot_velocity;
+        f_B_.noalias() = rt_buffer[i].guide->getB() * err_vel_;
+
+        // Sum spring force + damping force for the current mechanism
+        f_vm_ = f_K_ + f_B_;
+
+        f_out += rt_buffer[i].scale * f_vm_;
+        for(int j=0; j<rt_buffer.size();j++)
+        {
+            if(j!=i)
+                f_out -= rt_buffer[i].scale * rt_buffer[i].scale_t * rt_buffer[j].guide->getJacobianVersor() * f_vm_.dot(rt_buffer[j].guide->getJacobianVersor());
+        }
+    }
+}
+
+void MechanismManager::GetVmPosition(const int idx, Eigen::VectorXd& position)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx < rt_buffer.size())
+        rt_buffer[idx].guide->getState(position);
+}
+
+void MechanismManager::GetVmVelocity(const int idx, Eigen::VectorXd& velocity)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx < rt_buffer.size())
+        rt_buffer[idx].guide->getStateDot(velocity);
+}
+
+double MechanismManager::GetPhase(const int idx)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx < rt_buffer.size())
+        return rt_buffer[idx].guide->getPhase();
+    else
+        return 0.0;
+}
+
+double MechanismManager::GetScale(const int idx)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx < rt_buffer.size())
+        return rt_buffer[idx].scale;
+    else
+        return 0.0;
+}
+
+int MechanismManager::GetNbVms()
+{
+    // NO RT Version
+    //PRINT_INFO("Get number of guides");
+    //boost::recursive_mutex::scoped_lock guard(mtx_);
+    //std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    //return rt_buffer.size();
+
+     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+     return rt_buffer.size();
+}
+
+bool MechanismManager::OnVm()
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+
+    bool on_guide = false;
+
+    for(int i=0;i<rt_buffer.size();i++)
+    {
+        if(rt_buffer[i].scale > 0.9) // We are on a guide if it's scale is ... (so that we are on it)
+            on_guide = true;
+    }
+
+    return on_guide;
+}
+
+void MechanismManager::Stop()
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    for(int i=0;i<rt_buffer.size();i++)
+        rt_buffer[i].guide->Stop();
+}
 
 } // namespace

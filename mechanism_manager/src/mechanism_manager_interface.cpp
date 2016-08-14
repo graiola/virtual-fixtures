@@ -10,14 +10,6 @@ namespace mechanism_manager
 
 MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NULL)
 {
-      //Eigen::initParallel();
-
-      // For now the services are not so many, but in the future (if things get complicated) I should create a pool of limited workers to
-      // handle the rpcs
-      //async_thread_insert_ = new AsyncThread();
-      //async_thread_delete_ = new AsyncThread();
-      //async_thread_save_   = new AsyncThread();
-
       threads_pool_ = new ThreadsPool(4); // Create 4 workers
 
       if(!ReadConfig())
@@ -37,8 +29,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       robot_velocity_.fill(0.0);
       f_.fill(0.0);
 
-      //loopCnt = 0;
-
       collision_detected_ = true; // Let's start not active
 
       try
@@ -57,10 +47,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
 MechanismManagerInterface::~MechanismManagerInterface()
 {
-    //delete async_thread_insert_;
-    //delete async_thread_delete_;
-    //delete async_thread_save_;
-
     delete threads_pool_;
 
     if(mm_server_!=NULL)
@@ -83,52 +69,36 @@ bool MechanismManagerInterface::ReadConfig()
         return false;
 }
 
-void MechanismManagerInterface::InsertVM()
-{
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVM, mm_));
-    //async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVM, mm_));
-    //async_thread_insert_->Trigger();
-}
-
 void MechanismManagerInterface::InsertVM(MatrixXd& data)
 {
     threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
-    //async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
-    //async_thread_insert_->Trigger();
 }
 
 void MechanismManagerInterface::InsertVM(std::string& model_name)
 {
     threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
-    //async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
-    //async_thread_insert_->Trigger();
 }
 
 void MechanismManagerInterface::SaveVM(const int idx)
 {
     threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVM, mm_, idx));
-    //async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx));
-    //async_thread_save_->Trigger();
-}
-
-void MechanismManagerInterface::SaveVM(const int idx, std::string& model_name)
-{
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
-    //async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVM, mm_, idx, model_name));
-    //async_thread_save_->Trigger();
 }
 
 void MechanismManagerInterface::DeleteVM(const int idx)
 {
     threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
-    //async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
-    //async_thread_delete_->Trigger();
 }
 
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
-    //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
-    mm_->GetVmName(idx,name);
+    threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
+    //mm_->GetVmName(idx,name);
+}
+
+void MechanismManagerInterface::GetVmNames(std::vector<std::string>& names)
+{
+    threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmNames, mm_, boost::ref(names)));
+    //mm_->GetVmNames(names);
 }
 
 void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)

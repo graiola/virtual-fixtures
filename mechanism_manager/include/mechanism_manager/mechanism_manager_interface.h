@@ -18,7 +18,7 @@
 namespace mechanism_manager
 {
 
-enum scale_mode_t {HARD,POTENTIAL,SOFT};
+enum scale_mode_t {HARD,SOFT};
 class MechanismManagerServer;
 class MechanismManager;
 
@@ -42,11 +42,10 @@ class MechanismManagerInterface
     void InsertVM(std::string& model_name);
     void InsertVM(Eigen::MatrixXd& data);
     void InsertVM(double* data, const int n_rows);
-    void InsertVM();
     void DeleteVM(const int idx);
     void SaveVM(const int idx);
-    void SaveVM(const int idx, std::string& model_name);
     void GetVmName(const int idx, std::string& name);
+    void GetVmNames(std::vector<std::string>& names);
 
     /// Stop the mechanisms
     void Stop();
