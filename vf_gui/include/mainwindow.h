@@ -28,9 +28,13 @@ private slots:
     void on_quitButton_clicked();
     void on_deleteButton_clicked();
     void on_insertButton_clicked();
+    void on_refreshButton_clicked();
+
+    void on_saveButton_clicked();
 
 protected:
     void timerEvent(QTimerEvent *event);
+    void UpdateList();
     ros::ServiceClient sc_;
     QStringListModel* NamesModel_;
     QStringList NamesList_;

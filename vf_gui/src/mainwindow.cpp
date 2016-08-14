@@ -15,11 +15,6 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // Create model
     NamesModel_ = new QStringListModel(this);
 
-    //NamesList_ << "Clair de Lune" << "Reverie" << "Prelude";
-
-    // Populate our model
-    NamesModel_->setStringList(NamesList_);
-
     ui->listView->setModel(NamesModel_);
 
     // Add additional feature so that
@@ -29,7 +24,9 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
                                   QAbstractItemView::DoubleClicked);
 
 
-    sc_ = nh.serviceClient<MechanismManagerServices>("/mechanism_manager/mechanism_manager_interaction",true); // Permanent connection
+    sc_ = nh.serviceClient<MechanismManagerServices>("/mechanism_manager/mechanism_manager_interaction");
+    UpdateList();
+
 }
 
 
@@ -49,6 +46,25 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::UpdateList()
+{
+    MechanismManagerServices srv;
+    sc_.call(srv);
+    QVector<QString> vec;
+    QString tmp_qstring;
+
+    for (unsigned int i = 0; i<srv.response.list_guides.size(); i++)
+    {
+        tmp_qstring = QString::fromStdString(srv.response.list_guides[i]);
+        vec.append(tmp_qstring);
+    }
+
+    NamesList_ = QStringList::fromVector(vec);
+
+    // Populate our model
+    NamesModel_->setStringList(NamesList_);
+}
+
 void MainWindow::on_quitButton_clicked()
 {
     qApp->quit();
@@ -59,13 +75,11 @@ void MainWindow::on_deleteButton_clicked()
     MechanismManagerServices srv;
     std::string command = "delete";
     srv.request.request_command = command;
-    srv.request.selected_guide = 0;
+    srv.request.selected_guide = ui->listView->currentIndex().row();
     if(!sc_.call(srv))
     {
-      //ROS_INFO("OK, sent. Here is the answer:");
-      //ROS_INFO(" - Response string: '%s'", srv.response.response_string.c_str());
+        // TODO Visualize the problem on the gui
     }
-
 }
 
 void MainWindow::on_insertButton_clicked()
@@ -86,4 +100,21 @@ void MainWindow::on_insertButton_clicked()
     ui->listView->setCurrentIndex(index);
     ui->listView->edit(index);
     //mm_->Insert();
+}
+
+void MainWindow::on_refreshButton_clicked()
+{
+    UpdateList();
+}
+
+void MainWindow::on_saveButton_clicked()
+{
+    MechanismManagerServices srv;
+    std::string command = "save";
+    srv.request.request_command = command;
+    srv.request.selected_guide = ui->listView->currentIndex().row();
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+    }
 }
