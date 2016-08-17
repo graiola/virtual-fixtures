@@ -1,0 +1,6 @@
+string request_command
+uint32 selected_guide_idx
+string selected_guide_name
+---
+string response_command
+string[] list_guides
