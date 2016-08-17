@@ -31,19 +31,22 @@ MechanismManagerServer::~MechanismManagerServer()
         delete spinner_ptr_;
 }
 
-
-
 bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
                                       MechanismManagerServices::Response &res)
 {
     if(std::strcmp(req.request_command.c_str(), "delete") == 0)
     {
-        mm_interface_->DeleteVM(req.selected_guide);
+        mm_interface_->DeleteVM(req.selected_guide_idx);
         res.response_command = req.request_command;
     }
     if(std::strcmp(req.request_command.c_str(), "save") == 0)
     {
-        mm_interface_->SaveVM(req.selected_guide);
+        mm_interface_->SaveVM(req.selected_guide_idx);
+        res.response_command = req.request_command;
+    }
+    if(std::strcmp(req.request_command.c_str(), "insert") == 0)
+    {
+        mm_interface_->InsertVM(req.selected_guide_name);
         res.response_command = req.request_command;
     }
 
