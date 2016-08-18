@@ -101,13 +101,16 @@ void MechanismManager::InsertVM(std::string& model_name)
     try
     {
         vm_tmp_ptr = vm_factory_.Build(model_complete_path);
-        vm_tmp_ptr->setName(model_name);
-        ExpandVectors(vm_tmp_ptr);
     }
     catch(...)
     {
-        PRINT_ERROR("Impossible to create the guide... "<<model_complete_path);
+        PRINT_WARNING("Impossible to create the guide... "<<model_complete_path);
+        return;
     }
+
+    vm_tmp_ptr->setName(model_name);
+    ExpandVectors(vm_tmp_ptr);
+
     PRINT_INFO("... Done!");
 }
 
@@ -118,13 +121,16 @@ void MechanismManager::InsertVM(const MatrixXd& data)
     try
     {
         vm_tmp_ptr = vm_factory_.Build(data);
-        vm_tmp_ptr->setName("new_guide");
-        ExpandVectors(vm_tmp_ptr);
     }
     catch(...)
     {
-        PRINT_ERROR("Impossible to create the guide from data...");
+        PRINT_WARNING("Impossible to create the guide from data...");
+        return;
     }
+
+    vm_tmp_ptr->setName("new_guide");
+    ExpandVectors(vm_tmp_ptr);
+
     PRINT_INFO("... Done!");
 }
 

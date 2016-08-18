@@ -6,6 +6,7 @@ using namespace virtual_mechanism;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
 std::string file_path(pkg_path+"/test/test_gmm.txt");
+std::string file_path_wrong(pkg_path+"/test/wrong");
 
 order_t order;
 model_type_t model_type;
@@ -29,6 +30,9 @@ TEST(VirtualMechanismFactory, BuildFromFile)
     order = SECOND;
     model_type = GMR_NORMALIZED;
     EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path,order,model_type));
+
+    // Wrong file
+    EXPECT_THROW(vm_ptr = vm_factory.Build(file_path_wrong,order,model_type),std::runtime_error);
 
     delete vm_ptr;
 }

@@ -26,13 +26,17 @@ VirtualMechanismInterface* VirtualMechanismFactory::Build(const MatrixXd& data, 
     try
     {
         vm_ptr = CreateEmptyMechanism(order,model_type);
-        vm_ptr->CreateModelFromData(data);
-        vm_ptr->Init();
     }
     catch(const runtime_error& e)
     {
-       ROS_ERROR("Error in the factory: %s",e.what());
+       PRINT_ERROR(e.what());
     }
+
+    if(vm_ptr->CreateModelFromData(data))
+        vm_ptr->Init();
+    else
+        PRINT_ERROR("Can not create the mechanism from data in the factory");
+
     return vm_ptr;
 }
 
@@ -42,13 +46,17 @@ VirtualMechanismInterface* VirtualMechanismFactory::Build(const string model_nam
     try
     {
         vm_ptr = CreateEmptyMechanism(order,model_type);
-        vm_ptr->CreateModelFromFile(model_name);
-        vm_ptr->Init();
     }
     catch(const runtime_error& e)
     {
-       ROS_ERROR("Error in the factory: %s",e.what());
+       PRINT_ERROR(e.what());
     }
+
+    if(vm_ptr->CreateModelFromFile(model_name))
+        vm_ptr->Init();
+    else
+        PRINT_ERROR("Can not create the mechanism from file in the factory");
+
     return vm_ptr;
 }
 
@@ -75,14 +83,14 @@ void VirtualMechanismFactory::SetDefaultPreferences(const string order, const st
     else if (order == "second")
         default_order_ = SECOND;
     else
-        throw new runtime_error("VirtualMechanismFactory: Wrong order.");
+        throw runtime_error("VirtualMechanismFactory: Wrong order.");
 
     if (model_type == "gmr")
         default_model_type_ = GMR;
     else if (model_type == "gmr_normalized")
         default_model_type_ = GMR_NORMALIZED;
     else
-        throw new runtime_error("VirtualMechanismFactory: Wrong model_type.");
+        throw runtime_error("VirtualMechanismFactory: Wrong model_type.");
 }
 
 VirtualMechanismInterface* VirtualMechanismFactory::CreateEmptyMechanism(const order_t order, const model_type_t model_type)

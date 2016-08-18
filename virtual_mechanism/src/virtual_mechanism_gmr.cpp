@@ -20,8 +20,13 @@ bool VirtualMechanismGmrNormalized<VM_t>::CreateModelFromData(const MatrixXd& da
 template<class VM_t>
 bool VirtualMechanismGmrNormalized<VM_t>::CreateModelFromFile(const std::string file_path)
 {
-    VirtualMechanismGmr<VM_t>::CreateModelFromFile(file_path);
-    Normalize();
+    if(VirtualMechanismGmr<VM_t>::CreateModelFromFile(file_path))
+    {
+        Normalize();
+        return true;
+    }
+    else
+        return false;
 }
 
 template <class VM_t>
@@ -300,7 +305,7 @@ template <class VM_t>
 VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const std::string file_path) : VirtualMechanismGmr()
 {
     if(!CreateModelFromFile(file_path))
-        ROS_ERROR("Can not create model from file: %s",file_path.c_str());
+        PRINT_ERROR("Can not create model from file "<< file_path);
 
      VM_t::Init();
 }
