@@ -81,7 +81,7 @@ void MechanismManagerInterface::InsertVM(std::string& model_name)
 
 void MechanismManagerInterface::InsertVM(double* data, const int n_rows)
 {
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVM, this, data, n_rows));
+    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVM, mm_, data, n_rows));
 }
 
 void MechanismManagerInterface::SaveVM(const int idx)
