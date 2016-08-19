@@ -15,6 +15,7 @@ using namespace boost;
 
 double dt = 0.001;
 std::string model_name = "test_gmm.txt";
+std::string model_name_wrong = "wrong.txt";
 
 TEST(MechanismManagerTest, InitializesCorrectly)
 {
@@ -120,12 +121,12 @@ TEST(MechanismManagerTest, SaveVmMethod)
   EXPECT_NO_THROW(mm->InsertVM(model_name));
 
   std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //getchar();
 
   EXPECT_NO_THROW(mm->SaveVM(0));
 
   std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //getchar();
 
   delete mm;
 }
@@ -170,24 +171,24 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   END_REAL_TIME_CRITICAL_CODE();
 
   std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //getchar();
 
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm.DeleteVM(0));
 
   std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //getchar();
 
 }
 
 TEST(MechanismManagerTest, LoopUpdate)
 {
-  /*int nb = omp_get_num_threads();
-  std::cout << "OMP THREADS = " << nb <<std::endl;
+  //int nb = omp_get_num_threads();
+  //std::cout << "OMP THREADS = " << nb <<std::endl;
 
   //Eigen::setNbThreads(4);
-  int nthreads = Eigen::nbThreads( );
-  std::cout << "EIGEN THREADS = " << nthreads <<std::endl;*/
+  //int nthreads = Eigen::nbThreads( );
+  //std::cout << "EIGEN THREADS = " << nthreads <<std::endl;
 
   MechanismManagerInterface mm;
   EXPECT_NO_THROW(mm.InsertVM(model_name));
@@ -211,9 +212,16 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   double scale, phase;
 
+  long long loopCnt = 0;
+
   int n_steps = 1000000000; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
+
+      //if(loopCnt%10000==0)
+      //    mm.SaveVM(0);
+
+      loopCnt++;
 
       //START_REAL_TIME_CRITICAL_CODE();
       EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
@@ -239,12 +247,12 @@ TEST(MechanismManagerTest, LoopUpdate)
 
       if (i == 1000)
       {
-          EXPECT_NO_THROW(mm.InsertVM(model_name));
+          EXPECT_NO_THROW(mm.InsertVM(model_name_wrong));
       }
 
       /*if (i == 2000)
       {
-          EXPECT_NO_THROW(mm.SaveVM(2,model_name));
+          EXPECT_NO_THROW(mm.SaveVM(2));
       }*/
 
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
