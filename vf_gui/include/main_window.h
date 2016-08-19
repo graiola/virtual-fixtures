@@ -1,14 +1,15 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef MAIN_WINDOW_H
+#define MAIN_WINDOW_H
 
 /// QT
 #include <QMainWindow>
-#include <QStringListModel>
+//#include <QStringListModel>
 
 /// ROS
 #include <ros/ros.h>
-#include <mechanism_manager/MechanismManagerServices.h>
+//#include <mechanism_manager/MechanismManagerServices.h>
 
+#include "guides_model.h"
 
 namespace Ui {
 class MainWindow;
@@ -30,16 +31,12 @@ private slots:
     void on_insertButton_clicked();
     void on_refreshButton_clicked();
     void on_saveButton_clicked();
-
 protected:
     void timerEvent(QTimerEvent *event);
-    void UpdateList();
-    ros::ServiceClient sc_;
-    QStringListModel* NamesModel_;
-    QStringList NamesList_;
+    GuidesModel* guides_model_;
 
 private:
     Ui::MainWindow *ui;
 };
 
-#endif // MAINWINDOW_H
+#endif // MAIN_WINDOW_H

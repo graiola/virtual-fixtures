@@ -29,10 +29,15 @@ catkin_package(
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 # Parse the ui files
-qt5_wrap_ui(ui_mainwindow.h forms/mainwindow.ui)
+qt5_wrap_ui(ui_main_window.h forms/main_window.ui)
 
 # Tell CMake to create the executable
-add_executable(vf_gui ui_mainwindow.h include/mainwindow.h src/mainwindow.cpp src/main.cpp)
+add_executable(vf_gui ui_main_window.h
+                      include/main_window.h
+                      include/guides_model.h
+                      src/main_window.cpp
+                      src/guides_model.cpp
+                      src/main.cpp)
 
 # Use the Widgets and DBus modules from Qt 5.
 target_link_libraries(vf_gui Qt5::Widgets Qt5::DBus ${Boost_LIBRARIES} ${catkin_LIBRARIES})
@@ -46,3 +51,9 @@ add_dependencies(
 install(TARGETS ${PROJECT_NAME} vf_gui
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+## Visualize the folders src and include in QtCreator
+FILE(GLOB_RECURSE include_files "include/*.h")
+add_custom_target(headers SOURCES ${include_files})
+FILE(GLOB_RECURSE src_files "src/*.cpp")
+add_custom_target(src SOURCES ${src_files})
