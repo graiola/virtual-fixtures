@@ -45,7 +45,7 @@ MechanismManager::~MechanismManager()
         vm_buffers_[i].clear();
 }
 
-void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
+void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr, std::string& name)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
@@ -59,7 +59,7 @@ void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr)
       no_rt_buffer.push_back(rt_buffer[i]); // FIXME possible problems in the copy!!! (fade)
 
     GuideStruct new_guide;
-    new_guide.name = vm_tmp_ptr->getName();
+    new_guide.name = name;
     new_guide.fade = DynSystemFirstOrder(10.0); // FIXME since it's a dynamic system, it should be a pointer or in the vm
     new_guide.scale = 0.0;
     new_guide.scale_t = 0.0;
@@ -108,8 +108,7 @@ void MechanismManager::InsertVM(std::string& model_name)
         return;
     }
 
-    vm_tmp_ptr->setName(model_name);
-    ExpandVectors(vm_tmp_ptr);
+    ExpandVectors(vm_tmp_ptr,model_name);
 
     PRINT_INFO("... Done!");
 }
@@ -128,8 +127,8 @@ void MechanismManager::InsertVM(const MatrixXd& data)
         return;
     }
 
-    vm_tmp_ptr->setName("new_guide");
-    ExpandVectors(vm_tmp_ptr);
+    std::string default_name = "new_guide";
+    ExpandVectors(vm_tmp_ptr,default_name);
 
     PRINT_INFO("... Done!");
 }
@@ -215,6 +214,21 @@ void MechanismManager::GetVmNames(std::vector<std::string>& names)
     {
         names[i] = rt_buffer[i].name;
     }
+    guard.unlock();
+}
+
+void MechanismManager::SetVmName(const int idx, std::string& name)
+{
+    PRINT_INFO("Set name of guide number#"<<idx);
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    if(idx<rt_buffer.size())
+    {
+        rt_buffer[idx].name = name;
+    }
+    else
+        PRINT_WARNING("Guide number#"<<idx<<" not available");
     guard.unlock();
 }
 

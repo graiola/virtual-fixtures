@@ -50,6 +50,12 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         res.response_command = req.request_command;
     }
 
+    if(std::strcmp(req.request_command.c_str(), "set_name") == 0)
+    {
+        mm_interface_->SetVmName(req.selected_guide_idx,req.selected_guide_name);
+        res.response_command = req.request_command;
+    }
+
     // Update the names list
     mm_interface_->GetVmNames(res.list_guides);
 

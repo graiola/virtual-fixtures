@@ -19,11 +19,6 @@ public:
 
 protected:
     ros::ServiceServer ss_;
-    /*actionlib::SimpleActionServer<mechanism_manager::MechanismManagerAction> as_;
-    std::string action_name_;
-    // create messages that are used to published feedback/result
-    mechanism_manager::MechanismManagerActionFeedback feedback_;
-    mechanism_manager::MechanismManagerActionResult result_;*/
 
 private:
     MechanismManagerInterface* mm_interface_;

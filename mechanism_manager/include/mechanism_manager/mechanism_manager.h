@@ -56,6 +56,7 @@ class MechanismManager
     void ClusterVM(Eigen::MatrixXd& data);
     void SaveVM(const int idx);
     void GetVmName(const int idx, std::string& name);
+    void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);
 
 
@@ -72,7 +73,7 @@ class MechanismManager
   protected:
 
     bool ReadConfig();
-    void ExpandVectors(vm_t* const vm_tmp_ptr);
+    void ExpandVectors(vm_t* const vm_tmp_ptr, std::string& name);
 
   private:   
     
