@@ -29,7 +29,7 @@ class VirtualMechanismInterface
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
           phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
           phase_ddot_(0.0),scale_(1.0),
-          fade_(0.0),active_(false),dt_(0.001),name_("")
+          fade_(0.0),active_(false),dt_(0.001)
 	  {
 
           if(!ReadConfig())
@@ -62,6 +62,9 @@ class VirtualMechanismInterface
           //quaternion_ << 1.0,0.0,0.0,0.0;
 	  }
 	
+      //VirtualMechanismInterface(const VirtualMechanismInterface& to_copy); // copy constructor
+      //virtual VirtualMechanismInterface* Clone() = 0;
+
 	  virtual ~VirtualMechanismInterface()
       {
       }
@@ -226,10 +229,10 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getJacobian() {return J_;}
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
-      inline const std::string& getName() const {return name_;}
+      //inline const std::string& getName() const {return name_;}
 
-      inline void setName(const std::string name) {name_ = name;}
-      inline void setActive(const bool active) {active_ = active;}
+      //inline void setName(const std::string name) {name_ = name;}
+      //inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
       inline void Init()
@@ -348,8 +351,6 @@ class VirtualMechanismInterface
       boost::shared_ptr<quaternion_t > q_end_;
       boost::shared_ptr<quaternion_t > quaternion_;
 
-      // Cute name
-      std::string name_;
 };
   
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -426,14 +427,12 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
            // Compute phase_ddot
           phase_ddot_ = (phase_dot_ - phase_dot_prev_)/dt;
 	  }
-	  
-	protected:
 
 	  double det_;
       double num_;
 	  double Bd_; // Damp term
       //double Bd_max_; // Max damp term
-      //double epsilon_;      
+      //double epsilon_;
 };
 
 class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
@@ -480,13 +479,8 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           }
           else
               return false;
-
-
-
       }
 	
-      //inline void setInertia(const double inertia) {assert(inertia > 0.0); inertia_ = inertia;}
-
 	protected:
 	    
 	  virtual void UpdateJacobian()=0;
