@@ -133,6 +133,12 @@ void MechanismManager::InsertVM(const MatrixXd& data)
     PRINT_INFO("... Done!");
 }
 
+void MechanismManager::InsertVM(double* data, const int n_rows)
+{
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    InsertVM(mat);
+}
+
 void MechanismManager::SaveVM(const int idx)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);

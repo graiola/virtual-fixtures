@@ -51,6 +51,7 @@ class MechanismManager
     /// Non Real time methods, to be launched in seprated threads
     void InsertVM(std::string& model_name);
     void InsertVM(const Eigen::MatrixXd& data);
+    void InsertVM(double* data, const int n_rows);
     void DeleteVM(const int idx);
     void UpdateVM(Eigen::MatrixXd& data, const int idx);
     void ClusterVM(Eigen::MatrixXd& data);
