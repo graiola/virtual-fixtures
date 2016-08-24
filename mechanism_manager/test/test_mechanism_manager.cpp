@@ -121,12 +121,12 @@ TEST(MechanismManagerTest, SaveVmMethod)
   EXPECT_NO_THROW(mm->InsertVM(model_name));
 
   std::cout << "Press to continue..." << std::endl;
-  //getchar();
+  getchar();
 
   EXPECT_NO_THROW(mm->SaveVM(0));
 
   std::cout << "Press to continue..." << std::endl;
-  //getchar();
+  getchar();
 
   delete mm;
 }
@@ -171,13 +171,13 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   END_REAL_TIME_CRITICAL_CODE();
 
   std::cout << "Press to continue..." << std::endl;
-  //getchar();
+  getchar();
 
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm.DeleteVM(0));
 
   std::cout << "Press to continue..." << std::endl;
-  //getchar();
+  getchar();
 
 }
 
@@ -214,11 +214,11 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   long long loopCnt = 0;
 
-  int n_steps = 1000000000; // Give enough time to test stuff
+  int n_steps = 1500; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
-      //if(loopCnt%10000==0)
+      //if(loopCnt%500==0)
       //    mm.SaveVM(0);
 
       loopCnt++;
@@ -231,33 +231,30 @@ TEST(MechanismManagerTest, LoopUpdate)
       EXPECT_NO_THROW(phase = mm.GetPhase(0));
       //END_REAL_TIME_CRITICAL_CODE();
 
-      if(i == 100)
+      if(i == 10)
       {
-        //EXPECT_NO_THROW(mm.DeleteVM(0));
+        EXPECT_NO_THROW(mm.DeleteVM(0));
       }
-      if (i == 50)
-      {
-          EXPECT_NO_THROW(mm.InsertVM(model_name));
-      }
-
-      if (i == 500)
+      if (i == 100)
       {
           EXPECT_NO_THROW(mm.InsertVM(model_name));
       }
 
-      if (i == 1000)
+      if (i == 300)
+      {
+          EXPECT_NO_THROW(mm.InsertVM(model_name));
+      }
+
+      if (i == 400)
       {
           EXPECT_NO_THROW(mm.InsertVM(model_name_wrong));
       }
 
-      /*if (i == 2000)
-      {
-          EXPECT_NO_THROW(mm.SaveVM(2));
-      }*/
-
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
-      //getchar();
   }
+
+  std::cout << "Press to continue..." << std::endl;
+  getchar();
 }
 
 int main(int argc, char** argv)
