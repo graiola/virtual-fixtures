@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules")
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED)
+find_package(RTAI)
 find_package(YamlCpp REQUIRED)
 set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
@@ -102,6 +103,12 @@ add_dependencies(
   ${PROJECT_NAME}
   ${mechanism_manager_EXPORTED_TARGETS}
 )
+
+if(RTAI_FOUND)
+    message(STATUS "RTAI found")
+    add_executable(test_realtime test/test_realtime.cpp)
+    target_link_libraries(test_realtime ${PROJECT_NAME})
+endif()
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}
