@@ -132,7 +132,7 @@ install(DIRECTORY config/
 
 install(DIRECTORY models/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/models
-  FILES_MATCHING PATTERN "*.txt"
+  #FILES_MATCHING PATTERN "*.txt"
 )
 
 ## Visualize the folders src and include in QtCreator
