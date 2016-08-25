@@ -21,6 +21,7 @@ namespace mechanism_manager
 enum scale_mode_t {HARD,SOFT};
 class MechanismManagerServer;
 class MechanismManager;
+static bool default_threading_on = false;
 
 class MechanismManagerInterface
 {
@@ -34,16 +35,17 @@ class MechanismManagerInterface
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode = SOFT);
 
     /// Non real time services
-    void InsertVm(std::string& model_name);
-    void InsertVm(Eigen::MatrixXd& data);
-    void InsertVm(double* data, const int n_rows);
-    void DeleteVm(const int idx);
-    void UpdateVm(Eigen::MatrixXd& data, const int idx);
-    void ClusterVm(Eigen::MatrixXd& data);
-    void SaveVm(const int idx);
-    void GetVmName(const int idx, std::string& name);
-    void SetVmName(const int idx, std::string& name);
-    void GetVmNames(std::vector<std::string>& names);
+    /// threading enables the use of separate threads to ensure the real time
+    void InsertVm(std::string& model_name, bool threading = default_threading_on);
+    void InsertVm(Eigen::MatrixXd& data, bool threading = default_threading_on);
+    void InsertVm(double* data, const int n_rows, bool threading = default_threading_on);
+    void DeleteVm(const int idx, bool threading = default_threading_on);
+    void UpdateVm(Eigen::MatrixXd& data, const int idx, bool threading = default_threading_on);
+    void ClusterVm(Eigen::MatrixXd& data, bool threading = default_threading_on);
+    void SaveVm(const int idx, bool threading = default_threading_on);
+    void GetVmName(const int idx, std::string& name, bool threading = default_threading_on);
+    void SetVmName(const int idx, std::string& name, bool threading = default_threading_on);
+    void GetVmNames(std::vector<std::string>& names, bool threading = default_threading_on);
 
     /// Stop the mechanisms
     void Stop();
@@ -67,6 +69,7 @@ class MechanismManagerInterface
   protected:
 
     bool ReadConfig();
+    //bool ExecuteService();
 
   private:
 
