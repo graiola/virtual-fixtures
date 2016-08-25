@@ -5,6 +5,20 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <string>
+#include <sstream>
+
+struct stringwrapper
+{
+   std::stringstream ss;
+   template<typename T>
+   stringwrapper & operator << (const T &data)
+   {
+        ss << data;
+        return *this;
+   }
+   operator std::string() { return ss.str(); }
+};
 
 #ifdef EIGEN_MALLOC_CHECKS
   #define EIGEN_RUNTIME_NO_MALLOC
@@ -24,7 +38,7 @@
     //#define PRINT_INFO(f_, ...) std::printf((std::string(f_)+"\n").c_str(), __VA_ARGS__);
     //#define PRINT_ERROR(f_, ...) std::printf(("ERROR: "+std::string(f_)+"\n").c_str(), __VA_ARGS__);
     #define PRINT_INFO(f_) do { std::cout << f_ << std::endl; } while (0)
-    #define PRINT_ERROR(f_) do { std::cout << "ERROR: " << f_ << std::endl; throw std::runtime_error("");} while (0)
+    #define PRINT_ERROR(f_) do { std::cout << "ERROR: " << f_ << std::endl; throw std::runtime_error(stringwrapper() << f_); } while (0)
     #define PRINT_WARNING(f_) do { std::cout << "WARNING: " << f_ << std::endl; } while (0)
 #endif
 
