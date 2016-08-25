@@ -29,21 +29,16 @@ class MechanismManagerInterface
     MechanismManagerInterface();
     ~MechanismManagerInterface();
 
-    // NOTE: We can not copy mechanism manager because of the internal thread and the mutex
-    // We can explicit that thanks to C++11
-    //MechanismManagerInterface( const MechanismManagerInterface& other ) = delete; // non construction-copyable
-    //MechanismManagerInterface& operator=( const MechanismManagerInterface& ) = delete; // non copyable
-
     /// Real time loop
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode = SOFT);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode = SOFT);
 
     /// Non real time services
-    void InsertVM(std::string& model_name);
-    void InsertVM(Eigen::MatrixXd& data);
-    void InsertVM(double* data, const int n_rows);
-    void DeleteVM(const int idx);
-    void SaveVM(const int idx);
+    void InsertVm(std::string& model_name);
+    void InsertVm(Eigen::MatrixXd& data);
+    void InsertVm(double* data, const int n_rows);
+    void DeleteVm(const int idx);
+    void SaveVm(const int idx);
     void GetVmName(const int idx, std::string& name);
     void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);
@@ -55,15 +50,15 @@ class MechanismManagerInterface
     bool OnVm();
 
     /// Sets
-    inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;} // HACKY
+    inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;}
 
     /// Gets
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
     void GetVmPosition(const int idx, Eigen::VectorXd& position);
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
-    void GetVmPosition(const int idx, double* const position_ptr); // Used by TAO
-    void GetVmVelocity(const int idx, double* const velocity_ptr); // Used by TAO
+    void GetVmPosition(const int idx, double* const position_ptr);
+    void GetVmVelocity(const int idx, double* const velocity_ptr);
     double GetPhase(const int idx);
     double GetScale(const int idx);
 
@@ -87,10 +82,10 @@ class MechanismManagerInterface
     MechanismManager* mm_;
 
     // Thread stuff
-    tool_box::ThreadsPool* threads_pool_;
-    //tool_box::AsyncThread* async_thread_insert_;
-    //tool_box::AsyncThread* async_thread_delete_;
-    //tool_box::AsyncThread* async_thread_save_;
+    //tool_box::ThreadsPool* threads_pool_;
+    tool_box::AsyncThread* async_thread_insert_;
+    tool_box::AsyncThread* async_thread_delete_;
+    tool_box::AsyncThread* async_thread_save_;
 
     // Ros stuff
     tool_box::RosNode ros_node_;

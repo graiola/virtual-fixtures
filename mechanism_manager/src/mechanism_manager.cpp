@@ -93,7 +93,7 @@ bool MechanismManager::ReadConfig()
         return false;
 }
 
-void MechanismManager::InsertVM(std::string& model_name)
+void MechanismManager::InsertVm(std::string& model_name)
 {
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
     PRINT_INFO("Creating the guide from file... " << model_complete_path);
@@ -113,7 +113,7 @@ void MechanismManager::InsertVM(std::string& model_name)
     PRINT_INFO("... Done!");
 }
 
-void MechanismManager::InsertVM(const MatrixXd& data)
+void MechanismManager::InsertVm(const MatrixXd& data)
 {
     PRINT_INFO("Creating the guide from data...");
     vm_t* vm_tmp_ptr = NULL;
@@ -133,13 +133,13 @@ void MechanismManager::InsertVM(const MatrixXd& data)
     PRINT_INFO("... Done!");
 }
 
-void MechanismManager::InsertVM(double* data, const int n_rows)
+void MechanismManager::InsertVm(double* data, const int n_rows)
 {
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
-    InsertVM(mat);
+    InsertVm(mat);
 }
 
-void MechanismManager::SaveVM(const int idx)
+void MechanismManager::SaveVm(const int idx)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
@@ -159,7 +159,7 @@ void MechanismManager::SaveVM(const int idx)
     guard.unlock();
 }
 
-void MechanismManager::DeleteVM(const int idx)
+void MechanismManager::DeleteVm(const int idx)
 {
    PRINT_INFO("Deleting guide number#"<<idx);
    bool delete_complete = false;
@@ -238,7 +238,7 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
     guard.unlock();
 }
 
-void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
+void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
 {
         /*std::cout << "Updating guide number#"<< idx << std::endl;
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -253,7 +253,7 @@ void MechanismManager::UpdateVM(MatrixXd& data, const int idx)
         else
         {
             std::cout << "Guide not available, creating a new guide..." << std::endl;
-            InsertVM(data);
+            InsertVm(data);
         }
 
         guard.unlock();
@@ -267,7 +267,7 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
 }
 */
 
-void MechanismManager::ClusterVM(MatrixXd& data)
+void MechanismManager::ClusterVm(MatrixXd& data)
 {
     //std::string file_path = "/home/sybot/gennaro_output/cropped_data_" + std::to_string(loopCnt++); zzz
     /*std::cout << "Crop incoming data" << std::endl;
@@ -310,7 +310,7 @@ void MechanismManager::ClusterVM(MatrixXd& data)
             if((h == 1).all())
             {
                 std::cout << "Creating a new guide..." << std::endl;
-                InsertVM(data);
+                InsertVm(data);
                 std::cout << "...DONE!" << std::endl;
             }
             else
@@ -322,7 +322,7 @@ void MechanismManager::ClusterVM(MatrixXd& data)
         else
         {
             std::cout << "No guides available, creating a new guide..." << std::endl;
-            InsertVM(data);
+            InsertVm(data);
         }
         guard.unlock();
         std::cout << "Clustering complete" << std::endl;

@@ -10,7 +10,11 @@ namespace mechanism_manager
 
 MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NULL)
 {
-      threads_pool_ = new ThreadsPool(4); // Create 4 workers
+      //threads_pool_ = new ThreadsPool(4); // Create 4 workers
+
+      async_thread_insert_ = new AsyncThread();
+      async_thread_delete_ = new AsyncThread();
+      async_thread_save_ = new AsyncThread();
 
       if(!ReadConfig())
       {
@@ -47,7 +51,10 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
 MechanismManagerInterface::~MechanismManagerInterface()
 {
-    delete threads_pool_;
+    //delete threads_pool_;
+    delete async_thread_insert_;
+    delete async_thread_delete_;
+    delete async_thread_save_;
 
     if(mm_server_!=NULL)
       delete mm_server_;
@@ -69,44 +76,57 @@ bool MechanismManagerInterface::ReadConfig()
         return false;
 }
 
-void MechanismManagerInterface::InsertVM(MatrixXd& data)
+void MechanismManagerInterface::InsertVm(MatrixXd& data)
 {
-    threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVM), mm_, data));
+    //threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVm), mm_, data));
+    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVm), mm_, data));
+    async_thread_insert_->Trigger();
 }
 
-void MechanismManagerInterface::InsertVM(std::string& model_name)
+void MechanismManagerInterface::InsertVm(std::string& model_name)
 {
-    threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVM), mm_, model_name));
+    //threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVm), mm_, model_name));
+    async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVm), mm_, model_name));
+    async_thread_insert_->Trigger();
 }
 
-void MechanismManagerInterface::InsertVM(double* data, const int n_rows)
+void MechanismManagerInterface::InsertVm(double* data, const int n_rows)
 {
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVM, mm_, data, n_rows));
+    //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVm, mm_, data, n_rows));
+    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVm, mm_, data, n_rows));
+    async_thread_insert_->Trigger();
 }
 
-void MechanismManagerInterface::SaveVM(const int idx)
+void MechanismManagerInterface::SaveVm(const int idx)
 {
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVM, mm_, idx));
+    //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVm, mm_, idx));
+    async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVm, mm_, idx));
+    async_thread_save_->Trigger();
 }
 
-void MechanismManagerInterface::DeleteVM(const int idx)
+void MechanismManagerInterface::DeleteVm(const int idx)
 {
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::DeleteVM, mm_, idx));
+    //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::DeleteVm, mm_, idx));
+    async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVm, mm_, idx));
+    async_thread_delete_->Trigger();
 }
 
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
-    threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
+    //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
+    mm_->GetVmName(idx,name);
 }
 
 void MechanismManagerInterface::GetVmNames(std::vector<std::string>& names)
 {
-    threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmNames, mm_, boost::ref(names)));
+    //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmNames, mm_, boost::ref(names)));
+    mm_->GetVmNames(names);
 }
 
 void MechanismManagerInterface::SetVmName(const int idx, std::string& name)
 {
-    threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SetVmName, mm_, idx,  name));
+    //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SetVmName, mm_, idx,  name));
+    mm_->SetVmName(idx,name);
 }
 
 void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)

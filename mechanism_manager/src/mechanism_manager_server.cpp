@@ -36,17 +36,17 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
 {
     if(std::strcmp(req.request_command.c_str(), "delete") == 0)
     {
-        mm_interface_->DeleteVM(req.selected_guide_idx);
+        mm_interface_->DeleteVm(req.selected_guide_idx);
         res.response_command = req.request_command;
     }
     if(std::strcmp(req.request_command.c_str(), "save") == 0)
     {
-        mm_interface_->SaveVM(req.selected_guide_idx);
+        mm_interface_->SaveVm(req.selected_guide_idx);
         res.response_command = req.request_command;
     }
     if(std::strcmp(req.request_command.c_str(), "insert") == 0)
     {
-        mm_interface_->InsertVM(req.selected_guide_name);
+        mm_interface_->InsertVm(req.selected_guide_name);
         res.response_command = req.request_command;
     }
 
@@ -71,7 +71,7 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
 
 /*void MechanismManagerInterface::Insert()
 {
-    mm_->InsertVM();
+    mm_->InsertVm();
 }*/
 
 

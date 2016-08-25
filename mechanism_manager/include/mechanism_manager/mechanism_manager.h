@@ -49,13 +49,13 @@ class MechanismManager
     void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode);
 
     /// Non Real time methods, to be launched in seprated threads
-    void InsertVM(std::string& model_name);
-    void InsertVM(const Eigen::MatrixXd& data);
-    void InsertVM(double* data, const int n_rows);
-    void DeleteVM(const int idx);
-    void UpdateVM(Eigen::MatrixXd& data, const int idx);
-    void ClusterVM(Eigen::MatrixXd& data);
-    void SaveVM(const int idx);
+    void InsertVm(std::string& model_name);
+    void InsertVm(const Eigen::MatrixXd& data);
+    void InsertVm(double* data, const int n_rows);
+    void DeleteVm(const int idx);
+    void UpdateVm(Eigen::MatrixXd& data, const int idx);
+    void ClusterVm(Eigen::MatrixXd& data);
+    void SaveVm(const int idx);
     void GetVmName(const int idx, std::string& name);
     void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);

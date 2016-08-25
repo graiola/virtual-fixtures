@@ -109,7 +109,7 @@ TEST(MechanismManagerTest, GetVmPositionAndVelocityRawVectors)
 TEST(MechanismManagerTest, InsertVmMethod)
 {
   MechanismManagerInterface* mm = new MechanismManagerInterface();
-  EXPECT_NO_THROW(mm->InsertVM(model_name));
+  EXPECT_NO_THROW(mm->InsertVm(model_name));
 
   delete mm;
 }
@@ -118,12 +118,12 @@ TEST(MechanismManagerTest, SaveVmMethod)
 {
   MechanismManagerInterface* mm = new MechanismManagerInterface();
 
-  EXPECT_NO_THROW(mm->InsertVM(model_name));
+  EXPECT_NO_THROW(mm->InsertVm(model_name));
 
   std::cout << "Press to continue..." << std::endl;
   getchar();
 
-  EXPECT_NO_THROW(mm->SaveVM(0));
+  EXPECT_NO_THROW(mm->SaveVm(0));
 
   std::cout << "Press to continue..." << std::endl;
   getchar();
@@ -136,7 +136,7 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   MechanismManagerInterface mm;
 
   // Insert
-  EXPECT_NO_THROW(mm.InsertVM(model_name));
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
 
   int pos_dim = mm.GetPositionDim();
 
@@ -174,7 +174,7 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   getchar();
 
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
-  EXPECT_NO_THROW(mm.DeleteVM(0));
+  EXPECT_NO_THROW(mm.DeleteVm(0));
 
   std::cout << "Press to continue..." << std::endl;
   getchar();
@@ -191,7 +191,7 @@ TEST(MechanismManagerTest, LoopUpdate)
   //std::cout << "EIGEN THREADS = " << nthreads <<std::endl;
 
   MechanismManagerInterface mm;
-  EXPECT_NO_THROW(mm.InsertVM(model_name));
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
 
   int pos_dim = mm.GetPositionDim();
 
@@ -219,7 +219,7 @@ TEST(MechanismManagerTest, LoopUpdate)
   {
 
       //if(loopCnt%500==0)
-      //    mm.SaveVM(0);
+      //    mm.SaveVm(0);
 
       loopCnt++;
 
@@ -233,21 +233,21 @@ TEST(MechanismManagerTest, LoopUpdate)
 
       if(i == 10)
       {
-        EXPECT_NO_THROW(mm.DeleteVM(0));
+        EXPECT_NO_THROW(mm.DeleteVm(0));
       }
       if (i == 100)
       {
-          EXPECT_NO_THROW(mm.InsertVM(model_name));
+          EXPECT_NO_THROW(mm.InsertVm(model_name));
       }
 
       if (i == 300)
       {
-          EXPECT_NO_THROW(mm.InsertVM(model_name));
+          EXPECT_NO_THROW(mm.InsertVm(model_name));
       }
 
       if (i == 400)
       {
-          EXPECT_NO_THROW(mm.InsertVM(model_name_wrong));
+          EXPECT_NO_THROW(mm.InsertVm(model_name_wrong));
       }
 
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
