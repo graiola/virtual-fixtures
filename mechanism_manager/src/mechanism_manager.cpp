@@ -45,7 +45,7 @@ MechanismManager::~MechanismManager()
         vm_buffers_[i].clear();
 }
 
-void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr, std::string& name)
+void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock(); // Lock
@@ -60,10 +60,10 @@ void MechanismManager::ExpandVectors(vm_t* const vm_tmp_ptr, std::string& name)
 
     GuideStruct new_guide;
     new_guide.name = name;
-    new_guide.fade = DynSystemFirstOrder(10.0); // FIXME since it's a dynamic system, it should be a pointer or in the vm
     new_guide.scale = 0.0;
     new_guide.scale_t = 0.0;
     new_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
+    new_guide.fade = boost::shared_ptr<DynSystemFirstOrder>(new DynSystemFirstOrder(10.0)); // FIXME since it's a dynamic system, it should be a pointer or in the vm
 
     no_rt_buffer.push_back(new_guide);
 
@@ -108,7 +108,7 @@ void MechanismManager::InsertVm(std::string& model_name)
         return;
     }
 
-    ExpandVectors(vm_tmp_ptr,model_name);
+    AddNewVm(vm_tmp_ptr,model_name);
 
     PRINT_INFO("... Done!");
 }
@@ -128,7 +128,7 @@ void MechanismManager::InsertVm(const MatrixXd& data)
     }
 
     std::string default_name = "new_guide";
-    ExpandVectors(vm_tmp_ptr,default_name);
+    AddNewVm(vm_tmp_ptr,default_name);
 
     PRINT_INFO("... Done!");
 }
@@ -380,9 +380,9 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
         if(rt_buffer[i].scale_hard > 1.0/static_cast<double>(rt_buffer.size()))
             for(int j=0; j<rt_buffer.size();j++)
                 if(j!=i)
-                    rt_buffer[j].scale_t = rt_buffer[j].fade.IntegrateForward();
+                    rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateForward();
                 else
-                    rt_buffer[j].scale_t = rt_buffer[j].fade.IntegrateBackward();
+                    rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateBackward();
 
     // Compute the force for each mechanism, remove the antagonist force components
     for(int i=0; i<rt_buffer.size();i++)

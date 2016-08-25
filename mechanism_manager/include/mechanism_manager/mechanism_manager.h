@@ -26,11 +26,11 @@ typedef virtual_mechanism::VirtualMechanismInterface vm_t;
 struct GuideStruct
 {
   std::string name;
-  tool_box::DynSystemFirstOrder fade;
   double scale;
   double scale_hard;
   double scale_t;
   boost::shared_ptr<vm_t> guide;
+  boost::shared_ptr<tool_box::DynSystemFirstOrder> fade;
 };
 
 class MechanismManager
