@@ -120,13 +120,13 @@ TEST(MechanismManagerTest, SaveVmMethod)
 
   EXPECT_NO_THROW(mm->InsertVm(model_name));
 
-  std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //std::cout << "Press to continue..." << std::endl;
+  //getchar();
 
   EXPECT_NO_THROW(mm->SaveVm(0));
 
-  std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //std::cout << "Press to continue..." << std::endl;
+  //getchar();
 
   delete mm;
 }
@@ -170,14 +170,14 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   EXPECT_NO_THROW(mm.GetVmVelocity(0,&vel_std[0])); // Get
   END_REAL_TIME_CRITICAL_CODE();
 
-  std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //std::cout << "Press to continue..." << std::endl;
+  //getchar();
 
   // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm.DeleteVm(0));
 
-  std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //std::cout << "Press to continue..." << std::endl;
+  //getchar();
 
 }
 
@@ -188,9 +188,6 @@ TEST(MechanismManagerTest, Clustering)
   // Insert
   EXPECT_NO_THROW(mm.InsertVm(model_name));
 
-  std::cout << "Wait..." << std::endl;
-  getchar();
-
   int pos_dim = mm.GetPositionDim();
 
   int n_points = 100;
@@ -198,10 +195,28 @@ TEST(MechanismManagerTest, Clustering)
 
   EXPECT_NO_THROW(mm.ClusterVm(data));
 
-  std::cout << "Wait..." << std::endl;
-  getchar();
-
   ASSERT_EQ(mm.GetNbVms(),2);
+
+
+  data.resize(n_points,pos_dim);
+  for (int i=0; i<data.cols(); i++)
+    data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 2.0);
+
+  EXPECT_NO_THROW(mm.ClusterVm(data));
+
+  ASSERT_EQ(mm.GetNbVms(),3);
+
+  EXPECT_NO_THROW(mm.ClusterVm(data));
+
+  ASSERT_EQ(mm.GetNbVms(),3);
+
+  data.resize(n_points,pos_dim);
+  for (int i=0; i<data.cols(); i++)
+    data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 2.2);
+
+  EXPECT_NO_THROW(mm.ClusterVm(data));
+
+  ASSERT_EQ(mm.GetNbVms(),3);
 
 }
 
@@ -277,8 +292,8 @@ TEST(MechanismManagerTest, LoopUpdate)
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
   }
 
-  std::cout << "Press to continue..." << std::endl;
-  getchar();
+  //std::cout << "Press to continue..." << std::endl;
+  //getchar();
 }
 
 int main(int argc, char** argv)
