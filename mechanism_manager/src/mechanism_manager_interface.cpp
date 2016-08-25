@@ -97,6 +97,18 @@ void MechanismManagerInterface::InsertVm(double* data, const int n_rows)
     async_thread_insert_->Trigger();
 }
 
+void MechanismManagerInterface::UpdateVm(Eigen::MatrixXd& data, const int idx)
+{
+    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::UpdateVm, mm_, data, idx));
+    async_thread_insert_->Trigger();
+}
+
+void MechanismManagerInterface::ClusterVm(Eigen::MatrixXd& data)
+{
+    async_thread_insert_->AddHandler(boost::bind(&MechanismManager::ClusterVm, mm_, data));
+    async_thread_insert_->Trigger();
+}
+
 void MechanismManagerInterface::SaveVm(const int idx)
 {
     //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVm, mm_, idx));

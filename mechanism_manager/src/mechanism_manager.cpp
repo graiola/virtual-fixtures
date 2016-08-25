@@ -139,6 +139,115 @@ void MechanismManager::InsertVm(double* data, const int n_rows)
     InsertVm(mat);
 }
 
+void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
+{
+    // TODO Check if the guide is a probabilistic one...
+
+    PRINT_INFO("Update the guide.");
+
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock(); // Lock
+
+    std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    no_rt_buffer.clear();
+
+    if(idx<rt_buffer.size())
+    {
+        // Clone the vm to update
+        vm_t* vm_tmp_ptr = NULL;
+        vm_tmp_ptr = rt_buffer[idx].guide->Clone();
+
+        // Update
+        // Behavior:
+        //  - Spline: substitute the model
+        //  - GMR: incremental training
+        vm_tmp_ptr->CreateModelFromData(data);
+        //vm_tmp_ptr->AlignAndUpateGuide(data);
+
+        GuideStruct updated_guide;
+        updated_guide.name = rt_buffer[idx].name;
+        updated_guide.scale = rt_buffer[idx].scale;
+        updated_guide.scale_t = rt_buffer[idx].scale_t;
+        updated_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
+        updated_guide.fade = rt_buffer[idx].fade; // Copy the shared pointer
+
+        for (size_t i = 0; i < rt_buffer.size(); i++)
+        {
+            if(i != idx)
+                 no_rt_buffer.push_back(rt_buffer[i]); // Copy all the vms except the one to update
+            else
+                 no_rt_buffer.push_back(updated_guide);
+        }
+
+        // Circular swap
+        rt_idx_ = (rt_idx_ + 1) % 2;
+        no_rt_idx_ = (no_rt_idx_ + 1) % 2;
+    }
+    else
+        PRINT_WARNING("Impossible to update the guide.");
+
+    guard.unlock(); // Unlock
+}
+
+void MechanismManager::ClusterVm(MatrixXd& data)
+{
+    if(CropData(data))
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock(); // Lock
+
+        std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+        if(rt_buffer.size()>0)
+        {
+            ArrayXd resps(rt_buffer.size());
+            ArrayXi h(rt_buffer.size());
+            ArrayXd::Index max_resp_idx;
+            int dofs = 10; // WTF
+            double old_resp, new_resp;
+            for(int i=0;i<rt_buffer.size();i++)
+            {
+                old_resp = rt_buffer[i].guide->GetResponsability();
+                new_resp = rt_buffer[i].guide->ComputeResponsability(data);
+                try
+                {
+                    h(i) = lratiotest(old_resp,new_resp, dofs);
+                }
+                catch(...)
+                {
+                    PRINT_WARNING("Something is wrong with lratiotest, skipping the clustering...");
+                    break;
+                }
+
+                if(h(i) == 1)
+                    resps(i) = -std::numeric_limits<double>::infinity();
+                else
+                    resps(i) = new_resp;
+            }
+
+            if((h == 1).all())
+            {
+                //PRINT_INFO("Creating a new guide.");
+                InsertVm(data);
+            }
+            else
+            {
+                //PRINT_INFO("Update guide: " << max_resp_idx);
+                resps.maxCoeff(&max_resp_idx); // Break the tie
+                UpdateVm(data,max_resp_idx);
+            }
+        }
+        else
+        {
+            //PRINT_INFO("No guide available, creating a new one");
+            InsertVm(data);
+        }
+        guard.unlock();
+    }
+    else
+        PRINT_WARNING("Impossible to update guide, data is empty.");
+}
+
 void MechanismManager::SaveVm(const int idx)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -189,7 +298,7 @@ void MechanismManager::DeleteVm(const int idx)
    guard.unlock();
 
    if(delete_complete)
-        PRINT_INFO("Delete of guide number#"<<idx<<" complete");
+       PRINT_INFO("Delete of guide number#"<<idx<<" complete");
    else
        PRINT_WARNING("Impossible to remove guide number#"<<idx);
 }
@@ -238,27 +347,7 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
     guard.unlock();
 }
 
-void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
-{
-        /*std::cout << "Updating guide number#"<< idx << std::endl;
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        guard.lock();
-        if(idx < vm_vector_.size())
-        {
-            std::cout << "Updating..." << std::endl;
-            vm_vector_[idx]->CreateModelFromData(data);
-            //vm_vector_[idx]->AlignAndUpateGuide(data);
-            std::cout << "...DONE!" << std::endl;
-        }
-        else
-        {
-            std::cout << "Guide not available, creating a new guide..." << std::endl;
-            InsertVm(data);
-        }
 
-        guard.unlock();
-        std::cout << "Updating of guide number#"<< idx << " complete." << std::endl;*/
-}
 /*
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
 {
@@ -266,70 +355,6 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
     UpdateVM_no_rt(mat,idx);
 }
 */
-
-void MechanismManager::ClusterVm(MatrixXd& data)
-{
-    //std::string file_path = "/home/sybot/gennaro_output/cropped_data_" + std::to_string(loopCnt++); zzz
-    /*std::cout << "Crop incoming data" << std::endl;
-    if(CropData(data))
-    {
-        //tool_box::WriteTxtFile(file_path.c_str(),data);
-
-        std::cout << "Clustering the incoming data" << std::endl;
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        guard.lock();
-        if(vm_vector_.size()>0)
-        {
-            ArrayXd resps(vm_vector_.size());
-            ArrayXi h(vm_vector_.size());
-            ArrayXd::Index max_resp_idx;
-            int dofs = 10; // WTF
-            double old_resp, new_resp;
-            for(int i=0;i<vm_vector_.size();i++)
-            {
-                old_resp = vm_vector_[i]->GetResponsability();
-                new_resp = vm_vector_[i]->ComputeResponsability(data);
-
-                try
-                {
-                 h(i) = lratiotest(old_resp,new_resp, dofs);
-                }
-
-                catch(...)
-                {
-                    std::cerr << "Something is wrong with lratiotest, skipping the clustering..." << std::endl;
-                    break;
-                }
-
-                if(h(i) == 1)
-                    resps(i) = -std::numeric_limits<double>::infinity();
-                else
-                    resps(i) = new_resp;
-            }
-
-            if((h == 1).all())
-            {
-                std::cout << "Creating a new guide..." << std::endl;
-                InsertVm(data);
-                std::cout << "...DONE!" << std::endl;
-            }
-            else
-            {
-                 resps.maxCoeff(&max_resp_idx); // Break the tie
-                 UpdateVM(data,max_resp_idx);
-            }
-        }
-        else
-        {
-            std::cout << "No guides available, creating a new guide..." << std::endl;
-            InsertVm(data);
-        }
-        guard.unlock();
-        std::cout << "Clustering complete" << std::endl;
-    }
-    else
-        std::cerr << "Impossible to update guide, data is empty" << std::endl;*/
-}
 
 /*void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
 {

@@ -74,7 +74,7 @@ class MechanismManager
   protected:
 
     bool ReadConfig();
-    void ExpandVectors(vm_t* const vm_tmp_ptr, std::string& name);
+    void AddNewVm(vm_t* const vm_tmp_ptr, std::string& name);
 
   private:   
     

@@ -181,6 +181,30 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
 
 }
 
+TEST(MechanismManagerTest, Clustering)
+{
+  MechanismManagerInterface mm;
+
+  // Insert
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
+
+  std::cout << "Wait..." << std::endl;
+  getchar();
+
+  int pos_dim = mm.GetPositionDim();
+
+  int n_points = 100;
+  MatrixXd data = MatrixXd::Random(n_points,pos_dim); // No phase
+
+  EXPECT_NO_THROW(mm.ClusterVm(data));
+
+  std::cout << "Wait..." << std::endl;
+  getchar();
+
+  ASSERT_EQ(mm.GetNbVms(),2);
+
+}
+
 TEST(MechanismManagerTest, LoopUpdate)
 {
   //int nb = omp_get_num_threads();
