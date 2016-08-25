@@ -34,7 +34,7 @@ class VirtualMechanismInterface
 
           if(!ReadConfig())
           {
-            throw new std::runtime_error("VirtualMechanismInterface: Can not read config file");
+            PRINT_ERROR("VirtualMechanismInterface: Can not read config file");
           }
 
 	      // Initialize/resize the attributes
@@ -362,7 +362,7 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 
         if(!ReadConfig())
         {
-          throw new std::runtime_error("VirtualMechanismInterfaceFirstOrder: Can not read config file");
+          PRINT_ERROR("VirtualMechanismInterfaceFirstOrder: Can not read config file");
         }
 
 	    det_ = 1.0;
@@ -443,7 +443,7 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
       {
           if(!ReadConfig())
           {
-            throw new std::runtime_error("VirtualMechanismInterfaceSecondOrder: Can not read config file");
+            PRINT_ERROR("VirtualMechanismInterfaceSecondOrder: Can not read config file");
           }
 
 	      // Resize the attributes

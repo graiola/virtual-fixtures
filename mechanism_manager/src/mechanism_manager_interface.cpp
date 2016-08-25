@@ -18,7 +18,7 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 
       if(!ReadConfig())
       {
-        throw new std::runtime_error("MechanismManagerInterface: Can not read config file");
+        PRINT_ERROR("MechanismManagerInterface: Can not read config file");
       }
 
       // Resize

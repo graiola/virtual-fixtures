@@ -141,8 +141,6 @@ void MechanismManager::InsertVm(double* data, const int n_rows)
 
 void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
 {
-    // TODO Check if the guide is a probabilistic one...
-
     PRINT_INFO("Update the guide.");
 
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -192,6 +190,9 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
 
 void MechanismManager::ClusterVm(MatrixXd& data)
 {
+    // TODO Check if the guide is a probabilistic one
+    // otherwise skip
+
     if(CropData(data))
     {
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
@@ -215,7 +216,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
                 }
                 catch(...)
                 {
-                    PRINT_WARNING("Something is wrong with lratiotest, skipping the clustering...");
+                    PRINT_WARNING("Something is wrong with lratiotest, skipping the clustering.");
                     break;
                 }
 
@@ -247,6 +248,20 @@ void MechanismManager::ClusterVm(MatrixXd& data)
     else
         PRINT_WARNING("Impossible to update guide, data is empty.");
 }
+
+/*
+void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
+{
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    UpdateVM_no_rt(mat,idx);
+}
+*/
+
+/*void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
+{
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    ClusterVM_no_rt(mat);
+}*/
 
 void MechanismManager::SaveVm(const int idx)
 {
@@ -347,20 +362,6 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
     guard.unlock();
 }
 
-
-/*
-void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
-{
-    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
-    UpdateVM_no_rt(mat,idx);
-}
-*/
-
-/*void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
-{
-    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
-    ClusterVM_no_rt(mat);
-}*/
 
 ///// RT METHODS
 

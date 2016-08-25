@@ -45,10 +45,10 @@ class VirtualMechanismGmr: public VM_t
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       double GetResponsability();
-      bool ReadConfig();
 	  
 	protected:
 	  
+      bool ReadConfig();
       void TrainModel(const Eigen::MatrixXd& data);
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
@@ -85,12 +85,13 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
 
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
-      bool ReadConfig();
+
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
       virtual bool CreateModelFromFile(const std::string file_path);
 
     protected:
 
+      bool ReadConfig();
       void TrainModel(const Eigen::MatrixXd& data);
       virtual void UpdateJacobian();
       virtual void UpdateState();

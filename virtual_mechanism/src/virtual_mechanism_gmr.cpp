@@ -51,7 +51,7 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized():
 {
     if(!ReadConfig())
     {
-      throw new std::runtime_error("VirtualMechanismGmrNormalized: Can not read config file");
+      PRINT_ERROR("VirtualMechanismGmrNormalized: Can not read config file");
     }
 
     Jz_.resize(VM_t::state_dim_,1);
@@ -285,7 +285,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(): VM_t()
 {
     if(!ReadConfig())
     {
-      throw new std::runtime_error("VirtualMechanismGmr: Can not read config file");
+      PRINT_ERROR("VirtualMechanismGmr: Can not read config file");
     }
 
     fa_input_.resize(1,1);
@@ -406,7 +406,7 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const string file_path): VM_t()
     if(LoadModelFromFile(file_path))
         Init();
     else
-        throw new invalid_argument("Impossible to load GMM from file.");
+        PRINT_ERROR("Impossible to load GMM from file.");
 }*/
 
 template <class VM_t>

@@ -83,14 +83,14 @@ void VirtualMechanismFactory::SetDefaultPreferences(const string order, const st
     else if (order == "second")
         default_order_ = SECOND;
     else
-        throw runtime_error("VirtualMechanismFactory: Wrong order.");
+        PRINT_ERROR("VirtualMechanismFactory: Wrong order.");
 
     if (model_type == "gmr")
         default_model_type_ = GMR;
     else if (model_type == "gmr_normalized")
         default_model_type_ = GMR_NORMALIZED;
     else
-        throw runtime_error("VirtualMechanismFactory: Wrong model_type.");
+        PRINT_ERROR("VirtualMechanismFactory: Wrong model_type.");
 }
 
 VirtualMechanismInterface* VirtualMechanismFactory::CreateEmptyMechanism(const order_t order, const model_type_t model_type)
