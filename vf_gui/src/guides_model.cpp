@@ -9,10 +9,10 @@ GuidesModel::GuidesModel(NodeHandle& nh, QObject *parent)
 
     sc_ = nh.serviceClient<MechanismManagerServices>("/mechanism_manager/mechanism_manager_interaction");
 
-    refresh_timer_ = new QTimer(this);
-    refresh_timer_->setInterval(15000); // Refresh the list every 15s
-    connect(refresh_timer_, SIGNAL(timeout()) , this, SLOT(refreshTimerHit()));
-    refresh_timer_->start();
+    //refresh_timer_ = new QTimer(this);
+    //refresh_timer_->setInterval(15000); // Refresh the list every 15s
+    //connect(refresh_timer_, SIGNAL(timeout()) , this, SLOT(refreshTimerHit()));
+    //refresh_timer_->start();
 
     // True if the user tries to insert a new guide
     new_guide_ = false;
