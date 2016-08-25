@@ -30,7 +30,10 @@ class VirtualMechanismGmr: public VM_t
       VirtualMechanismGmr();
       VirtualMechanismGmr(const std::string file_path);
       VirtualMechanismGmr(const Eigen::MatrixXd& data);
+      VirtualMechanismGmr(const fa_t* const fa);
       ~VirtualMechanismGmr();
+
+      virtual VirtualMechanismInterface* Clone();
 
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
@@ -50,7 +53,7 @@ class VirtualMechanismGmr: public VM_t
 	  virtual void UpdateJacobian();
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
-	  virtual void ComputeFinalState();
+      virtual void ComputeFinalState();
 
       void UpdateInvCov();
       double ComputeProbability(const Eigen::VectorXd& pos);
@@ -76,6 +79,10 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       VirtualMechanismGmrNormalized();
       VirtualMechanismGmrNormalized(const std::string file_path);
       VirtualMechanismGmrNormalized(const Eigen::MatrixXd& data);
+      VirtualMechanismGmrNormalized(const fa_t* const fa);
+
+      virtual VirtualMechanismInterface* Clone();
+
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
       void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       bool ReadConfig();

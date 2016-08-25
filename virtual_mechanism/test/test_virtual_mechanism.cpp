@@ -96,7 +96,30 @@ TEST(VirtualMechanismFactory, BuildDefault)
     vm_factory.SetDefaultPreferences(order,model_type);
     EXPECT_NO_THROW(vm_ptr = vm_factory.Build(data));
     EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path));
+}
 
+TEST(VirtualMechanismFactory, Clone)
+{
+    VirtualMechanismInterface* vm_ptr = NULL;
+
+    order = FIRST;
+    model_type = GMR;
+
+    // DEFAULT
+    vm_factory.SetDefaultPreferences(order,model_type);
+    EXPECT_NO_THROW(vm_ptr = vm_factory.Build(file_path));
+
+    VirtualMechanismInterface* vm_ptr_clone = NULL;
+
+    EXPECT_NO_THROW(vm_ptr_clone = vm_ptr->Clone());
+
+    getchar();
+
+    delete vm_ptr;
+
+    EXPECT_NO_THROW(vm_ptr = vm_ptr_clone->Clone());
+
+    delete vm_ptr_clone;
     delete vm_ptr;
 }
 

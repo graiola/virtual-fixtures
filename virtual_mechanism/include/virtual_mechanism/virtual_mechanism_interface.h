@@ -63,7 +63,7 @@ class VirtualMechanismInterface
 	  }
 	
       //VirtualMechanismInterface(const VirtualMechanismInterface& to_copy); // copy constructor
-      //virtual VirtualMechanismInterface* Clone() = 0;
+      virtual VirtualMechanismInterface* Clone() = 0;
 
 	  virtual ~VirtualMechanismInterface()
       {
@@ -124,7 +124,7 @@ class VirtualMechanismInterface
               return false;
       }
 
-	  virtual void Update(Eigen::VectorXd& force, const double dt)
+      virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
         assert(dt > 0.0);
 

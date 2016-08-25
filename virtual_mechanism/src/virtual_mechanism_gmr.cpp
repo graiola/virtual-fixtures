@@ -62,6 +62,22 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized():
 }
 
 template <class VM_t>
+VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const fa_t* const fa) : VirtualMechanismGmrNormalized()
+{
+    assert(fa!=NULL);
+    assert(fa->isTrained());
+    this->fa_ = dynamic_cast<fa_t*>(fa->clone());
+    Normalize();
+    VM_t::Init();
+}
+
+template<class VM_t>
+VirtualMechanismInterface* VirtualMechanismGmrNormalized<VM_t>::Clone()
+{
+    return new VirtualMechanismGmrNormalized<VM_t>(this->fa_);
+}
+
+template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 {
     spline_phase_.clear(); // spline::clear()
@@ -254,21 +270,6 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateStateDot()
     VM_t::state_dot_ = this->Jz_ * this->z_dot_; // Keep the velocities of the demonstrations
 }
 
-
-/*template <class VM_t>
-bool VirtualMechanismGmr<VM_t>::LoadModelFromFile(const string file_path)
-{
-    ModelParametersGMR* model_parameters_gmr = ModelParametersGMR::loadGMMFromMatrix(file_path);
-    if(model_parameters_gmr!=NULL)
-    {
-        fa_ = new fa_t(model_parameters_gmr);
-        //delete model_parameters_gmr;
-        return true;
-    }
-    else
-        return false;
-}*/
-
 template <class VM_t>
 bool VirtualMechanismGmr<VM_t>::SaveModelToFile(const string file_path)
 {
@@ -316,6 +317,28 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data) : VirtualMe
     CreateModelFromData(data);
 
     VM_t::Init();
+}
+
+template <class VM_t>
+VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const fa_t* const fa) : VirtualMechanismGmr()
+{
+    assert(fa!=NULL);
+    assert(fa->isTrained());
+    fa_ = dynamic_cast<fa_t*>(fa->clone());
+    VM_t::Init();
+}
+
+template<class VM_t>
+VirtualMechanismInterface* VirtualMechanismGmr<VM_t>::Clone()
+{
+    /*fa_t* fa_clone = fa_->clone();
+    VirtualMechanismGmr<VM_t>* vm_clone = new VirtualMechanismGmr<VM_t>();
+    vm_clone->fa_ = fa_clone; // fa_ is NULL
+
+    if(vm_clone->fa_->isTrained()) // Check if we didn't clone an empty VM
+        vm_clone->Init();*/
+
+    return new VirtualMechanismGmr<VM_t>(fa_);
 }
 
 template<class VM_t>
