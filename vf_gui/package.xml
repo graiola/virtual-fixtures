@@ -2,11 +2,15 @@
 <package>
   <name>vf_gui</name>
   <version>0.0.0</version>
-  <description>A cool graphic stuff package</description>
+  <description>Graphic interface</description>
 
-  <maintainer email="gennaro@todo.todo">gennaro</maintainer>
+  <maintainer email="gennaro.raiola(at)gmail.com">Gennaro Raiola</maintainer>
 
-  <license>TODO</license>
+  <license>GPLv2</license>
+
+  <url type="website">https://github.com/graiola/virtual-fixtures</url>
+
+  <author email="gennaro.raiola(at)gmail.com">Gennaro Raiola</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
