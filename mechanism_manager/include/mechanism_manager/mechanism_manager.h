@@ -1,3 +1,26 @@
+/**
+ * @file   mechanism_manager.h
+ * @brief  Manager of the guides.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef MECHANISM_MANAGER_H
 #define MECHANISM_MANAGER_H
 
@@ -75,6 +98,7 @@ class MechanismManager
 
     bool ReadConfig();
     void AddNewVm(vm_t* const vm_tmp_ptr, std::string& name);
+    bool CheckForNamesCollision(const std::string& name);
 
   private:   
     
@@ -96,13 +120,14 @@ class MechanismManager
     double escape_factor_;
 
     std::string pkg_path_;
+    int guide_unique_id_; // Incremental id
 
     /// Double buffer http://gameprogrammingpatterns.com/double-buffer.html
+    /// Mechanism used: Page-flipping
     std::vector<GuideStruct> vm_buffers_[2];
     boost::atomic<int> rt_idx_; // atom
     boost::atomic<int> no_rt_idx_; // atom
     mutex_t mtx_;
-
 };
 
 }

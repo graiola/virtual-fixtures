@@ -1,3 +1,26 @@
+/**
+ * @file   mechanism_manager_interface.cpp
+ * @brief  External interface for the mechanism manager.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mechanism_manager/mechanism_manager_interface.h"
 #include "mechanism_manager/mechanism_manager_server.h"
 #include "mechanism_manager/mechanism_manager.h"
@@ -46,7 +69,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       }
 
       mm_ = new MechanismManager(position_dim_);
-
 }
 
 MechanismManagerInterface::~MechanismManagerInterface()

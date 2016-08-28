@@ -1,3 +1,26 @@
+/**
+ * @file   mechanism_manager.cpp
+ * @brief  Manager of the guides.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mechanism_manager/mechanism_manager.h"
 
 namespace mechanism_manager
@@ -35,6 +58,8 @@ MechanismManager::MechanismManager(int position_dim)
 
       pkg_path_ = ros::package::getPath(ROS_PKG_NAME);
 
+      guide_unique_id_ = 0;
+
       rt_idx_ = 0;
       no_rt_idx_ = 1;
 }
@@ -47,31 +72,40 @@ MechanismManager::~MechanismManager()
 
 void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
 {
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock(); // Lock
+    if(!CheckForNamesCollision(name))
+    {
+        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+        guard.lock(); // Lock
 
-    std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
-    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
-    no_rt_buffer.clear();
+        std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
+        std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+        no_rt_buffer.clear();
 
-    // Copy
-    for (size_t i = 0; i < rt_buffer.size(); i++)
-      no_rt_buffer.push_back(rt_buffer[i]); // FIXME possible problems in the copy!!! (fade)
+        // Copy
+        for (size_t i = 0; i < rt_buffer.size(); i++)
+          no_rt_buffer.push_back(rt_buffer[i]); // FIXME possible problems in the copy!!! (fade)
 
-    GuideStruct new_guide;
-    new_guide.name = name;
-    new_guide.scale = 0.0;
-    new_guide.scale_t = 0.0;
-    new_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
-    new_guide.fade = boost::shared_ptr<DynSystemFirstOrder>(new DynSystemFirstOrder(10.0)); // FIXME since it's a dynamic system, it should be a pointer or in the vm
+        GuideStruct new_guide;
+        new_guide.name = name;
+        new_guide.scale = 0.0;
+        new_guide.scale_t = 0.0;
+        new_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
+        new_guide.fade = boost::shared_ptr<DynSystemFirstOrder>(new DynSystemFirstOrder(10.0)); // FIXME since it's a dynamic system, it should be a pointer or in the vm
 
-    no_rt_buffer.push_back(new_guide);
+        // Define a new ros node with the same name as the guide
+        new_guide.guide->InitRtPublishers(name);
 
-    // Circular swap
-    rt_idx_ = (rt_idx_ + 1) % 2;
-    no_rt_idx_ = (no_rt_idx_ + 1) % 2;
+        // Add the new guide to the buffer
+        no_rt_buffer.push_back(new_guide);
 
-    guard.unlock(); // Unlock
+        // Circular swap
+        rt_idx_ = (rt_idx_ + 1) % 2;
+        no_rt_idx_ = (no_rt_idx_ + 1) % 2;
+
+        guard.unlock(); // Unlock
+    }
+    else
+        PRINT_WARNING("Impossible to insert the guide, guide already existing.");
 }
 
 bool MechanismManager::ReadConfig()
@@ -127,7 +161,7 @@ void MechanismManager::InsertVm(const MatrixXd& data)
         return;
     }
 
-    std::string default_name = "new_guide";
+    std::string default_name = "guide_"+std::to_string(++guide_unique_id_);
     AddNewVm(vm_tmp_ptr,default_name);
 
     PRINT_INFO("... Done!");
@@ -355,13 +389,33 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
     if(idx<rt_buffer.size())
     {
-        rt_buffer[idx].name = name;
+        if(!CheckForNamesCollision(name))
+        {
+            rt_buffer[idx].name = name;
+            rt_buffer[idx].guide->InitRtPublishers(name);
+        }
+        else
+            PRINT_WARNING("Name already used, please change it");
     }
     else
         PRINT_WARNING("Guide number#"<<idx<<" not available");
     guard.unlock();
 }
 
+bool MechanismManager::CheckForNamesCollision(const std::string& name)
+{
+    bool collision = false;
+    boost::recursive_mutex::scoped_lock guard(mtx_);
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+
+    for(size_t i = 0; i<rt_buffer.size(); i++)
+    {
+        if(std::strcmp(name.c_str(),rt_buffer[i].name.c_str()) == 0)
+            collision = true;
+    }
+
+    return collision;
+}
 
 ///// RT METHODS
 

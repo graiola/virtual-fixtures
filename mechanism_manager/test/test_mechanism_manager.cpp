@@ -1,3 +1,26 @@
+/**
+ * @file   test_mechanism_manager.cpp
+ * @brief  GTest for mechanism manager.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <toolbox/debug.h>
 
 #include <gtest/gtest.h>
@@ -14,8 +37,8 @@ using namespace Eigen;
 using namespace boost;
 
 double dt = 0.001;
-std::string model_name = "test_gmm.txt";
-std::string model_name_wrong = "wrong.txt";
+std::string model_name = "test_gmm";
+std::string model_name_wrong = "wrong";
 
 TEST(MechanismManagerTest, InitializesCorrectly)
 {
@@ -181,6 +204,23 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
 
 }
 
+TEST(MechanismManagerTest, CheckNamesCollision)
+{
+  MechanismManagerInterface mm;
+
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
+
+  ASSERT_EQ(mm.GetNbVms(),1);
+
+  // FIXME This is a kind of hack, by changing the name I am allowed to add the same guide
+  std::string new_name = "newnew";
+  EXPECT_NO_THROW(mm.SetVmName(0,new_name));
+  EXPECT_NO_THROW(mm.InsertVm(model_name));
+
+  ASSERT_EQ(mm.GetNbVms(),2);
+}
+
 TEST(MechanismManagerTest, Clustering)
 {
   MechanismManagerInterface mm;
@@ -196,7 +236,6 @@ TEST(MechanismManagerTest, Clustering)
   EXPECT_NO_THROW(mm.ClusterVm(data));
 
   ASSERT_EQ(mm.GetNbVms(),2);
-
 
   data.resize(n_points,pos_dim);
   for (int i=0; i<data.cols(); i++)
@@ -253,7 +292,7 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   long long loopCnt = 0;
 
-  int n_steps = 1500; // Give enough time to test stuff
+  int n_steps = 15000; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
@@ -272,7 +311,7 @@ TEST(MechanismManagerTest, LoopUpdate)
 
       if(i == 10)
       {
-        EXPECT_NO_THROW(mm.DeleteVm(0));
+         EXPECT_NO_THROW(mm.DeleteVm(0));
       }
       if (i == 100)
       {
