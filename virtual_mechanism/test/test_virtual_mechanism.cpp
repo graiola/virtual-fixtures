@@ -1,3 +1,27 @@
+/**
+ * @file   test_virtual_mechanism.cpp
+ * @brief  GTest.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #include <toolbox/debug.h>
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_factory.h"
@@ -5,7 +29,7 @@
 using namespace virtual_mechanism;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
-std::string file_path(pkg_path+"/test/test_gmm.txt");
+std::string file_path(pkg_path+"/test/test_gmm");
 std::string file_path_wrong(pkg_path+"/test/wrong");
 
 order_t order;
@@ -112,8 +136,6 @@ TEST(VirtualMechanismFactory, Clone)
     VirtualMechanismInterface* vm_ptr_clone = NULL;
 
     EXPECT_NO_THROW(vm_ptr_clone = vm_ptr->Clone());
-
-    getchar();
 
     delete vm_ptr;
 

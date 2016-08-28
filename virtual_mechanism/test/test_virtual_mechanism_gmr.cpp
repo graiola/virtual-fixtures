@@ -1,3 +1,26 @@
+/**
+ * @file   test_virtual_mechanism_gmr.cpp
+ * @brief  GTest.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <toolbox/debug.h>
 #include <toolbox/toolbox.h>
 #include <toolbox/dtw/dtw.h>
@@ -29,7 +52,7 @@ typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
 std::string pkg_path = ros::package::getPath("virtual_mechanism");
-std::string file_path(pkg_path+"/test/test_gmm.txt");
+std::string file_path(pkg_path+"/test/test_gmm");
 double dt = 0.001;
 int test_dim = 2;
 

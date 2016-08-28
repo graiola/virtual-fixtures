@@ -1,3 +1,26 @@
+/**
+ * @file   virtual_mechanism_interface.h
+ * @brief  Abstract virtual mechanism interfaces.
+ * @author Gennaro Raiola
+ *
+ * This file is part of virtual-fixtures, a set of libraries and programs to create
+ * and interact with a library of virtual guides.
+ * Copyright (C) 2014-2016 Gennaro Raiola, ENSTA-ParisTech
+ *
+ * virtual-fixtures is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * virtual-fixtures is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef VIRTUAL_MECHANISM_INTERFACE_H
 #define VIRTUAL_MECHANISM_INTERFACE_H
 
@@ -157,6 +180,11 @@ class VirtualMechanismInterface
 
         // Compute the jacobian versor (used to avoid the lock in the manager)
         ComputeJacobianVersor();
+
+        // Publish stuff
+#ifdef USE_ROS_RT_PUBLISHER
+        rt_publishers_.PublishAll();
+#endif
 	  }
 	  
       virtual void Stop()
@@ -182,8 +210,8 @@ class VirtualMechanismInterface
 	  }
 	  
       // Here to no break the polymorphism
-      virtual double ComputeResponsability(const Eigen::MatrixXd& pos){ROS_ERROR("ComputeResponsability has not been defined.");}
-      virtual double GetResponsability(){ROS_ERROR("GetResponsability has not been defined.");}
+      virtual double ComputeResponsability(const Eigen::MatrixXd& pos){PRINT_ERROR("ComputeResponsability has not been defined.");}
+      virtual double GetResponsability(){PRINT_ERROR("GetResponsability has not been defined.");}
 
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data)=0;
       virtual bool CreateModelFromFile(const std::string file_path)=0;
@@ -229,9 +257,7 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getJacobian() {return J_;}
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
-      //inline const std::string& getName() const {return name_;}
 
-      //inline void setName(const std::string name) {name_ = name;}
       //inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
@@ -260,7 +286,37 @@ class VirtualMechanismInterface
 
          Init();
       }
-	  
+
+      inline void InitRtPublishers(const std::string node_name)
+      {
+
+#ifdef USE_ROS_RT_PUBLISHER
+
+        // Reset the ros node (usefull if we change node's name)
+        if(ros_node_.InitDone())
+            ros_node_.Reset();
+
+        // Initialize the ros node and the rt-publishers
+        try
+        {
+              ros_node_.Init(node_name);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_ddot_);
+              //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
+        }
+        catch(const std::runtime_error& e)
+        {
+              ROS_ERROR("Failed to create the real time publishers: %s",e.what());
+        }
+#else
+        PRINT_WARNING("Impossible to start the real time publishers.");
+#endif
+
+      }
+
+
    protected:
 
 	  virtual void UpdateJacobian()=0;
@@ -350,6 +406,12 @@ class VirtualMechanismInterface
       boost::shared_ptr<quaternion_t > q_start_;
       boost::shared_ptr<quaternion_t > q_end_;
       boost::shared_ptr<quaternion_t > quaternion_;
+
+      // Ros Stuff
+#ifdef USE_ROS_RT_PUBLISHER
+      tool_box::RosNode ros_node_;
+      tool_box::RealTimePublishers<tool_box::RealTimePublisherScalar> rt_publishers_;
+#endif
 
 };
   
