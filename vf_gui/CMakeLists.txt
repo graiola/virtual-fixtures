@@ -15,9 +15,6 @@ find_package(catkin REQUIRED COMPONENTS roscpp roslib
 # Find the QtWidgets library
 find_package(Qt5Widgets)
 
-# Find Qt DBus
-find_package(Qt5DBus)
-
 # Catkin specific configuration
 catkin_package(
  #CATKIN_DEPENDS mechanism_manager
@@ -40,7 +37,7 @@ add_executable(vf_gui ui_main_window.h
                       src/main.cpp)
 
 # Use the Widgets and DBus modules from Qt 5.
-target_link_libraries(vf_gui Qt5::Widgets Qt5::DBus ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(vf_gui Qt5::Widgets ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 add_dependencies(
   vf_gui
