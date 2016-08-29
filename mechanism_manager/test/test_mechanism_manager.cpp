@@ -143,13 +143,7 @@ TEST(MechanismManagerTest, SaveVmMethod)
 
   EXPECT_NO_THROW(mm->InsertVm(model_name));
 
-  //std::cout << "Press to continue..." << std::endl;
-  //getchar();
-
   EXPECT_NO_THROW(mm->SaveVm(0));
-
-  //std::cout << "Press to continue..." << std::endl;
-  //getchar();
 
   delete mm;
 }
@@ -193,15 +187,8 @@ TEST(MechanismManagerTest, InsertVmUpdateGetPositionAndVelocityDelete) // Most a
   EXPECT_NO_THROW(mm.GetVmVelocity(0,&vel_std[0])); // Get
   END_REAL_TIME_CRITICAL_CODE();
 
-  //std::cout << "Press to continue..." << std::endl;
-  //getchar();
 
-  // Delete Note: this is async, so it could happen that there is nothing to delete because Insert is still going on
   EXPECT_NO_THROW(mm.DeleteVm(0));
-
-  //std::cout << "Press to continue..." << std::endl;
-  //getchar();
-
 }
 
 TEST(MechanismManagerTest, CheckNamesCollision)
@@ -213,7 +200,7 @@ TEST(MechanismManagerTest, CheckNamesCollision)
 
   ASSERT_EQ(mm.GetNbVms(),1);
 
-  // FIXME This is a kind of hack, by changing the name I am allowed to add the same guide
+  // FIXME This is a kind of hack, by changing the name it is possible to add the same guide twice
   std::string new_name = "newnew";
   EXPECT_NO_THROW(mm.SetVmName(0,new_name));
   EXPECT_NO_THROW(mm.InsertVm(model_name));
@@ -292,22 +279,22 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   long long loopCnt = 0;
 
-  int n_steps = 15000; // Give enough time to test stuff
+  int n_steps = 1500; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
       //if(loopCnt%500==0)
-      //    mm.SaveVm(0);
+      //    mm.SaveVm(0,true);
 
       loopCnt++;
 
-      //START_REAL_TIME_CRITICAL_CODE();
+      START_REAL_TIME_CRITICAL_CODE();
       EXPECT_NO_THROW(mm.Update(rob_pos,rob_vel,dt,f_out));
       EXPECT_NO_THROW(mm.GetVmPosition(0,pos));
       EXPECT_NO_THROW(mm.GetVmVelocity(0,vel));
       EXPECT_NO_THROW(scale = mm.GetScale(0));
       EXPECT_NO_THROW(phase = mm.GetPhase(0));
-      //END_REAL_TIME_CRITICAL_CODE();
+      END_REAL_TIME_CRITICAL_CODE();
 
       if(i == 10)
       {
