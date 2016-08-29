@@ -24,7 +24,6 @@ find_package(catkin
   COMPONENTS
   sensor_msgs
   geometry_msgs
-  nav_msgs
   visualization_msgs
   realtime_tools
 )
