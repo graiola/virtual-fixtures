@@ -455,7 +455,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
             rt_buffer[i].scale =  rt_buffer[i].scale * rt_buffer[i].scale_hard;
             break;
         default:
-          PRINT_ERROR("Wrong scale_mode.");
+          rt_buffer[i].scale =  rt_buffer[i].scale * rt_buffer[i].scale_hard; // Soft
           break;
       }
     }
