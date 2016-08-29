@@ -104,6 +104,8 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         no_rt_idx_ = (no_rt_idx_ + 1) % 2;
 
         guard.unlock(); // Unlock
+
+        PRINT_INFO("... Done!");
     }
     else
         PRINT_WARNING("Impossible to insert the guide, guide already existing.");
@@ -150,8 +152,6 @@ void MechanismManager::InsertVm(std::string& model_name)
     }
 
     AddNewVm(vm_tmp_ptr,model_name);
-
-    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVm(const MatrixXd& data)
@@ -170,8 +170,6 @@ void MechanismManager::InsertVm(const MatrixXd& data)
 
     std::string default_name = "guide_"+std::to_string(++guide_unique_id_);
     AddNewVm(vm_tmp_ptr,default_name);
-
-    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVm(double* data, const int n_rows)
