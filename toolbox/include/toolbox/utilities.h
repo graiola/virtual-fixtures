@@ -113,7 +113,7 @@ class AsyncThread
         inline void AddHandler(funct_t f)
         {
             if(trigger_ == true)
-                throw std::runtime_error("Service thread already busy.");
+                std::cerr<< "Service thread already busy." << std::endl;
             else
                 f_ = f;
         }
