@@ -39,7 +39,8 @@ extern "C"
 #define SEC2NANO(a)	a*1e9
 
 ////////// Activate some timing infos
-#define TIMING
+//#define TIMING // NOTE: Prints are not real time safe... use them at your own risk!
+bool kill_loop = false;
 static int tmp_dt_cnt;
 static int tmp_loop_cnt;
 static long long start_dt_time, end_dt_time, elapsed_dt_time;
@@ -61,15 +62,15 @@ double count2Sec(const long long in){
 
 #define INIT_CNT(cnt) do { if (TIME_ACTIVE) (cnt) = 0; } while (0)
 #define SAVE_TIME(out) do { if (TIME_ACTIVE) getCpuCount((out)); } while (0)
-#define PRINT_TIME(T_start,T_end,cnt,string) do { if (TIME_ACTIVE) if ((cnt)%100==0) ROS_INFO("%s: %fs",string,count2Sec(((T_end) - (T_start)))); cnt = cnt++ & INT_MAX;} while (0)
+#define PRINT_TIME(T_start,T_end,cnt,string) do { if (TIME_ACTIVE) if ((cnt)%1000==0) ROS_INFO("%s: %fs",string,count2Sec(((T_end) - (T_start)))); cnt = cnt++ & INT_MAX;} while (0)
 
 double dt = 0.001;
 static RT_TASK *rt_task; // Main task will be Real time schedulable!
 
-// NOTE: The rtai modules have to been already loaded in order to be able to schedule a rtai task!
+// NOTE: The rtai modules have to been already loaded in order to be able to schedule a rtai task
 // sudo insmod /usr/realtime/modules/rtai_hal.ko
 // sudo insmod /usr/realtime/modules/rtai_sched.ko
-// NOTE: The code has to been compiled in Release in order to run at 1kHz
+// NOTE: The code has to been compiled in Release in order to run at ~1kHz
 bool rt_init()
 {
     rt_allow_nonroot_hrt();
@@ -115,7 +116,7 @@ void rt_update_loop()
         f_out.fill(0.0);
 
         SAVE_TIME(start_loop_time);
-        while(true) // RT Loop
+        while(!kill_loop) // RT Loop
         {
             SAVE_TIME(start_dt_time);
 
@@ -133,9 +134,16 @@ void rt_update_loop()
     }
 }
 
+void rt_shutdown(int signum)
+{
+    kill_loop = true;
+}
+
 int main(int argc, char** argv)
 {
+    signal(SIGINT, rt_shutdown);
+
     rt_update_loop();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
