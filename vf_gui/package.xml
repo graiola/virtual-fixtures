@@ -23,9 +23,4 @@
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>mechanism_manager</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
 </package>
