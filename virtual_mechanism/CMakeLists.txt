@@ -17,7 +17,17 @@ set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 find_package(catkin REQUIRED COMPONENTS
   toolbox
   roslib
+  COMPONENTS
+  sensor_msgs
+  geometry_msgs
+  visualization_msgs
+  realtime_tools
 )
+
+if(realtime_tools_FOUND AND sensor_msgs_FOUND)
+   add_definitions(-DUSE_ROS_RT_PUBLISHER)
+   message(STATUS "Realtime tools found")
+endif()
 
 ###################################
 ## catkin specific configuration ##

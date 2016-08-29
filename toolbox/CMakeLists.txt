@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
  roslib
  rospy
  std_msgs
- realtime_tools
 )
 
 catkin_package(
@@ -21,10 +20,6 @@ catkin_package(
 
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION}) # Has to be after catkin_package() call
 
-if(realtime_tools_FOUND)
-    message(STATUS "Use REALTIME TOOLS")
-    #add_definitions(-DINCLUDE_ROS_RT_PUBLISHER)
-endif(realtime_tools_FOUND)
 
 ## Visualize the folders src and include in QtCreator
 FILE(GLOB_RECURSE include_files "include/*.h")
