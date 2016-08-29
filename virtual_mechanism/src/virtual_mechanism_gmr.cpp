@@ -56,8 +56,10 @@ template <class VM_t>
 VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized(const std::string file_path):
     VirtualMechanismGmrNormalized()
 {
-    CreateModelFromFile(file_path);
-    VM_t::Init();
+    if(CreateModelFromFile(file_path))
+        VM_t::Init();
+    else
+        PRINT_ERROR("Can not create model from file "<< file_path);
 }
 
 template <class VM_t>
