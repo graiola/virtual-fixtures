@@ -144,7 +144,8 @@ class AsyncThread
         boost::thread callback_;
 };
 
-class ThreadsPool
+
+/*class ThreadsPool
 {
     typedef boost::function<void ()> funct_t;
     public:
@@ -202,8 +203,7 @@ class ThreadsPool
 
         std::vector<AsyncThread* > pool_;
         //boost::thread polling_thread_;
-
-};
+};*/
 
 /// Eigen containers manipulation
 inline void Delete(const int idx, Eigen::VectorXd& vect)
