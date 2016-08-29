@@ -129,6 +129,12 @@ bool MechanismManager::ReadConfig()
 
 void MechanismManager::InsertVm(std::string& model_name)
 {
+    if(model_name.empty())
+    {
+        PRINT_WARNING("Impossible to create the guide, empty name.");
+        return;
+    }
+
     std::string model_complete_path(pkg_path_+"/models/gmm/"+model_name); // FIXME change the folder for splines
     PRINT_INFO("Creating the guide from file... " << model_complete_path);
     vm_t* vm_tmp_ptr = NULL;
