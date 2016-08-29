@@ -15,8 +15,8 @@ These packages allow you to create a library of guides (i.e. multiple guides wor
 ------
 ## Why ?
 
-Virtual guides can be used in a co-manipulation context where humans and robots work togheter to complete different kind of tasks. As well known, industrial robots have a good accuracy and strength but they lack flexibility in terms of abstract thinking and perception, while humans excel in both things.
-By using the virtual guides it is possible to combine the advantages of both in order to facilitate the joint completion of a task. 
+Virtual guides can be used in a co-manipulation context where humans and robots work togheter to complete different kind of tasks. As well known, industrial robots have a good accuracy and strength but they lack the capacity of abstract thinking and they don't (usually) posses a good perception.
+By using the virtual guides it is possible to combine the advantages of an industrial robot with the flexibility and smartness of a human worker, in order to facilitate the joint completion of a task. 
 
 ------
 ## Prerequisites
@@ -28,3 +28,10 @@ Work in progress..
 ```bash
 Work in progress.. 
 ```
+
+------
+## References
+[1]  Gennaro Raiola, Xavier Lamy, and Freek Stulp. 
+     Co-manipulation with Multiple Probabilistic Virtual Guides. In International Conference on       Intelligent Robots and Systems (IROS), 2015. [pdf](https://hal-cea.archives-ouvertes.fr/hal-01170974/document)
+
+[2]   Gennaro Raiola, Pedro Rodriguez-Ayerbe, Xavier Lamy, Sami Tliba, and Freek Stulp. Parallel Guiding Virtual Fixtures: Control and Stability. In IEEE Multi-Conference on Systems and Control (MSC), 2015. [pdf](https://hal-cea.archives-ouvertes.fr/hal-01250101/document)
