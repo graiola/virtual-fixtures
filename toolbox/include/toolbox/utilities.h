@@ -102,7 +102,6 @@ class AsyncThread
         {
             trigger_ = false;
             stop_loop_ = false;
-            busy_ = false;
             loop_ = boost::thread(boost::bind(&AsyncThread::Loop, this));
         }
         ~AsyncThread()
@@ -113,15 +112,14 @@ class AsyncThread
         }
         inline void AddHandler(funct_t f)
         {
-            //if(f_.empty())
-            f_ = f;
-            //else
-            //    std::cerr << "Callback already defined" << std::endl;
+            if(trigger_ == true)
+                throw std::runtime_error("Service thread already busy.");
+            else
+                f_ = f;
         }
         inline void Trigger()
         {
             trigger_ = true;
-            busy_ = true; // I am going to do amazing stuff!
         }
         inline void Loop()
         {
@@ -129,32 +127,14 @@ class AsyncThread
             {
                 if(trigger_)
                 {
-                    if(!f_.empty())
-                    {
-                        trigger_ = false;
-                        callback_ =  boost::thread(f_);
-                        callback_.join();
-                        //f_.clear();
-                    }
-                    else
-                        std::cerr << "No Callback function" << std::endl;
-                    busy_ = false; // Work done!
+                    callback_ =  boost::thread(f_);
+                    callback_.join();
+                    trigger_ = false;
                 }
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             }
             return;
         }
-
-        inline void Wait()
-        {
-            //callback_.join();
-            while(busy_)
-            {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            }
-        }
-
-        boost::atomic<bool> busy_;
 
     private:
         funct_t f_;
