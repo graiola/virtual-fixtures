@@ -1,6 +1,6 @@
 /**
  * @file   test_virtual_mechanism_gmr.cpp
- * @brief  GTest.
+ * @brief  GTest for Virtual Mechanism GMR.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
