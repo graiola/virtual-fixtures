@@ -2,7 +2,7 @@
 <package>
   <name>toolbox</name>
   <version>0.0.0</version>
-  <description>The toolbox package</description>
+  <description>Mechanism Manager</description>
 
   <maintainer email="gennaro.raiola(at)gmail.com">Gennaro Raiola</maintainer>
 
