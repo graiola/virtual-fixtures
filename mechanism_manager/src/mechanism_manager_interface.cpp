@@ -100,11 +100,6 @@ bool MechanismManagerInterface::ReadConfig()
         return false;
 }
 
-/*bool MechanismManagerInterface::ExecuteService()
-{
-
-}*/
-
 void MechanismManagerInterface::InsertVm(MatrixXd& data, bool threading)
 {
     if(threading)
