@@ -125,8 +125,8 @@ class MechanismManager
     /// Double buffer http://gameprogrammingpatterns.com/double-buffer.html
     /// Mechanism used: Page-flipping
     std::vector<GuideStruct> vm_buffers_[2];
-    boost::atomic<int> rt_idx_; // atom
-    boost::atomic<int> no_rt_idx_; // atom
+    std::atomic<int> rt_idx_; // atom
+    std::atomic<int> no_rt_idx_; // atom
     mutex_t mtx_;
 };
 

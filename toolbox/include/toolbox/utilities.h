@@ -27,6 +27,7 @@
 ////////// STD
 #include <iostream>
 #include <fstream>
+#include <atomic>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -157,8 +158,8 @@ class AsyncThread
 
     private:
         funct_t f_;
-        boost::atomic<bool> trigger_;
-        boost::atomic<bool> stop_loop_;
+        std::atomic<bool> trigger_;
+        std::atomic<bool> stop_loop_;
         boost::thread loop_;
         boost::thread callback_;
 };
