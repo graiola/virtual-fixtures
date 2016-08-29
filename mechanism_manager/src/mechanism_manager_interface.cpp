@@ -35,9 +35,10 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 {
       //threads_pool_ = new ThreadsPool(4); // Create 4 workers
 
-      async_thread_insert_ = new AsyncThread();
-      async_thread_delete_ = new AsyncThread();
-      async_thread_save_ = new AsyncThread();
+      //async_thread_insert_ = new AsyncThread();
+      //async_thread_delete_ = new AsyncThread();
+      //async_thread_save_ = new AsyncThread();
+      async_thread_ = new AsyncThread();
 
       if(!ReadConfig())
       {
@@ -74,9 +75,10 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
 MechanismManagerInterface::~MechanismManagerInterface()
 {
     //delete threads_pool_;
-    delete async_thread_insert_;
-    delete async_thread_delete_;
-    delete async_thread_save_;
+    //delete async_thread_insert_;
+    //delete async_thread_delete_;
+    //delete async_thread_save_;
+    delete async_thread_;
 
     if(mm_server_!=NULL)
       delete mm_server_;
@@ -107,9 +109,8 @@ void MechanismManagerInterface::InsertVm(MatrixXd& data, bool threading)
 {
     if(threading)
     {
-        //threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVm), mm_, data));
-        async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVm), mm_, data));
-        async_thread_insert_->Trigger();
+        async_thread_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(const MatrixXd&)>(&MechanismManager::InsertVm), mm_, data));
+        async_thread_->Trigger();
     }
     else
         mm_->InsertVm(data);
@@ -119,9 +120,8 @@ void MechanismManagerInterface::InsertVm(std::string& model_name, bool threading
 {
     if(threading)
     {
-        //threads_pool_->DoAsyncWork(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVm), mm_, model_name));
-        async_thread_insert_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVm), mm_, model_name));
-        async_thread_insert_->Trigger();
+        async_thread_->AddHandler(boost::bind(static_cast<void (MechanismManager::*)(std::string&)>(&MechanismManager::InsertVm), mm_, model_name));
+        async_thread_->Trigger();
     }
     else
         mm_->InsertVm(model_name);
@@ -131,9 +131,8 @@ void MechanismManagerInterface::InsertVm(double* data, const int n_rows, bool th
 {
     if(threading)
     {
-        //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::InsertVm, mm_, data, n_rows));
-        async_thread_insert_->AddHandler(boost::bind(&MechanismManager::InsertVm, mm_, data, n_rows));
-        async_thread_insert_->Trigger();
+        async_thread_->AddHandler(boost::bind(&MechanismManager::InsertVm, mm_, data, n_rows));
+        async_thread_->Trigger();
     }
     else
         mm_->InsertVm(data,n_rows);
@@ -143,8 +142,8 @@ void MechanismManagerInterface::UpdateVm(Eigen::MatrixXd& data, const int idx, b
 {
     if(threading)
     {
-        async_thread_insert_->AddHandler(boost::bind(&MechanismManager::UpdateVm, mm_, data, idx));
-        async_thread_insert_->Trigger();
+        async_thread_->AddHandler(boost::bind(&MechanismManager::UpdateVm, mm_, data, idx));
+        async_thread_->Trigger();
     }
     else
         mm_->UpdateVm(data,idx);
@@ -154,8 +153,8 @@ void MechanismManagerInterface::ClusterVm(Eigen::MatrixXd& data, bool threading)
 {
     if(threading)
     {
-        async_thread_insert_->AddHandler(boost::bind(&MechanismManager::ClusterVm, mm_, data));
-        async_thread_insert_->Trigger();
+        async_thread_->AddHandler(boost::bind(&MechanismManager::ClusterVm, mm_, data));
+        async_thread_->Trigger();
     }
     else
         mm_->ClusterVm(data);
@@ -165,9 +164,8 @@ void MechanismManagerInterface::SaveVm(const int idx, bool threading)
 {
     if(threading)
     {
-        //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SaveVm, mm_, idx));
-        async_thread_save_->AddHandler(boost::bind(&MechanismManager::SaveVm, mm_, idx));
-        async_thread_save_->Trigger();
+        async_thread_->AddHandler(boost::bind(&MechanismManager::SaveVm, mm_, idx));
+        async_thread_->Trigger();
     }
     else
         mm_->SaveVm(idx);
@@ -177,42 +175,26 @@ void MechanismManagerInterface::DeleteVm(const int idx, bool threading)
 {
     if(threading)
     {
-        //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::DeleteVm, mm_, idx));
-        async_thread_delete_->AddHandler(boost::bind(&MechanismManager::DeleteVm, mm_, idx));
-        async_thread_delete_->Trigger();
+        async_thread_->AddHandler(boost::bind(&MechanismManager::DeleteVm, mm_, idx));
+        async_thread_->Trigger();
     }
     else
         mm_->DeleteVm(idx);
 }
 
-void MechanismManagerInterface::GetVmName(const int idx, std::string& name, bool threading)
+void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
-    if(threading)
-    {
-        //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmName, mm_, idx,  boost::ref(name)));
-    }
-    else
-        mm_->GetVmName(idx,name);
+    mm_->GetVmName(idx,name);
 }
 
-void MechanismManagerInterface::GetVmNames(std::vector<std::string>& names, bool threading)
+void MechanismManagerInterface::GetVmNames(std::vector<std::string>& names)
 {
-    if(threading)
-    {
-        //threads_pool_->DoSyncWork(boost::bind(&MechanismManager::GetVmNames, mm_, boost::ref(names)));
-    }
-    else
-        mm_->GetVmNames(names);
+    mm_->GetVmNames(names);
 }
 
-void MechanismManagerInterface::SetVmName(const int idx, std::string& name, bool threading)
+void MechanismManagerInterface::SetVmName(const int idx, std::string& name)
 {
-    if(threading)
-    {
-        //threads_pool_->DoAsyncWork(boost::bind(&MechanismManager::SetVmName, mm_, idx,  name));
-    }
-    else
-        mm_->SetVmName(idx,name);
+    mm_->SetVmName(idx,name);
 }
 
 void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)

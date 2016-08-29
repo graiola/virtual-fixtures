@@ -57,7 +57,7 @@ class MechanismManagerInterface
     void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode = SOFT);
     void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode = SOFT);
 
-    /// Non real time services
+    /// Non real time async services
     /// threading enables the use of separate threads to ensure the real time
     void InsertVm(std::string& model_name, bool threading = default_threading_on);
     void InsertVm(Eigen::MatrixXd& data, bool threading = default_threading_on);
@@ -66,9 +66,11 @@ class MechanismManagerInterface
     void UpdateVm(Eigen::MatrixXd& data, const int idx, bool threading = default_threading_on);
     void ClusterVm(Eigen::MatrixXd& data, bool threading = default_threading_on);
     void SaveVm(const int idx, bool threading = default_threading_on);
-    void GetVmName(const int idx, std::string& name, bool threading = default_threading_on);
-    void SetVmName(const int idx, std::string& name, bool threading = default_threading_on);
-    void GetVmNames(std::vector<std::string>& names, bool threading = default_threading_on);
+
+    /// Non real time sync services
+    void GetVmName(const int idx, std::string& name);
+    void SetVmName(const int idx, std::string& name);
+    void GetVmNames(std::vector<std::string>& names);
 
     /// Stop the mechanisms
     void Stop();
@@ -110,10 +112,11 @@ class MechanismManagerInterface
     MechanismManager* mm_;
 
     // Thread stuff
+    tool_box::AsyncThread* async_thread_;
     //tool_box::ThreadsPool* threads_pool_;
-    tool_box::AsyncThread* async_thread_insert_;
-    tool_box::AsyncThread* async_thread_delete_;
-    tool_box::AsyncThread* async_thread_save_;
+    //tool_box::AsyncThread* async_thread_insert_;
+    //tool_box::AsyncThread* async_thread_delete_;
+    //tool_box::AsyncThread* async_thread_save_;
 
     // Ros stuff
     tool_box::RosNode ros_node_;
