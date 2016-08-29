@@ -26,6 +26,8 @@
 using namespace mechanism_manager;
 using namespace ros;
 
+bool use_threading = false;
+
 MechanismManagerServer::MechanismManagerServer(MechanismManagerInterface* mm_interface, NodeHandle& nh)
     : spinner_ptr_(NULL)
 {
@@ -59,17 +61,17 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
 {
     if(std::strcmp(req.request_command.c_str(), "delete") == 0)
     {
-        mm_interface_->DeleteVm(req.selected_guide_idx);
+        mm_interface_->DeleteVm(req.selected_guide_idx,use_threading);
         res.response_command = req.request_command;
     }
     if(std::strcmp(req.request_command.c_str(), "save") == 0)
     {
-        mm_interface_->SaveVm(req.selected_guide_idx);
+        mm_interface_->SaveVm(req.selected_guide_idx,use_threading);
         res.response_command = req.request_command;
     }
     if(std::strcmp(req.request_command.c_str(), "insert") == 0)
     {
-        mm_interface_->InsertVm(req.selected_guide_name);
+        mm_interface_->InsertVm(req.selected_guide_name,use_threading);
         res.response_command = req.request_command;
     }
 
