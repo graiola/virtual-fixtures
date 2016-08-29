@@ -93,8 +93,9 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         new_guide.fade = boost::shared_ptr<DynSystemFirstOrder>(new DynSystemFirstOrder(10.0)); // FIXME since it's a dynamic system, it should be a pointer or in the vm
 
         // Define a new ros node with the same name as the guide
+#ifdef USE_ROS_RT_PUBLISHER
         new_guide.guide->InitRtPublishers(name);
-
+#endif
         // Add the new guide to the buffer
         no_rt_buffer.push_back(new_guide);
 
@@ -398,7 +399,9 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
         if(!CheckForNamesCollision(name))
         {
             rt_buffer[idx].name = name;
+#ifdef USE_ROS_RT_PUBLISHER
             rt_buffer[idx].guide->InitRtPublishers(name);
+#endif
         }
         else
             PRINT_WARNING("Name already used, please change it");
