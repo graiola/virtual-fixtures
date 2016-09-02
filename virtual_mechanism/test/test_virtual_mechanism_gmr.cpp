@@ -29,9 +29,12 @@
 #include "virtual_mechanism/virtual_mechanism_gmr.h"
 
 ////////// Function Approximator
-#include <functionapproximators/FunctionApproximatorGMR.hpp>
-#include <functionapproximators/ModelParametersGMR.hpp>
-#include <functionapproximators/MetaParametersGMR.hpp>
+//#include <functionapproximators/FunctionApproximatorGMR.hpp>
+//#include <functionapproximators/ModelParametersGMR.hpp>
+//#include <functionapproximators/MetaParametersGMR.hpp>
+#include <vf_gmr/FunctionApproximatorGMR.hpp>
+#include <vf_gmr/ModelParametersGMR.hpp>
+#include <vf_gmr/MetaParametersGMR.hpp>
 
 ////////// STD
 #include <iostream>

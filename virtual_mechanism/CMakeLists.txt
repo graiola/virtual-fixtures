@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules
 
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED) 
 find_package(YamlCpp REQUIRED)
-set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
+#set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -17,6 +17,7 @@ set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 find_package(catkin REQUIRED COMPONENTS
   toolbox
   roslib
+  vf_gmr
   COMPONENTS
   sensor_msgs
   geometry_msgs
@@ -41,7 +42,7 @@ endif()
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS toolbox
+ CATKIN_DEPENDS toolbox vf_gmr
  DEPENDS system_lib boost dmpbbo
 )
 
@@ -50,7 +51,7 @@ add_definitions(-DROS_PKG_NAME="${PROJECT_NAME}")
 
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR} ${YAMLCPP_INCLUDE_DIR})
-set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES} ${Boost_LIBRARIES} ${YAMLCPP_LIBRARY})
+set(LINK_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAMLCPP_LIBRARY})
 set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

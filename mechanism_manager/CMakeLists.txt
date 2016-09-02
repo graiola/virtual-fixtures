@@ -10,7 +10,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules
 find_package(Boost COMPONENTS filesystem system serialization REQUIRED)
 find_package(RTAI)
 find_package(YamlCpp REQUIRED)
-set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
+#set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 find_package(catkin
   REQUIRED COMPONENTS
@@ -19,6 +19,7 @@ find_package(catkin
   rospy
   std_msgs
   toolbox
+  vf_gmr
   virtual_mechanism
   message_generation
   COMPONENTS
@@ -61,8 +62,7 @@ add_definitions(-DROS_PKG_NAME="${PROJECT_NAME}")
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
     ${VIRTUAL_MECHANISM_INCLUDE_DIR} ${RTAI_INCLUDE_DIR} ${YAMLCPP_INCLUDE_DIR})
-set(LINK_LIBS ${catkin_LIBRARIES} ${DMP_LIBRARIES}
-    ${Boost_LIBRARIES} ${RTAI_LIBRARIES} ${YAMLCPP_LIBRARY})
+set(LINK_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${RTAI_LIBRARIES} ${YAMLCPP_LIBRARY})
 set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
@@ -86,7 +86,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
+add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/mechanism_manager_server.h
     include/${PROJECT_NAME}/mechanism_manager_interface.h
     include/${PROJECT_NAME}/mechanism_manager.h

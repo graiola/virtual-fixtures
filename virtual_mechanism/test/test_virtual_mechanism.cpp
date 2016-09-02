@@ -1,6 +1,6 @@
 /**
  * @file   test_virtual_mechanism.cpp
- * @brief  GTest.
+ * @brief  GTest for Virtual Mechanism.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
