@@ -67,10 +67,10 @@ double count2Sec(const long long in){
 double dt = 0.001;
 static RT_TASK *rt_task; // Main task will be Real time schedulable!
 
-// NOTE: The rtai modules have to been already loaded in order to be able to schedule a rtai task
+// NOTE: The rtai modules have to be already loaded in order to be able to schedule a rtai task
 // sudo insmod /usr/realtime/modules/rtai_hal.ko
 // sudo insmod /usr/realtime/modules/rtai_sched.ko
-// NOTE: The code has to been compiled in Release in order to run at ~1kHz
+// NOTE: The code has to be compiled in Release in order to run at ~1kHz
 bool rt_init()
 {
     rt_allow_nonroot_hrt();
