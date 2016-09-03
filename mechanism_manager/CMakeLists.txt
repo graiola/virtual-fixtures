@@ -10,7 +10,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules
 find_package(Boost COMPONENTS filesystem system REQUIRED)
 find_package(RTAI)
 find_package(YamlCpp REQUIRED)
-#set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 find_package(catkin
   REQUIRED COMPONENTS
@@ -25,11 +24,6 @@ find_package(catkin
 )
 
 find_package(realtime_tools QUIET)
-
-if(realtime_tools_FOUND)
-   add_definitions(-DUSE_ROS_RT_PUBLISHER)
-   message(STATUS "Realtime tools found")
-endif()
 
 add_service_files(FILES
   MechanismManagerServices.srv)
@@ -58,11 +52,26 @@ add_definitions(-DROS_PKG_NAME="${PROJECT_NAME}")
 
 set(INCLUDE_INSTALL_DIR ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 set(INCLUDE_PATHS ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${TOOLBOX_INCLUDE_DIR}
-    ${VIRTUAL_MECHANISM_INCLUDE_DIR} ${RTAI_INCLUDE_DIR} ${YAMLCPP_INCLUDE_DIR})
-set(LINK_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${RTAI_LIBRARIES} ${YAMLCPP_LIBRARY})
+    ${VIRTUAL_MECHANISM_INCLUDE_DIR}  ${YAMLCPP_INCLUDE_DIR})
+set(LINK_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAMLCPP_LIBRARY})
 set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+if(RTAI_FOUND)
+    message(STATUS "RTAI found")
+    list(APPEND INCLUDE_PATHS ${RTAI_INCLUDE_DIR})
+    list(APPEND LINK_LIBS ${RTAI_LIBRARIES})
+    add_executable(test_realtime test/test_realtime.cpp)
+    target_link_libraries(test_realtime ${PROJECT_NAME})
+endif()
+
+if(realtime_tools_FOUND)
+   add_definitions(-DUSE_ROS_RT_PUBLISHER)
+   message(STATUS "Realtime tools found")
+   list(APPEND INCLUDE_PATHS ${realtime_tools_INCLUDE_DIRS})
+   list(APPEND LINK_LIBS ${realtime_tools_LIBRARIES})
+endif()
 
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(test_mechanism_manager
@@ -99,12 +108,6 @@ add_dependencies(
   ${PROJECT_NAME}
   ${mechanism_manager_EXPORTED_TARGETS}
 )
-
-if(RTAI_FOUND)
-    message(STATUS "RTAI found")
-    add_executable(test_realtime test/test_realtime.cpp)
-    target_link_libraries(test_realtime ${PROJECT_NAME})
-endif()
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}

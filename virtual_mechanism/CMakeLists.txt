@@ -22,11 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(realtime_tools QUIET)
 
-if(realtime_tools_FOUND)
-   add_definitions(-DUSE_ROS_RT_PUBLISHER)
-   message(STATUS "Realtime tools found")
-endif()
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -52,6 +47,13 @@ set(LINK_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAMLCPP_LIBRARY})
 set(ARCHIVE_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(LIBRARY_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 set(RUNTIME_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+if(realtime_tools_FOUND)
+   add_definitions(-DUSE_ROS_RT_PUBLISHER)
+   message(STATUS "Realtime tools found")
+   list(APPEND INCLUDE_PATHS ${realtime_tools_INCLUDE_DIRS})
+   list(APPEND LINK_LIBS ${realtime_tools_LIBRARIES})
+endif()
 
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(test_gmr
