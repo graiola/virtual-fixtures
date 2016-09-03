@@ -4,9 +4,6 @@ project(vf_gui)
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# Instruct CMake to run moc automatically when needed.
-set(CMAKE_AUTOMOC ON)
-
 find_package(Boost COMPONENTS system REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS roscpp roslib
@@ -16,38 +13,50 @@ find_package(catkin REQUIRED COMPONENTS roscpp roslib
 find_package(Qt5Widgets)
 
 # Catkin specific configuration
-catkin_package(
- #CATKIN_DEPENDS mechanism_manager
- #DEPENDS system_lib boost
-)
+	catkin_package(
+	 #CATKIN_DEPENDS mechanism_manager
+	 #DEPENDS system_lib boost
+	)
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include ${catkin_INCLUDE_DIRS})
+	## Specify additional locations of header files
+	## Your package locations should be listed before other locations
+	include_directories(include ${catkin_INCLUDE_DIRS})
 
-# Parse the ui files
-qt5_wrap_ui(ui_main_window.h forms/main_window.ui)
+if(Qt5Widgets_FOUND)
 
-# Tell CMake to create the executable
-add_executable(vf_gui ui_main_window.h
-                      include/main_window.h
-                      include/guides_model.h
-                      src/main_window.cpp
-                      src/guides_model.cpp
-                      src/main.cpp)
+	message(STATUS "Qt5Widgets Found - Compile ${PROJECT_NAME}")
 
-# Use the Widgets and DBus modules from Qt 5.
-target_link_libraries(vf_gui Qt5::Widgets ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+	# Instruct CMake to run moc automatically when needed.
+	set(CMAKE_AUTOMOC ON)
 
-add_dependencies(
-  vf_gui
-  ${mechanism_manager_EXPORTED_TARGETS}
-)
+	# Parse the ui files
+	qt5_wrap_ui(ui_main_window.h forms/main_window.ui)
 
-# Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} vf_gui
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+	# Tell CMake to create the executable
+	add_executable(vf_gui ui_main_window.h
+			      include/main_window.h
+			      include/guides_model.h
+			      src/main_window.cpp
+			      src/guides_model.cpp
+			      src/main.cpp)
+
+	# Use the Widgets and DBus modules from Qt 5.
+	target_link_libraries(vf_gui Qt5::Widgets ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+
+	add_dependencies(
+	  vf_gui
+	  ${mechanism_manager_EXPORTED_TARGETS}
+	)
+
+	# Mark executables and/or libraries for installation
+	install(TARGETS ${PROJECT_NAME} vf_gui
+	  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+else(Qt5Widgets_FOUND)
+
+	message(STATUS "Qt5Widgets NOT Found - DON'T Compile ${PROJECT_NAME}")
+
+endif(Qt5Widgets_FOUND)
 
 ## Visualize the folders src and include in QtCreator
 FILE(GLOB_RECURSE include_files "include/*.h")
