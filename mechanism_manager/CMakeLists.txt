@@ -22,7 +22,6 @@ find_package(catkin
   vf_gmr
   virtual_mechanism
   message_generation
-  realtime_tools
 )
 
 find_package(realtime_tools QUIET)
