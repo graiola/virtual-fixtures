@@ -22,14 +22,12 @@ find_package(catkin
   vf_gmr
   virtual_mechanism
   message_generation
-  OPTIONAL_COMPONENTS
-  sensor_msgs
-  geometry_msgs
-  visualization_msgs
   realtime_tools
 )
 
-if(realtime_tools_FOUND AND sensor_msgs_FOUND)
+find_package(realtime_tools QUIET)
+
+if(realtime_tools_FOUND)
    add_definitions(-DUSE_ROS_RT_PUBLISHER)
    message(STATUS "Realtime tools found")
 endif()
