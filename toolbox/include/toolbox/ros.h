@@ -36,10 +36,6 @@
 #ifdef USE_ROS_RT_PUBLISHER
   #include <std_msgs/Float64.h>
   #include <std_msgs/Float64MultiArray.h>
-  #include <geometry_msgs/PoseStamped.h>
-  #include <geometry_msgs/WrenchStamped.h>
-  #include <visualization_msgs/Marker.h>
-  #include <nav_msgs/Path.h>
   #include <realtime_tools/realtime_publisher.h>
 #endif
 
