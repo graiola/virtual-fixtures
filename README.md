@@ -19,18 +19,51 @@ Virtual guides can be used in a co-manipulation context where humans and robots 
 By using the virtual guides it is possible to facilitate the joint completion of a task by combining the advantages of an industrial robot with the smartness of a human worker. 
 
 ------
-## Prerequisites
-#### Necessary 
+## Prerequisites:
+The code has been tested with ROS Indigo and Ubuntu 14.04.
+### Necessary:
+##### Eigen 3.2.2
 ```bash
-Work in progress..
+wget -P /tmp/ http://ftp.fr.debian.org/debian/pool/main/e/eigen3/libeigen3-dev_3.2.2-3_all.deb && sudo dpkg -i /tmp/libeigen3-dev_3.2.2-3_all.deb
 ```
-##### Optional
+##### Yaml
 ```bash
-Work in progress.. 
+sudo apt-get install -y libyaml-cpp-dev
 ```
+### Optional:
+##### ros-control (Needed by vf_controller)
+```bash
+sudo apt-get install -y ros-indigo-ros-control
+```
+##### realtime_tools (Needed to have the real time publishers)
+```bash
+sudo apt-get install -y ros-indigo-realtime-tools 
+```
+##### Qt5 (Needed by vf_gui)
+```bash
+sudo apt-get install -y qt5-default 
+```
+##### RTAI for real time tests
+Here is a good reference to install
+[RTAI](https://www.rtai.org/userfiles/downloads/RTAICONTRIB/RTAI_Installation_Guide.pdf)
 
 ------
-## References
+## Installation:
+In your catkin/src:
+```bash
+sudo git clone --recursive https://github.com/graiola/virtual-fixtures
+```
+Compile and install
+```bash
+catkin_make_isolated --install
+```
+If you want to launch the tests
+```bash
+catkin_make_isolated --install -DCMAKE_BUILD_TYPE=Debug --make-args run_tests
+```
+And that's it! :D
+
+## References:
 [1]  Gennaro Raiola, Xavier Lamy, and Freek Stulp. 
      Co-manipulation with Multiple Probabilistic Virtual Guides. In International Conference on       Intelligent Robots and Systems (IROS), 2015. [pdf](https://hal-cea.archives-ouvertes.fr/hal-01170974/document)
 
