@@ -1,0 +1,9 @@
+- Smart factory where I choose to build active/incremental models
+- VF_CONTROLLER/VF_FAKE_HW
+- Spline uses eigen
+- GmrNormalized and Spline should be called Active
+- Find install requirements -> docker
+- ROS state machine -> check orocos rtt state machine
+- Fix threads pool -> naive fix done
+- Clean old branches -> http://railsware.com/blog/2014/08/11/git-housekeeping-tutorial-clean-up-outdated-branches-in-local-and-remote-repositories/
+- clear the rt_buffer at the end of any async operation
