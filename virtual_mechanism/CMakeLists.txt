@@ -18,10 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   toolbox
   roslib
   vf_gmr
-)
-
-# Optional components
-find_package(catkin COMPONENTS
+  OPTIONAL_COMPONENTS
   sensor_msgs
   geometry_msgs
   visualization_msgs

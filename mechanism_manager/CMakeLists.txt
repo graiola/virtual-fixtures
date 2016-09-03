@@ -22,10 +22,7 @@ find_package(catkin
   vf_gmr
   virtual_mechanism
   message_generation
-)
-
-# Optional components
-find_package(catkin COMPONENTS
+  OPTIONAL_COMPONENTS
   sensor_msgs
   geometry_msgs
   visualization_msgs
