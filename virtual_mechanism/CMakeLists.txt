@@ -46,7 +46,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS toolbox vf_gmr
- DEPENDS system_lib boost dmpbbo
+ DEPENDS system_lib boost
 )
 
 ## To find the yaml file related to the pkg
