@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 ## Set where to find the FindXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules")
 
-find_package(Boost COMPONENTS filesystem system serialization REQUIRED)
+find_package(Boost COMPONENTS filesystem system REQUIRED)
 find_package(RTAI)
 find_package(YamlCpp REQUIRED)
 #set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
@@ -22,7 +22,10 @@ find_package(catkin
   vf_gmr
   virtual_mechanism
   message_generation
-  COMPONENTS
+)
+
+# Optional components
+find_package(catkin COMPONENTS
   sensor_msgs
   geometry_msgs
   visualization_msgs
