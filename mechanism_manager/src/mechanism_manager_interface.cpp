@@ -155,6 +155,17 @@ void MechanismManagerInterface::ClusterVm(Eigen::MatrixXd& data, bool threading)
         mm_->ClusterVm(data);
 }
 
+void MechanismManagerInterface::ClusterVm(double* data, const int n_rows, bool threading)
+{
+    if(threading)
+    {
+        async_thread_->AddHandler(boost::bind(&MechanismManager::ClusterVm, mm_, data, n_rows));
+        async_thread_->Trigger();
+    }
+    else
+        mm_->InsertVm(data,n_rows);
+}
+
 void MechanismManagerInterface::SaveVm(const int idx, bool threading)
 {
     if(threading)

@@ -288,6 +288,12 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         PRINT_WARNING("Impossible to update guide, data is empty.");
 }
 
+void MechanismManager::ClusterVm(double* const data, const int n_rows)
+{
+    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
+    ClusterVm(mat);
+}
+
 /*
 void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
 {
@@ -295,12 +301,6 @@ void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, cons
     UpdateVM_no_rt(mat,idx);
 }
 */
-
-/*void MechanismManager::ClusterVM_no_rt(double* const data, const int n_rows)
-{
-    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
-    ClusterVM_no_rt(mat);
-}*/
 
 void MechanismManager::SaveVm(const int idx)
 {

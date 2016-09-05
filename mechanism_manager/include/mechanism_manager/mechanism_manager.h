@@ -78,6 +78,7 @@ class MechanismManager
     void DeleteVm(const int idx);
     void UpdateVm(Eigen::MatrixXd& data, const int idx);
     void ClusterVm(Eigen::MatrixXd& data);
+    void ClusterVm(double* data, const int n_rows);
     void SaveVm(const int idx);
     void GetVmName(const int idx, std::string& name);
     void SetVmName(const int idx, std::string& name);

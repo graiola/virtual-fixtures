@@ -65,6 +65,7 @@ class MechanismManagerInterface
     void DeleteVm(const int idx, bool threading = default_threading_on);
     void UpdateVm(Eigen::MatrixXd& data, const int idx, bool threading = default_threading_on);
     void ClusterVm(Eigen::MatrixXd& data, bool threading = default_threading_on);
+    void ClusterVm(double* data, const int n_rows, bool threading = default_threading_on);
     void SaveVm(const int idx, bool threading = default_threading_on);
 
     /// Non real time sync services
