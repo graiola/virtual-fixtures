@@ -188,6 +188,11 @@ void MechanismManagerInterface::DeleteVm(const int idx, bool threading)
         mm_->DeleteVm(idx);
 }
 
+void MechanismManagerInterface::SetVmMode(const scale_mode_t mode)
+{
+    mm_->SetMode(mode);
+}
+
 void MechanismManagerInterface::SetVmMode(const std::string mode)
 {
     scale_mode_t enum_mode = SOFT;
