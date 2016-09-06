@@ -39,6 +39,9 @@
 ////////// Toolbox
 #include <toolbox/toolbox.h>
 
+////////// Autom
+#include "virtual_mechanism/virtual_mechanism_autom.h"
+
 #define LINE_CLAMP(x,y,x1,x2,y1,y2) do { y = (y2-y1)/(x2-x1) * (x-x1) + y1; } while (0)
 
 namespace virtual_mechanism
@@ -52,7 +55,7 @@ class VirtualMechanismInterface
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
           phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
           phase_ddot_(0.0),scale_(1.0),
-          fade_(0.0),active_(false),dt_(0.001)
+          fade_(0.0),active_(false),check_activation_(false),dt_(0.001)
 	  {
 
           if(!ReadConfig())
@@ -132,19 +135,21 @@ class VirtualMechanismInterface
                   assert(Kf_ >= 0.0);
                   assert(Bf_ >= 0.0);
                   fade_sys_.SetGain(fade_sys_gain);
+                  check_activation_ = true;
               }
               else
               {
                   Kf_ = 0.0;
                   Bf_ = 0.0;
+                  check_activation_ = false;
               }
-              active_ = false; // By default the guide is passive
-
               return true;
           }
           else
               return false;
       }
+
+      inline void CheckForActivation();
 
       virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
@@ -157,6 +162,10 @@ class VirtualMechanismInterface
 
         // Save the previous phase_dot
         phase_dot_prev_ = phase_dot_;
+
+        // Check for guide activation
+        if(check_activation_)
+            CheckActivation();
   
 	    // Update the Jacobian and its transpose
 	    UpdateJacobian();
@@ -257,8 +266,8 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
 
-      inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
+      inline void setCollisionDetected(const bool collision) {collision_detected_ = collision;}
 
       inline void Init()
       {
@@ -312,9 +321,7 @@ class VirtualMechanismInterface
 #else
         PRINT_WARNING("Impossible to start the real time publishers.");
 #endif
-
       }
-
 
    protected:
 
@@ -328,6 +335,15 @@ class VirtualMechanismInterface
       {
           // Jacobian versor
           t_versor_ = J_/J_.norm();
+      }
+
+      inline void CheckActivation()
+      {
+          autom_.Step(phase_dot_,phase_dot_ref_,collision_detected_);
+          if(autom_.GetState())
+              active_ = true;
+          else
+              active_ = false;
       }
 
       virtual void ApplySaturation()
@@ -359,7 +375,7 @@ class VirtualMechanismInterface
           *quaternion_ = q_start_->slerp(phase_,*q_end_);
       }
 	  
-	  // States
+      /// States
 	  double phase_;
 	  double phase_prev_;
 	  double phase_dot_;
@@ -386,27 +402,30 @@ class VirtualMechanismInterface
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
 
-	  // Gains
+      /// Gains
       Eigen::MatrixXd B_;
       Eigen::MatrixXd K_;
 
-      // Fade system
+      /// Fade system
       tool_box::DynSystemFirstOrder fade_sys_;
 	  
-	  // Auto completion
+      /// Auto completion
 	  double Kf_;
       double Bf_;
 	  double fade_;
 	  bool active_;
+      bool check_activation_;
+      bool collision_detected_;
       double dt_;
+      VirtualMechanismAutom autom_;
 
-      // Orientation
+      /// Orientation
       bool update_quaternion_;
       boost::shared_ptr<quaternion_t > q_start_;
       boost::shared_ptr<quaternion_t > q_end_;
       boost::shared_ptr<quaternion_t > quaternion_;
 
-      // Ros Stuff
+      /// Ros Stuff
 #ifdef USE_ROS_RT_PUBLISHER
       tool_box::RosNode ros_node_;
       tool_box::RealTimePublishers<tool_box::RealTimePublisherScalar> rt_publishers_;

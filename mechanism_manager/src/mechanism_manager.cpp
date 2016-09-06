@@ -557,4 +557,11 @@ void MechanismManager::Stop()
         rt_buffer[i].guide->Stop();
 }
 
+void MechanismManager::SetCollisionDetected(const bool collision)
+{
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+    for(int i=0;i<rt_buffer.size();i++)
+        rt_buffer[i].guide->setCollisionDetected(collision);
+}
+
 } // namespace

@@ -1,6 +1,6 @@
 /**
- * @file   mechanism_manager_autom.cpp
- * @brief  Autom for mechanism manager.
+ * @file   virtual_mechanism_autom.cpp
+ * @brief  Autom for virtual mechanism.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
@@ -21,11 +21,11 @@
  * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mechanism_manager/mechanism_manager_autom.h"
+#include "virtual_mechanism/virtual_mechanism_autom.h"
 
-using namespace mechanism_manager;
+using namespace virtual_mechanism;
 
-MechanismManagerAutom::MechanismManagerAutom(const double phase_dot_preauto_th, const double phase_dot_th)
+VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th)
 {
     assert(phase_dot_th > 0.0);
     assert(phase_dot_preauto_th > phase_dot_th);
@@ -35,7 +35,7 @@ MechanismManagerAutom::MechanismManagerAutom(const double phase_dot_preauto_th, 
     loopCnt = 0;
 }
 
-void MechanismManagerAutom::Step(const double phase_dot,const double phase_dot_ref, bool collision_detected)
+void VirtualMechanismAutom::Step(const double& phase_dot, const double& phase_dot_ref, bool& collision_detected)
 {
     if(true)
     {
@@ -66,7 +66,7 @@ void MechanismManagerAutom::Step(const double phase_dot,const double phase_dot_r
     }
 }
 
-bool MechanismManagerAutom::GetState()
+bool VirtualMechanismAutom::GetState()
 {
     bool activate_vm;
     switch(state_)

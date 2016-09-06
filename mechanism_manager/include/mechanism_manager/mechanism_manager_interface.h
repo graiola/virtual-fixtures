@@ -79,9 +79,6 @@ class MechanismManagerInterface
     /// Check if the robot is on a guide
     bool OnVm();
 
-    /// Sets
-    inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;}
-
     /// Gets
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
@@ -92,34 +89,31 @@ class MechanismManagerInterface
     double GetPhase(const int idx);
     double GetScale(const int idx);
 
+    /// Sets
+    void SetCollisionDetected(const bool collision);
+
   protected:
 
     bool ReadConfig();
-    //bool ExecuteService();
 
   private:
 
-    Eigen::VectorXd tmp_eigen_vector_; // Used to convert std to eigen vector
+    /// Used to convert std to eigen vector
+    Eigen::VectorXd tmp_eigen_vector_;
 
     Eigen::VectorXd robot_position_;
     Eigen::VectorXd robot_velocity_;
     Eigen::VectorXd robot_orientation_;
     Eigen::VectorXd f_;
-
     int position_dim_;
-    bool collision_detected_;
 
-    // Mechanism Manager
+    /// Mechanism Manager
     MechanismManager* mm_;
 
-    // Thread stuff
+    /// Thread stuff
     tool_box::AsyncThread* async_thread_;
-    //tool_box::ThreadsPool* threads_pool_;
-    //tool_box::AsyncThread* async_thread_insert_;
-    //tool_box::AsyncThread* async_thread_delete_;
-    //tool_box::AsyncThread* async_thread_save_;
 
-    // Ros stuff
+    /// Ros stuff
     tool_box::RosNode ros_node_;
     MechanismManagerServer* mm_server_;
 };

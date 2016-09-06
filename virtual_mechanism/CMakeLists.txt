@@ -88,9 +88,11 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} ${SHARED_OR_STATIC}
     include/${PROJECT_NAME}/virtual_mechanism_interface.h
+    include/${PROJECT_NAME}/virtual_mechanism_autom.h
     include/${PROJECT_NAME}/virtual_mechanism_factory.h
     include/${PROJECT_NAME}/virtual_mechanism_gmr.h
     #include/${PROJECT_NAME}/virtual_mechanism_spline.h
+    src/virtual_mechanism_autom.cpp
     src/virtual_mechanism_factory.cpp
     src/virtual_mechanism_gmr.cpp
     #src/virtual_mechanism_spline.cpp

@@ -39,6 +39,7 @@
 
 ///////// MECHANISM_MANAGER
 #include "mechanism_manager/mechanism_manager_interface.h"
+#include "mechanism_manager/mechanism_manager_autom.h"
 
 namespace mechanism_manager
 {
@@ -94,6 +95,7 @@ class MechanismManager
     double GetScale(const int idx);
     void Stop();
     bool OnVm();
+    void SetCollisionDetected(const bool collision);
 
   protected:
 

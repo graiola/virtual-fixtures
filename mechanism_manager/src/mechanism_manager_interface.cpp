@@ -57,8 +57,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       robot_velocity_.fill(0.0);
       f_.fill(0.0);
 
-      collision_detected_ = true; // Let's start not active
-
       try
       {
           ros_node_.Init(ROS_PKG_NAME);
@@ -210,9 +208,6 @@ void MechanismManagerInterface::Update(const double* robot_position_ptr, const d
     robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
     robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
 
-    //if(use_active_guide_)
-    //    CheckForGuideActivation(i);
-
     mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_;
@@ -228,27 +223,15 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
     robot_position_ = robot_position;
     robot_velocity_ = robot_velocity;
 
-    //if(use_active_guide_)
-    //    CheckForGuideActivation(i);
-
     mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
 
     f_out = f_;
 }
 
-/*void MechanismManagerInterface::CheckForGuideActivation(const int idx)
+void MechanismManagerInterface::SetCollisionDetected(const bool collision)
 {
-    //const double r = vm_vector_[idx]->getR();
-    const double phase_dot = vm_vector_[idx]->getPhaseDot();
-    const double phase_dot_ref = vm_vector_[idx]->getPhaseDotRef();
-    vm_autom_[idx]->Step(phase_dot,phase_dot_ref,collision_detected_);
-    if(vm_autom_[idx]->GetState())
-        vm_vector_[idx]->setActive(true);
-    else
-        vm_vector_[idx]->setActive(false);
-
-    //r_(idx) = r;
-}*/
+   mm_->SetCollisionDetected(collision);
+}
 
 void MechanismManagerInterface::Stop()
 {

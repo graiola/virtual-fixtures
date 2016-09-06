@@ -1,6 +1,6 @@
 /**
- * @file   mechanism_manager_autom.h
- * @brief  Autom for mechanism manager.
+ * @file   virtual_mechanism_autom.h
+ * @brief  Autom for virtual mechanism.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
@@ -21,19 +21,21 @@
  * along with virtual-fixtures.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MECHANISM_MANAGER_AUTOM_H
-#define MECHANISM_MANAGER_AUTOM_H
+#ifndef VIRTUAL_MECHANISM_AUTOM_H
+#define VIRTUAL_MECHANISM_AUTOM_H
 
-#include "mechanism_manager/mechanism_manager.h"
+////////// Toolbox
+#include <toolbox/toolbox.h>
 
-namespace mechanism_manager
+namespace virtual_mechanism
 {
 
-class MechanismManagerAutom
+class VirtualMechanismAutom
 {
 public:
-    MechanismManagerAutom(const double phase_dot_preauto_th, const double phase_dot_th);
-    void Step(const double phase_dot,const double phase_dot_ref, bool collision_detected);
+    VirtualMechanismAutom(){}
+    VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
+    void Step(const double& phase_dot, const double& phase_dot_ref, bool& collision_detected);
     bool GetState();
 private:
     enum state_t {MANUAL,PREAUTO,AUTO};
