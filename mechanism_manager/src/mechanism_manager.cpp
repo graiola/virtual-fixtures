@@ -1,6 +1,6 @@
 /**
  * @file   mechanism_manager.cpp
- * @brief  Manager of the guides.
+ * @brief  Manager of guides.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
@@ -243,7 +243,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
             ArrayXd resps(rt_buffer.size());
             ArrayXi h(rt_buffer.size());
             ArrayXd::Index max_resp_idx;
-            int dofs = 10; // WTF
+            int dofs = 10; // WTF Export that
             double old_resp, new_resp;
             for(int i=0;i<rt_buffer.size();i++)
             {

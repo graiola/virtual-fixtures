@@ -1,6 +1,6 @@
 /**
  * @file   mechanism_manager.h
- * @brief  Manager of the guides.
+ * @brief  Manager of guides.
  * @author Gennaro Raiola
  *
  * This file is part of virtual-fixtures, a set of libraries and programs to create
