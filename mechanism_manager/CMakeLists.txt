@@ -91,14 +91,11 @@ include_directories(
   include ${INCLUDE_PATHS}
 )
 
+file(GLOB SOURCES src/*.cpp)
+file(GLOB HEADERS include/${PROJECT_NAME}/*.h)
+
 ## Declare a cpp library
-add_library(${PROJECT_NAME}
-    include/${PROJECT_NAME}/mechanism_manager_server.h
-    include/${PROJECT_NAME}/mechanism_manager_interface.h
-    include/${PROJECT_NAME}/mechanism_manager.h
-    src/mechanism_manager_server.cpp
-    src/mechanism_manager_interface.cpp
-    src/mechanism_manager.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})

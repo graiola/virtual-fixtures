@@ -257,7 +257,7 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
 
-      //inline void setActive(const bool active) {active_ = active;}
+      inline void setActive(const bool active) {active_ = active;}
       //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
       inline void Init()
