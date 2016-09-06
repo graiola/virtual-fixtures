@@ -129,7 +129,6 @@ class VirtualMechanismInterface
                   active_guide_node["Kf"] >> Kf_;
                   active_guide_node["Bf"] >> Bf_;
                   active_guide_node["fade_sys_gain"] >> fade_sys_gain;
-                  active_ = true;
                   assert(Kf_ >= 0.0);
                   assert(Bf_ >= 0.0);
                   fade_sys_.SetGain(fade_sys_gain);
@@ -138,8 +137,8 @@ class VirtualMechanismInterface
               {
                   Kf_ = 0.0;
                   Bf_ = 0.0;
-                  active_ = false;
               }
+              active_ = false; // By default the guide is passive
 
               return true;
           }
