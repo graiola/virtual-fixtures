@@ -429,7 +429,7 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
 
 void MechanismManager::SetVmMode(const scale_mode_t mode)
 {
-    PRINT_INFO("Set mode for the virtual mechanisms");
+    //PRINT_INFO("Set mode for the virtual mechanisms");
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
 
@@ -439,12 +439,15 @@ void MechanismManager::SetVmMode(const scale_mode_t mode)
         while(!OnVm()) // Pass to Hard when on guide
           boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         scale_mode_ = HARD;
+        PRINT_INFO("Set mode to HARD");
         break;
       case SOFT:
         scale_mode_ = SOFT;
+        PRINT_INFO("Set mode to SOFT");
         break;
       default:
         scale_mode_ = SOFT;
+        PRINT_INFO("Set mode to SOFT");
         break;
     }
 
