@@ -214,21 +214,19 @@ void MechanismManagerInterface::SetVmName(const int idx, std::string& name)
     mm_->SetVmName(idx,name);
 }
 
-void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)
+void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
 {
     assert(dt > 0.0);
 
     robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
     robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
 
-    mm_->SetMode(scale_mode);
-
     mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_;
 }
 
-void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
+void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
     assert(dt > 0.0);
 
@@ -237,8 +235,6 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
     assert(f_out.size() == position_dim_);
     robot_position_ = robot_position;
     robot_velocity_ = robot_velocity;
-
-    mm_->SetMode(scale_mode);
 
     mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
