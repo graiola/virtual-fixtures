@@ -188,6 +188,17 @@ void MechanismManagerInterface::DeleteVm(const int idx, bool threading)
         mm_->DeleteVm(idx);
 }
 
+void MechanismManagerInterface::SetVmMode(const std::string mode)
+{
+    scale_mode_t enum_mode = SOFT;
+    if(std::strcmp(mode.c_str(), "SOFT") == 0)
+       enum_mode = SOFT;
+    else if(std::strcmp(mode.c_str(), "HARD") == 0)
+       enum_mode = HARD;
+
+    mm_->SetVmMode(enum_mode);
+}
+
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
     mm_->GetVmName(idx,name);
@@ -210,10 +221,9 @@ void MechanismManagerInterface::Update(const double* robot_position_ptr, const d
     robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
     robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
 
-    //if(use_active_guide_)
-    //    CheckForGuideActivation(i);
+    mm_->SetMode(scale_mode);
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_;
 }
@@ -228,10 +238,9 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
     robot_position_ = robot_position;
     robot_velocity_ = robot_velocity;
 
-    //if(use_active_guide_)
-    //    CheckForGuideActivation(i);
+    mm_->SetMode(scale_mode);
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
     f_out = f_;
 }

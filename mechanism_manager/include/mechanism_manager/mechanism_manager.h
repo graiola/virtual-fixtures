@@ -69,7 +69,7 @@ class MechanismManager
     //MechanismManager& operator=( const MechanismManager& ) = delete; // non copyable
   
     /// Loop Update Interface
-    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode);
+    void Update(const Eigen::VectorXd& robot_position, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
 
     /// Non Real time methods, to be launched in seprated threads
     void InsertVm(std::string& model_name);
@@ -83,6 +83,7 @@ class MechanismManager
     void GetVmName(const int idx, std::string& name);
     void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);
+    void SetVmMode(const scale_mode_t mode);
 
 
     /// Real time methods, they can be called in a real time loop
@@ -92,6 +93,7 @@ class MechanismManager
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     double GetPhase(const int idx);
     double GetScale(const int idx);
+    void SetMode(const scale_mode_t mode);
     void Stop();
     bool OnVm();
 
@@ -100,6 +102,8 @@ class MechanismManager
     bool ReadConfig();
     void AddNewVm(vm_t* const vm_tmp_ptr, std::string& name);
     bool CheckForNamesCollision(const std::string& name);
+
+    scale_mode_t scale_mode_;
 
   private:   
     

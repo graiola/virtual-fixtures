@@ -81,6 +81,12 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         res.response_command = req.request_command;
     }
 
+    if(std::strcmp(req.request_command.c_str(), "set_mode") == 0)
+    {
+        mm_interface_->SetVmMode(req.selected_mode);
+        res.response_command = req.request_command;
+    }
+
     // Update the names list
     mm_interface_->GetVmNames(res.list_guides);
 

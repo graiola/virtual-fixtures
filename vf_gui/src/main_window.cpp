@@ -99,3 +99,15 @@ void MainWindow::on_saveButton_clicked()
 {
     guides_model_->saveRow(ui->listView->currentIndex().row());
 }
+
+void MainWindow::on_softRadioButton_clicked()
+{
+    QString mode = "SOFT";
+    guides_model_->setMode(mode);
+}
+
+void MainWindow::on_hardRadioButton_clicked()
+{
+    QString mode = "HARD";
+    guides_model_->setMode(mode);
+}

@@ -126,6 +126,20 @@ bool GuidesModel::insertRow(int row, const QModelIndex & /*parent*/)
     return true;
 }
 
+bool GuidesModel::setMode(const QString& mode)
+{
+    MechanismManagerServices srv;
+    std::string command = "set_mode";
+    srv.request.request_command = command;
+    srv.request.selected_mode = mode.toStdString();
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    return true;
+}
+
 bool GuidesModel::isServerConnected()
 {
     return sc_.exists();

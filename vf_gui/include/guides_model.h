@@ -43,6 +43,7 @@ public:
     bool insertRow(int row, const QModelIndex &parent = QModelIndex());
     bool saveRow(int row, const QModelIndex &parent = QModelIndex());
     bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
+    bool setMode(const QString& mode);
     Qt::ItemFlags flags(const QModelIndex & index) const ;
     void updateList();
     bool isServerConnected();

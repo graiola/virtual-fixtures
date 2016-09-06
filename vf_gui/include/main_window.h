@@ -38,6 +38,7 @@ namespace Ui {
 class MainWindow;
 class button;
 class label;
+class radioButton;
 }
 
 class MainWindow : public QMainWindow
@@ -54,6 +55,10 @@ private slots:
     void on_insertButton_clicked();
     void on_refreshButton_clicked();
     void on_saveButton_clicked();
+    void on_softRadioButton_clicked();
+
+    void on_hardRadioButton_clicked();
+
 protected:
     void timerEvent(QTimerEvent *event);
     GuidesModel* guides_model_;
