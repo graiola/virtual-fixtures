@@ -1,0 +1,6 @@
+<launch>
+	<!-- Launch the graphic interface -->
+	<node name="vf_gui"
+        pkg="vf_gui" type="vf_gui" output="screen"
+        args="" />
+</launch>

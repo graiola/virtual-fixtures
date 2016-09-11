@@ -52,6 +52,12 @@ if(Qt5Widgets_FOUND)
 	install(TARGETS ${PROJECT_NAME} vf_gui
 	  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
+        # Copy launch files
+        install(DIRECTORY launch
+           DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+           FILES_MATCHING PATTERN "*.launch"
+        )
+
 else(Qt5Widgets_FOUND)
 
 	message(STATUS "Qt5Widgets NOT Found - DON'T Compile ${PROJECT_NAME}")
