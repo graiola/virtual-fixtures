@@ -660,6 +660,7 @@ void VirtualMechanismGmr<VM_t>::CreateRecordedRefs()
 
     VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
     VM_t::phase_recorded_.resize(n_points,1);
+    VM_t::tmp_dists_.resize(n_points);
     VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
 
     fa_->predict(VM_t::phase_recorded_,VM_t::state_recorded_);

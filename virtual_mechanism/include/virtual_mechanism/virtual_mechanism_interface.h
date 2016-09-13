@@ -195,6 +195,12 @@ class VirtualMechanismInterface
 	  
       void FindMinDist(const Eigen::VectorXd& pos)
       {
+          assert(state_recorded_.rows() > 0);
+          assert(pos.size() ==  state_recorded_.cols());
+          assert(tmp_dists_.size() == state_recorded_.rows());
+          assert(phase_recorded_.rows() ==  state_recorded_.rows());
+          assert(phase_recorded_.cols() ==  1);
+
           Eigen::ArrayXd::Index min_idx;
           for(unsigned int i_row = 0; i_row < state_recorded_.rows(); i_row++)
               tmp_dists_(i_row) = (state_recorded_.row(i_row) - pos).norm();

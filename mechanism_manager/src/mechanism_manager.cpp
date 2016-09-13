@@ -478,10 +478,10 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     double sum = 0.0;
     for(int i=0; i<rt_buffer.size();i++)
     {
-        // Update the virtual mechanisms states
-        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt);
         // Compute the scale for each mechanism
         rt_buffer[i].scale = rt_buffer[i].guide->getScale(robot_position,escape_factor_);
+        // Update the virtual mechanisms states
+        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt,rt_buffer[i].scale);
         sum += rt_buffer[i].scale;
     }
 
