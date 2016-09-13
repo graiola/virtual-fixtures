@@ -651,6 +651,20 @@ double VirtualMechanismGmr<VM_t>::GetResponsability()
     return fa_->getCachedResponsability();
 }
 
+template<class VM_t>
+void VirtualMechanismGmr<VM_t>::CreateRecordedRefs()
+{
+    int n_points = 10;
+    //VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
+    //VM_t::phase_recorded_ = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+    VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
+    VM_t::phase_recorded_.resize(n_points,1);
+    VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+
+    fa_->predict(VM_t::phase_recorded_,VM_t::state_recorded_);
+}
+
 // Explicitly instantiate the templates, and its member definitions
 template class VirtualMechanismGmr<VirtualMechanismInterfaceFirstOrder>;
 template class VirtualMechanismGmr<VirtualMechanismInterfaceSecondOrder>;

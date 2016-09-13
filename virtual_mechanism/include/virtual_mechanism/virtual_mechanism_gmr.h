@@ -80,6 +80,7 @@ class VirtualMechanismGmr: public VM_t
 	  virtual void UpdateState();
 	  virtual void ComputeInitialState();
       virtual void ComputeFinalState();
+      virtual void CreateRecordedRefs();
 
       void UpdateInvCov();
       double ComputeProbability(const Eigen::VectorXd& pos);

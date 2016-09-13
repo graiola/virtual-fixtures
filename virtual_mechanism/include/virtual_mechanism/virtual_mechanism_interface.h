@@ -179,13 +179,29 @@ class VirtualMechanismInterface
 
         // Compute the jacobian versor (used to avoid the lock in the manager)
         ComputeJacobianVersor();
-
-        // Publish stuff
-#ifdef USE_ROS_RT_PUBLISHER
-        rt_publishers_.PublishAll();
-#endif
 	  }
+
+      void UpdateDiscrete(const Eigen::VectorXd& pos)
+      {
+        // Compute the phase based on the min distance
+        FindMinDist(pos);
+
+        // Compute the new state
+        UpdateState();
+
+        // Compute the new state dot
+        UpdateStateDot();
+      }
 	  
+      void FindMinDist(const Eigen::VectorXd& pos)
+      {
+          Eigen::ArrayXd::Index min_idx;
+          for(unsigned int i_row = 0; i_row < state_recorded_.rows(); i_row++)
+              tmp_dists_(i_row) = (state_recorded_.row(i_row) - pos).norm();
+          tmp_dists_.minCoeff(&min_idx);
+          phase_ = phase_recorded_(min_idx,0);
+      }
+
       virtual void Stop()
       {
           phase_dot_ = 0.0;
@@ -198,14 +214,27 @@ class VirtualMechanismInterface
 	      assert(vel.size() == state_dim_);
 	    
           scale_ = scale;
-          //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
-          displacement_.noalias() = state_ - pos;
-          force_pos_.noalias() = K_ * displacement_;
-          force_vel_.noalias() = B_ * vel;
-          force_ = force_pos_ - force_vel_;
-          force_ = scale_ * force_;
-	      //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
-	      Update(force_,dt);
+
+          if(scale_ > 0.2) // Compute the movement of the mechanism
+          {
+              //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
+              displacement_.noalias() = state_ - pos;
+              force_pos_.noalias() = K_ * displacement_;
+              force_vel_.noalias() = B_ * vel;
+              force_ = force_pos_ - force_vel_;
+              force_ = scale_ * force_;
+              //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
+              Update(force_,dt);
+          }
+          else // Find the min distance point
+          {
+              UpdateDiscrete(pos);
+          }
+
+          // Publish stuff
+#ifdef USE_ROS_RT_PUBLISHER
+          rt_publishers_.PublishAll();
+#endif
 	  }
 	  
       // Here to no break the polymorphism
@@ -269,6 +298,7 @@ class VirtualMechanismInterface
           ComputeInitialState();
           ComputeFinalState();
           ComputeJacobianVersor();
+          CreateRecordedRefs();
       }
 
       inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
@@ -312,7 +342,6 @@ class VirtualMechanismInterface
 #else
         PRINT_WARNING("Impossible to start the real time publishers.");
 #endif
-
       }
 
 
@@ -323,6 +352,7 @@ class VirtualMechanismInterface
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
+      virtual void CreateRecordedRefs()=0;
 
       inline void ComputeJacobianVersor()
       {
@@ -381,6 +411,9 @@ class VirtualMechanismInterface
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
       Eigen::VectorXd t_versor_;
+      Eigen::MatrixXd state_recorded_;
+      Eigen::MatrixXd phase_recorded_;
+      Eigen::ArrayXd tmp_dists_;
       Eigen::MatrixXd BxJ_;
       Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;
