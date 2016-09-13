@@ -654,7 +654,7 @@ double VirtualMechanismGmr<VM_t>::GetResponsability()
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::CreateRecordedRefs()
 {
-    int n_points = 10;
+    int n_points = 1000;
     //VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
     //VM_t::phase_recorded_ = VectorXd::LinSpaced(n_points, 0.0, 1.0);
 

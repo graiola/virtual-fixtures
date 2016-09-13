@@ -183,6 +183,13 @@ class VirtualMechanismInterface
 
       void UpdateDiscrete(const Eigen::VectorXd& pos)
       {
+
+        phase_dot_ = 0.0;
+        phase_ddot_ = 0.0;
+
+        // Update the Jacobian and its transpose
+        UpdateJacobian();
+
         // Compute the phase based on the min distance
         FindMinDist(pos);
 
@@ -201,10 +208,28 @@ class VirtualMechanismInterface
           assert(phase_recorded_.rows() ==  state_recorded_.rows());
           assert(phase_recorded_.cols() ==  1);
 
-          Eigen::ArrayXd::Index min_idx;
+          int min_idx = 0;
+          double curr_d;
+          double min = std::numeric_limits<double>::infinity();
           for(unsigned int i_row = 0; i_row < state_recorded_.rows(); i_row++)
-              tmp_dists_(i_row) = (state_recorded_.row(i_row) - pos).norm();
-          tmp_dists_.minCoeff(&min_idx);
+          {
+              curr_d = (state_recorded_.row(i_row).transpose() - pos).norm();
+              if(curr_d < min)
+              {
+                  min = curr_d;
+                  min_idx = i_row;
+              }
+
+
+          }
+
+          /*std::cout << "***" << std::endl;
+
+          std::cout << pos << std::endl;
+
+          std::cout << "***" << std::endl;
+          std::cout << state_recorded_.row(0).transpose() - pos << std::endl;*/
+
           phase_ = phase_recorded_(min_idx,0);
       }
 
@@ -221,14 +246,14 @@ class VirtualMechanismInterface
 	    
           scale_ = scale;
 
-          if(scale_ > 0.2) // Compute the movement of the mechanism
+          if(scale_ > 0.01) // Compute the movement of the mechanism
           {
               //K_ = adaptive_gain_ptr_->ComputeGain((state_ - pos).norm());
               displacement_.noalias() = state_ - pos;
               force_pos_.noalias() = K_ * displacement_;
               force_vel_.noalias() = B_ * vel;
               force_ = force_pos_ - force_vel_;
-              force_ = scale_ * force_;
+              //force_ = force_;
               //force_ = scale * (K_ * (state_ - pos) - B_ * (vel));
               Update(force_,dt);
           }
@@ -338,7 +363,7 @@ class VirtualMechanismInterface
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_ddot_);
-              //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"scale",&scale_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
         }
         catch(const std::runtime_error& e)
