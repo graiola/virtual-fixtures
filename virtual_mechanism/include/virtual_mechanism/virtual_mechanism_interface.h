@@ -149,8 +149,6 @@ class VirtualMechanismInterface
               return false;
       }
 
-      inline void CheckForActivation();
-
       virtual void Update(Eigen::VectorXd& force, const double dt)
 	  {
         assert(dt > 0.0);
