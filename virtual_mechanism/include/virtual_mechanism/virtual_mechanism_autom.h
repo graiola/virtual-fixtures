@@ -33,7 +33,6 @@ namespace virtual_mechanism
 class VirtualMechanismAutom
 {
 public:
-    VirtualMechanismAutom(){}
     VirtualMechanismAutom(const double phase_dot_preauto_th, const double phase_dot_th);
     void Step(const double& phase_dot, const double& phase_dot_ref, bool& collision_detected);
     bool GetState();
@@ -43,6 +42,7 @@ private:
     double phase_dot_th_;
     state_t state_;
     long long loopCnt;
+    long long collisions_count_;
 };
 
 } // namespace

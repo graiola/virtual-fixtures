@@ -33,6 +33,7 @@ VirtualMechanismAutom::VirtualMechanismAutom(const double phase_dot_preauto_th, 
     phase_dot_th_ = phase_dot_th;
     state_ = MANUAL;
     loopCnt = 0;
+    collisions_count_ = 0;
 }
 
 void VirtualMechanismAutom::Step(const double& phase_dot, const double& phase_dot_ref, bool& collision_detected)
@@ -42,17 +43,20 @@ void VirtualMechanismAutom::Step(const double& phase_dot, const double& phase_do
         switch(state_)
         {
             case MANUAL:
+                collisions_count_ = 0;
                 if(phase_dot >= phase_dot_preauto_th_)
                     state_ = PREAUTO;
                 break;
             case PREAUTO:
-                if(phase_dot <= (phase_dot_ref + phase_dot_th_))
+                if((phase_dot <= (phase_dot_ref + phase_dot_th_)) && (phase_dot >= (phase_dot_ref - phase_dot_th_)))
                     state_ = AUTO;
                 break;
             case AUTO:
                 //if((phase_dot < (phase_dot_ref - phase_dot_th_)))
                 //if((std::abs(r) > (r_th_)))
                 if(collision_detected)
+                    collisions_count_++;
+                if(collisions_count_ > 500)
                     state_ = MANUAL;
                 break;
         }

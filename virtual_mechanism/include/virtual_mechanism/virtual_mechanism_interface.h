@@ -38,6 +38,7 @@
 
 ////////// Toolbox
 #include <toolbox/toolbox.h>
+#include <toolbox/filters/filters.h>
 
 ////////// Autom
 #include "virtual_mechanism/virtual_mechanism_autom.h"
@@ -53,7 +54,7 @@ class VirtualMechanismInterface
 	public:
       VirtualMechanismInterface():update_quaternion_(false),phase_(0.0),
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
-          phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
+          phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),phase_dot_filtered_(0.0),
           phase_ddot_(0.0),scale_(1.0),
           fade_(0.0),active_(false),check_activation_(false),dt_(0.001)
 	  {
@@ -82,6 +83,10 @@ class VirtualMechanismInterface
 
           fade_sys_.SetRef(1.0);
 
+          autom_ = new VirtualMechanismAutom(0.1, 0.5); //(const double phase_dot_preauto_th, const double phase_dot_th) FIXME
+          phase_dot_filter_ = new filters::Filter(3);
+          phase_dot_filter_->SetN(10);
+
           // Default quaternions
           //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
           //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
@@ -93,6 +98,8 @@ class VirtualMechanismInterface
 
 	  virtual ~VirtualMechanismInterface()
       {
+          delete autom_;
+          delete phase_dot_filter_;
       }
 	  
       inline bool ReadConfig()
@@ -309,7 +316,7 @@ class VirtualMechanismInterface
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_ddot_);
-              //rt_publishers_vector_.AddPublisher(ros_node_.GetNode(),"scale",&scales_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot_filtered",&phase_dot_filtered_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
         }
         catch(const std::runtime_error& e)
@@ -337,8 +344,9 @@ class VirtualMechanismInterface
 
       inline void CheckActivation()
       {
-          autom_.Step(phase_dot_,phase_dot_ref_,collision_detected_);
-          if(autom_.GetState())
+          phase_dot_filtered_ = phase_dot_filter_->Step(phase_dot_);
+          autom_->Step(phase_dot_filtered_,phase_dot_ref_,collision_detected_);
+          if(autom_->GetState())
               active_ = true;
           else
               active_ = false;
@@ -381,6 +389,7 @@ class VirtualMechanismInterface
       double phase_ddot_ref_;
       double phase_ref_;
       double phase_dot_prev_;
+      double phase_dot_filtered_;
       double phase_ddot_;
       double scale_;
       int state_dim_;
@@ -415,7 +424,8 @@ class VirtualMechanismInterface
       bool check_activation_;
       bool collision_detected_;
       double dt_;
-      VirtualMechanismAutom autom_;
+      VirtualMechanismAutom* autom_;
+      filters::Filter* phase_dot_filter_;
 
       /// Orientation
       bool update_quaternion_;
