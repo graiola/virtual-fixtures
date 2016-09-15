@@ -31,6 +31,9 @@
 #include <string>
 #include <sstream>
 
+////////// ROS
+#include <ros/ros.h>
+
 struct stringwrapper
 {
    std::stringstream ss;
@@ -52,11 +55,11 @@ struct stringwrapper
   #define END_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
 #endif
 
-//#define ROS_PRINTS
+#define ROS_PRINTS
 #ifdef ROS_PRINTS
-     #define PRINT_INFO(f_) ROS_INFO_STREAM(f_);
-     #define PRINT_ERROR(f_, ...) ROS_ERROR_STREAM(f_);
-     #define PRINT_WARNING(f_, ...) ROS_WARNING_STREAM(f_);
+     #define PRINT_INFO(f_) do { ROS_INFO_STREAM(f_); } while (0)
+     #define PRINT_ERROR(f_) do { ROS_ERROR_STREAM(f_); throw std::runtime_error(stringwrapper() << f_); } while (0)
+     #define PRINT_WARNING(f_) do { ROS_WARN_STREAM(f_); } while (0)
 #else
     //#define PRINT_INFO(f_, ...) std::printf((std::string(f_)+"\n").c_str(), __VA_ARGS__);
     //#define PRINT_ERROR(f_, ...) std::printf(("ERROR: "+std::string(f_)+"\n").c_str(), __VA_ARGS__);
