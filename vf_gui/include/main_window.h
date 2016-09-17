@@ -39,6 +39,8 @@ class MainWindow;
 class button;
 class label;
 class radioButton;
+class spinBox;
+class slider;
 }
 
 class MainWindow : public QMainWindow
@@ -56,8 +58,11 @@ private slots:
     void on_refreshButton_clicked();
     void on_saveButton_clicked();
     void on_softRadioButton_clicked();
-
     void on_hardRadioButton_clicked();
+    //void on_mergeThSpinBox_editingFinished();
+    //void on_mergeSlider_actionTriggered(int action);
+
+    void on_mergeSlider_sliderMoved(int position);
 
 protected:
     void timerEvent(QTimerEvent *event);

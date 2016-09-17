@@ -45,6 +45,10 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // It may be triggered by hitting any key or double-click etc.
     ui->listView->setEditTriggers(QAbstractItemView::AnyKeyPressed |
                                   QAbstractItemView::DoubleClicked );
+
+    // SlideBar
+    ui->mergeSlider->setMinimum(0);
+    ui->mergeSlider->setMaximum(100);
 }
 
 
@@ -110,4 +114,9 @@ void MainWindow::on_hardRadioButton_clicked()
 {
     QString mode = "HARD";
     guides_model_->setMode(mode);
+}
+
+void MainWindow::on_mergeSlider_sliderMoved(int position)
+{
+    guides_model_->setMergeTh(position);
 }

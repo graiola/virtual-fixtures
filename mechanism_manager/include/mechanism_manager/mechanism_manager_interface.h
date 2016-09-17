@@ -92,7 +92,10 @@ class MechanismManagerInterface
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     double GetPhase(const int idx);
     double GetScale(const int idx);
+
+    /// Sets
     void SetVmMode(const scale_mode_t mode);
+    void SetMergeThreshold(int merge_th);
 
   protected:
 

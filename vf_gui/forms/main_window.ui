@@ -17,7 +17,7 @@
    <widget class="QPushButton" name="quitButton">
     <property name="geometry">
      <rect>
-      <x>605</x>
+      <x>570</x>
       <y>380</y>
       <width>101</width>
       <height>23</height>
@@ -31,7 +31,7 @@
     <property name="geometry">
      <rect>
       <x>230</x>
-      <y>100</y>
+      <y>30</y>
       <width>258</width>
       <height>215</height>
      </rect>
@@ -52,8 +52,8 @@
    <widget class="QPushButton" name="refreshButton">
     <property name="geometry">
      <rect>
-      <x>320</x>
-      <y>330</y>
+      <x>550</x>
+      <y>190</y>
       <width>80</width>
       <height>23</height>
      </rect>
@@ -66,7 +66,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>101</y>
+      <y>31</y>
       <width>121</width>
       <height>211</height>
      </rect>
@@ -98,8 +98,8 @@
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>70</x>
-      <y>330</y>
+      <x>530</x>
+      <y>90</y>
       <width>121</width>
       <height>80</height>
      </rect>
@@ -116,6 +116,39 @@
       <widget class="QRadioButton" name="hardRadioButton">
        <property name="text">
         <string>Hard Guides</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>270</y>
+      <width>361</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Merge Nothing</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="mergeSlider">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Merge All</string>
        </property>
       </widget>
      </item>

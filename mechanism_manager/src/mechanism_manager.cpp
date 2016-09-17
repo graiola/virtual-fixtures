@@ -64,6 +64,8 @@ MechanismManager::MechanismManager(int position_dim)
       no_rt_idx_ = 1;
 
       scale_mode_ = SOFT; // By default use soft guides
+
+      merge_th_ = 10;
 }
 
 MechanismManager::~MechanismManager()
@@ -252,12 +254,12 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         guard.lock(); // Lock
 
         std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
-        if(rt_buffer.size()>0)
+        if(rt_buffer.size()>0 || merge_th_ == 0)
         {
             ArrayXd resps(rt_buffer.size());
             ArrayXi h(rt_buffer.size());
             ArrayXd::Index max_resp_idx;
-            int dofs = 10; // WTF Export that
+            //int dofs = 10; // WTF Export that
             double old_resp, new_resp;
             for(int i=0;i<rt_buffer.size();i++)
             {
@@ -265,7 +267,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
                 new_resp = rt_buffer[i].guide->ComputeResponsability(data);
                 try
                 {
-                    h(i) = lratiotest(old_resp,new_resp, dofs);
+                    h(i) = lratiotest(old_resp,new_resp, merge_th_);
                 }
                 catch(...)
                 {
@@ -452,6 +454,16 @@ void MechanismManager::SetVmMode(const scale_mode_t mode)
     }
 
     guard.unlock();
+}
+
+void MechanismManager::SetMergeThreshold(int merge_th)
+{
+    assert(merge_th >= 0 && merge_th <= 100); //0: Don't merge, 100: Merge all
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    merge_th_ = merge_th;
+    guard.unlock();
+    PRINT_INFO("Merge threshold: "<< merge_th);
 }
 
 bool MechanismManager::CheckForNamesCollision(const std::string& name)

@@ -206,6 +206,11 @@ void MechanismManagerInterface::SetVmMode(const std::string mode)
     mm_->SetVmMode(enum_mode);
 }
 
+void MechanismManagerInterface::SetMergeThreshold(int merge_th)
+{
+    mm_->SetMergeThreshold(merge_th);
+}
+
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
     mm_->GetVmName(idx,name);
