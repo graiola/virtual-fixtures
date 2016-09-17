@@ -431,27 +431,34 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
 
 void MechanismManager::SetVmMode(const scale_mode_t mode)
 {
-    //PRINT_INFO("Set mode for the virtual mechanisms");
+    PRINT_INFO("Set mode for the virtual mechanisms");
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
 
-    switch(mode)
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+
+    if(rt_buffer.size()>0)
     {
-      case HARD:
-        while(!OnVm()) // Pass to Hard when on guide
-          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        scale_mode_ = HARD;
-        PRINT_INFO("Set mode to HARD");
-        break;
-      case SOFT:
-        scale_mode_ = SOFT;
-        PRINT_INFO("Set mode to SOFT");
-        break;
-      default:
-        scale_mode_ = SOFT;
-        PRINT_INFO("Set mode to SOFT");
-        break;
+        switch(mode)
+        {
+          case HARD:
+            while(!OnVm()) // Pass to Hard when on guide
+              boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            scale_mode_ = HARD;
+            PRINT_INFO("Set mode to HARD");
+            break;
+          case SOFT:
+            scale_mode_ = SOFT;
+            PRINT_INFO("Set mode to SOFT");
+            break;
+          default:
+            scale_mode_ = SOFT;
+            PRINT_INFO("Set mode to SOFT");
+            break;
+        }
     }
+    else
+        PRINT_WARNING("Can not change guide mode, no guide available.");
 
     guard.unlock();
 }
