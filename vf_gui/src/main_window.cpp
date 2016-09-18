@@ -25,7 +25,6 @@
 #include "ui_main_window.h"
 
 using namespace ros;
-//using namespace mechanism_manager;
 
 MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     QMainWindow(parent),
@@ -49,8 +48,60 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // SlideBar
     ui->mergeSlider->setMinimum(0);
     ui->mergeSlider->setMaximum(100);
+
+    sub_ = new Subscriber(nh.subscribe("rosout_agg", 1000, &MainWindow::loggerCallback, this));
+
+    spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
+    spinner_ptr_->start();
+
+    // TextBox is read only
+    ui->consoleText->setReadOnly(true);
+    ui->consoleText->setTextInteractionFlags(0); //0 == Qt::TextInteractionFlag::NoTextInteraction
+
+    //QColor color = QColorDialog::getColor(Qt::white,this); // in here your color pallete will open..
+
+    QPalette p = ui->consoleText->palette(); // define pallete for textEdit..
+    p.setColor(QPalette::Base, Qt::black); // set color "Red" for textedit base
+    //p.setColor(QPalette::Text, Qt::white); // set text color which is selected from color pallete
+    ui->consoleText->setPalette(p); // change textedit palette
 }
 
+void MainWindow::loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg)
+{
+    /*
+    ##
+    ## Severity level constants
+    ##
+    byte DEBUG=1 #debug level
+    byte INFO=2  #general level
+    byte WARN=4  #warning level
+    byte ERROR=8 #error level
+    byte FATAL=16 #fatal/critical level
+    */
+
+    QColor text_color;
+    if(std::strcmp(msg->name.c_str(),"/mechanism_manager") == 0)
+    {
+         //pkg_name = "[MechanismManager]: ";
+
+         if(msg->level == 4) // Warning
+         {
+            text_color.setRgbF(1.0,1.0,0.0); //yellow
+            ui->consoleText->setTextColor(text_color);
+         }
+         else if(msg->level == 8) // Error
+         {
+            text_color.setRgbF(1.0,0.0,0.0); //red
+            ui->consoleText->setTextColor(text_color);
+         }
+         else
+         {
+            text_color.setRgbF(1.0,1.0,1.0); //white
+            ui->consoleText->setTextColor(text_color);
+         }
+         ui->consoleText->append(msg->msg.data());
+    }
+}
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
@@ -66,6 +117,8 @@ else
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete sub_;
+    delete spinner_ptr_;
 }
 
 void MainWindow::on_quitButton_clicked()
@@ -119,4 +172,9 @@ void MainWindow::on_hardRadioButton_clicked()
 void MainWindow::on_mergeSlider_sliderMoved(int position)
 {
     guides_model_->setMergeTh(position);
+}
+
+void MainWindow::on_clearButton_clicked()
+{
+    ui->consoleText->clear();
 }

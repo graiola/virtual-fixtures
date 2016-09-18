@@ -7,14 +7,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Boost COMPONENTS system REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS roscpp roslib
-                                        mechanism_manager)
+                                        mechanism_manager
+                                        rosgraph_msgs)
 
 # Find the QtWidgets library
 find_package(Qt5Widgets)
 
 # Catkin specific configuration
 	catkin_package(
-	 #CATKIN_DEPENDS mechanism_manager
+         CATKIN_DEPENDS rosgraph_msgs
 	 #DEPENDS system_lib boost
 	)
 
