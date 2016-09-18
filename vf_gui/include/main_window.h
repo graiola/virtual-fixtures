@@ -52,7 +52,13 @@ public:
     ~MainWindow();
     void loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg);
 
+signals:
+    void requestUpdateConsole(const QString& data , int level);
+
 private slots:
+
+    void updateConsole(const QString& data , int level);
+
     void on_quitButton_clicked();
     void on_deleteButton_clicked();
     void on_insertButton_clicked();
@@ -71,7 +77,6 @@ protected:
 
 private:
     Ui::MainWindow *ui;
-
 };
 
 #endif // MAIN_WINDOW_H

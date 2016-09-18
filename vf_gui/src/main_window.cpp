@@ -49,7 +49,7 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     ui->mergeSlider->setMinimum(0);
     ui->mergeSlider->setMaximum(100);
 
-    sub_ = new Subscriber(nh.subscribe("rosout_agg", 1000, &MainWindow::loggerCallback, this));
+    sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
 
     spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
     spinner_ptr_->start();
@@ -64,43 +64,52 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     p.setColor(QPalette::Base, Qt::black); // set color "Red" for textedit base
     //p.setColor(QPalette::Text, Qt::white); // set text color which is selected from color pallete
     ui->consoleText->setPalette(p); // change textedit palette
+
+    // Explanation of this hack:
+    // Qt and Ros don't like each other, or better, their respective thread workers don't like each other.
+    // You should not handle qt objects with ROS threads.
+    // So we use the ros callback to trigger the qt callback :)
+    QObject::connect(this, SIGNAL(requestUpdateConsole(const QString&,int)),
+                     this, SLOT(updateConsole(const QString&,int)));
+
 }
 
 void MainWindow::loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg)
 {
-    /*
-    ##
-    ## Severity level constants
-    ##
-    byte DEBUG=1 #debug level
-    byte INFO=2  #general level
-    byte WARN=4  #warning level
-    byte ERROR=8 #error level
-    byte FATAL=16 #fatal/critical level
-    */
-
-    QColor text_color;
     if(std::strcmp(msg->name.c_str(),"/mechanism_manager") == 0)
     {
-         //pkg_name = "[MechanismManager]: ";
-
-         if(msg->level == 4) // Warning
-         {
-            text_color.setRgbF(1.0,1.0,0.0); //yellow
-            ui->consoleText->setTextColor(text_color);
-         }
-         else if(msg->level == 8) // Error
-         {
-            text_color.setRgbF(1.0,0.0,0.0); //red
-            ui->consoleText->setTextColor(text_color);
-         }
-         else
-         {
-            text_color.setRgbF(1.0,1.0,1.0); //white
-            ui->consoleText->setTextColor(text_color);
-         }
-         ui->consoleText->append(msg->msg.data());
+         QString tmp_qstring;
+         tmp_qstring = QString::fromStdString(msg->msg.data());
+         emit requestUpdateConsole(tmp_qstring,msg->level);
     }
+}
+
+void MainWindow::updateConsole(const QString& data, int level)
+{
+    ui->consoleText->setTextBackgroundColor(Qt::black);
+
+    switch(level)
+    {
+        case 4 :
+            ui->consoleText->setTextColor(Qt::yellow);
+            break;
+        case 8 :
+            ui->consoleText->setTextColor(Qt::red);
+            break;
+        default:
+            ui->consoleText->setTextColor(Qt::white);
+            break;
+    }
+
+    /*if(level == 4) // Warning
+       ui->consoleText->setTextColor(Qt::yellow);
+    else if(level == 8) // Error
+
+    else
+       ui->consoleText->setTextColor(Qt::white);*/
+
+
+    ui->consoleText->append(data);
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
