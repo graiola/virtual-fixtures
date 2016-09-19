@@ -48,6 +48,7 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // SlideBar
     ui->mergeSlider->setMinimum(0);
     ui->mergeSlider->setMaximum(100);
+    guides_model_->setMergeTh(ui->mergeSlider->value());
 
     sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
 
