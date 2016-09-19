@@ -47,6 +47,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex & index) const ;
     void updateList();
     bool isServerConnected();
+    bool setMergeTh(int merge_th);
 
 protected:
     QStringList names_list_;
@@ -54,11 +55,8 @@ protected:
     QTimer* refresh_timer_;
     bool new_guide_;
 
-
-
 protected Q_SLOTS:
     void refreshTimerHit();
-
 
 };
 

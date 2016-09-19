@@ -62,6 +62,8 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       try
       {
           ros_node_.Init(ROS_PKG_NAME);
+          if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Count) )
+             ros::console::notifyLoggerLevelsChanged();
           mm_server_ = new MechanismManagerServer(this,ros_node_.GetNode());
       }
       catch(const std::runtime_error& e)
@@ -202,6 +204,11 @@ void MechanismManagerInterface::SetVmMode(const std::string mode)
        enum_mode = HARD;
 
     mm_->SetVmMode(enum_mode);
+}
+
+void MechanismManagerInterface::SetMergeThreshold(int merge_th)
+{
+    mm_->SetMergeThreshold(merge_th);
 }
 
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)

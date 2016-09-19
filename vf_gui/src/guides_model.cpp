@@ -140,6 +140,21 @@ bool GuidesModel::setMode(const QString& mode)
     return true;
 }
 
+bool GuidesModel::setMergeTh(int merge_th)
+{
+    MechanismManagerServices srv;
+    std::string command = "set_merge_th";
+    srv.request.request_command = command;
+    srv.request.merge_th = merge_th;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    return true;
+
+}
+
 bool GuidesModel::isServerConnected()
 {
     return sc_.exists();

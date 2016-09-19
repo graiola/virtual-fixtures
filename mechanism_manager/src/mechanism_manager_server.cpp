@@ -87,9 +87,14 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         res.response_command = req.request_command;
     }
 
+    if(std::strcmp(req.request_command.c_str(), "set_merge_th") == 0)
+    {
+        mm_interface_->SetMergeThreshold(req.merge_th);
+        res.response_command = req.request_command;
+    }
+
     // Update the names list
     mm_interface_->GetVmNames(res.list_guides);
-
 
     return true;
 }
