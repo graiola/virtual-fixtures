@@ -65,7 +65,7 @@ MechanismManager::MechanismManager(int position_dim)
 
       scale_mode_ = SOFT; // By default use soft guides
 
-      merge_th_ = 10;
+      merge_th_ = 0;
 }
 
 MechanismManager::~MechanismManager()
@@ -254,7 +254,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         guard.lock(); // Lock
 
         std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
-        if(rt_buffer.size()>0 || merge_th_ == 0)
+        if(rt_buffer.size()>0 && merge_th_ > 0)
         {
             ArrayXd resps(rt_buffer.size());
             ArrayXi h(rt_buffer.size());
@@ -394,7 +394,7 @@ void MechanismManager::GetVmName(const int idx, std::string& name)
 
 void MechanismManager::GetVmNames(std::vector<std::string>& names)
 {
-    PRINT_INFO("Get the guides name");
+    //PRINT_INFO("Get the guides name");
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];

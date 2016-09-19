@@ -51,6 +51,7 @@ TEST(MechanismManagerTest, InitializesCorrectly)
 
 TEST(MechanismManagerTest, UpdateMethodOnlyPosition)
 {
+
   MechanismManagerInterface* mm = new MechanismManagerInterface();
 
   int pos_dim = mm->GetPositionDim();
