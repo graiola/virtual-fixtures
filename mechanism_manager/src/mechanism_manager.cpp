@@ -470,7 +470,7 @@ void MechanismManager::SetMergeThreshold(int merge_th)
     guard.lock();
     merge_th_ = merge_th;
     guard.unlock();
-    PRINT_INFO("Merge threshold: "<< merge_th);
+    PRINT_INFO("Set Merge threshold: "<< merge_th);
 }
 
 void MechanismManager::GetMergeThreshold(int& merge_th)
@@ -479,7 +479,7 @@ void MechanismManager::GetMergeThreshold(int& merge_th)
     guard.lock();
     merge_th = merge_th_;
     guard.unlock();
-    PRINT_INFO("Merge threshold: "<< merge_th);
+    PRINT_INFO("Get Merge threshold: "<< merge_th);
 }
 
 bool MechanismManager::CheckForNamesCollision(const std::string& name)
