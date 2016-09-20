@@ -468,16 +468,12 @@ class VirtualMechanismInterface
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
 
-<<<<<<< HEAD
-      /// Gains
-=======
       // Discretization
       int n_points_discretization_;
       Eigen::MatrixXd state_recorded_;
       Eigen::MatrixXd phase_recorded_;
 
 	  // Gains
->>>>>>> a3a3acf25123d3eac6c12bc580bd79b5a6408cf0
       Eigen::MatrixXd B_;
       Eigen::MatrixXd K_;
 
