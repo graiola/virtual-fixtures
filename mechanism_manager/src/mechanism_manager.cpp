@@ -190,8 +190,6 @@ void MechanismManager::InsertVm(double* data, const int n_rows)
 
 void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
 {
-    PRINT_INFO("Update the guide.");
-
     boost::recursive_mutex::scoped_lock guard(mtx_);
     //guard.lock(); // Lock
 
@@ -204,6 +202,8 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
     std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
     no_rt_buffer.clear();
+
+    PRINT_INFO("Update guide: " << rt_buffer[idx].name);
 
     if(idx<rt_buffer.size())
     {
@@ -326,7 +326,7 @@ void MechanismManager::SaveVm(const int idx)
     if(idx<rt_buffer.size())
     {
         std::string model_complete_path(pkg_path_+"/models/gmm/"+rt_buffer[idx].name);
-        PRINT_INFO("Saving guide number#"<<idx<<" to " << model_complete_path);
+        PRINT_INFO("Saving guide "<<rt_buffer[idx].name<<" to " << model_complete_path);
 
         if(!rt_buffer[idx].guide->SaveModelToFile(model_complete_path))
             PRINT_ERROR("Impossible to save the file " << model_complete_path);
@@ -340,10 +340,11 @@ void MechanismManager::SaveVm(const int idx)
 
 void MechanismManager::DeleteVm(const int idx)
 {
-   PRINT_INFO("Deleting guide number#"<<idx);
+
    bool delete_complete = false;
 
    boost::recursive_mutex::scoped_lock guard(mtx_);
+
    //guard.lock(); // Lock
    if(scale_mode_ == HARD)
    {
@@ -353,6 +354,8 @@ void MechanismManager::DeleteVm(const int idx)
    std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
    no_rt_buffer.clear();
+
+   PRINT_INFO("Deleting guide "<<rt_buffer[idx].name);
 
    // Copy all the guides, except the one to delete
    // It will be deleted from the no_rt_buffer at the next Delete or Insert
@@ -372,9 +375,9 @@ void MechanismManager::DeleteVm(const int idx)
    guard.unlock();
 
    if(delete_complete)
-       PRINT_INFO("Delete of guide number#"<<idx<<" complete");
+       PRINT_INFO("Delete of guide "<<rt_buffer[idx].name<<" complete");
    else
-       PRINT_WARNING("Impossible to remove guide number#"<<idx);
+       PRINT_WARNING("Impossible to remove guide "<<rt_buffer[idx].name);
 }
 
 void MechanismManager::GetVmName(const int idx, std::string& name)
@@ -475,7 +478,7 @@ void MechanismManager::SetMergeThreshold(int merge_th)
     guard.lock();
     merge_th_ = merge_th;
     guard.unlock();
-    PRINT_INFO("Set Merge threshold: "<< merge_th);
+    PRINT_INFO("Set Merge threshold to: "<< merge_th);
 }
 
 void MechanismManager::GetMergeThreshold(int& merge_th)
@@ -484,7 +487,7 @@ void MechanismManager::GetMergeThreshold(int& merge_th)
     guard.lock();
     merge_th = merge_th_;
     guard.unlock();
-    PRINT_INFO("Get Merge threshold: "<< merge_th);
+    //PRINT_INFO("Get Merge threshold: "<< merge_th);
 }
 
 bool MechanismManager::CheckForNamesCollision(const std::string& name)
