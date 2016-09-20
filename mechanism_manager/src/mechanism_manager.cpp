@@ -473,6 +473,15 @@ void MechanismManager::SetMergeThreshold(int merge_th)
     PRINT_INFO("Merge threshold: "<< merge_th);
 }
 
+void MechanismManager::GetMergeThreshold(int& merge_th)
+{
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    merge_th = merge_th_;
+    guard.unlock();
+    PRINT_INFO("Merge threshold: "<< merge_th);
+}
+
 bool MechanismManager::CheckForNamesCollision(const std::string& name)
 {
     bool collision = false;

@@ -48,6 +48,7 @@ public:
     void updateList();
     bool isServerConnected();
     bool setMergeTh(int merge_th);
+    bool getMergeTh(int& merge_th);
 
 protected:
     QStringList names_list_;

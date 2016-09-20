@@ -152,6 +152,20 @@ bool GuidesModel::setMergeTh(int merge_th)
         return false;
     }
     return true;
+}
+
+bool GuidesModel::getMergeTh(int& merge_th)
+{
+    MechanismManagerServices srv;
+    std::string command = "get_merge_th";
+    srv.request.request_command = command;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    merge_th = srv.response.merge_th;
+    return true;
 
 }
 

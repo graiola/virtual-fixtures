@@ -211,6 +211,11 @@ void MechanismManagerInterface::SetMergeThreshold(int merge_th)
     mm_->SetMergeThreshold(merge_th);
 }
 
+void MechanismManagerInterface::GetMergeThreshold(int& merge_th)
+{
+    mm_->GetMergeThreshold(merge_th);
+}
+
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
     mm_->GetVmName(idx,name);
