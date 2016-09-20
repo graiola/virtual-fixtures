@@ -218,6 +218,8 @@ TEST(MechanismManagerTest, Clustering)
   int n_points = 100;
   MatrixXd data = MatrixXd::Random(n_points,pos_dim); // No phase
 
+  EXPECT_NO_THROW(mm.SetMergeThreshold(10)); // Test value, don't modify it or it will report failures in the following expressions
+
   EXPECT_NO_THROW(mm.ClusterVm(data));
 
   ASSERT_EQ(mm.GetNbVms(),2);
