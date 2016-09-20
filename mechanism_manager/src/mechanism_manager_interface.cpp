@@ -206,6 +206,19 @@ void MechanismManagerInterface::SetVmMode(const std::string mode)
     mm_->SetVmMode(enum_mode);
 }
 
+void MechanismManagerInterface::GetVmMode(std::string& mode)
+{
+    switch(mm_->GetVmMode())
+    {
+        case SOFT:
+            mode = "SOFT";
+            break;
+        case HARD:
+            mode = "HARD";
+            break;
+    }
+}
+
 void MechanismManagerInterface::SetMergeThreshold(int merge_th)
 {
     mm_->SetMergeThreshold(merge_th);

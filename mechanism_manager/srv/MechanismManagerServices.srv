@@ -6,4 +6,5 @@ uint32 merge_th
 ---
 string response_command
 string[] list_guides
+string selected_mode
 uint32 merge_th

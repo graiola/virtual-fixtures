@@ -92,6 +92,7 @@ class MechanismManagerInterface
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     double GetPhase(const int idx);
     double GetScale(const int idx);
+    void GetVmMode(std::string& mode);
     void GetMergeThreshold(int& merge_th);
 
     /// Sets
