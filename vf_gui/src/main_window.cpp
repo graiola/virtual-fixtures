@@ -161,6 +161,8 @@ void MainWindow::on_refreshButton_clicked()
         ui->softRadioButton->setChecked(true);
     else if(mode == "HARD")
          ui->hardRadioButton->setChecked(true);
+    /*else
+        ui->softRadioButton->setChecked(true);*/
 }
 
 void MainWindow::on_saveButton_clicked()
