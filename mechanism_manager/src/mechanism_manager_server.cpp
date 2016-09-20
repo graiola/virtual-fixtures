@@ -87,6 +87,14 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
         res.response_command = req.request_command;
     }
 
+    if(std::strcmp(req.request_command.c_str(), "get_mode") == 0)
+    {
+        std::string selected_mode;
+        mm_interface_->GetVmMode(selected_mode);
+        res.selected_mode = selected_mode;
+        res.response_command = req.request_command;
+    }
+
     if(std::strcmp(req.request_command.c_str(), "set_merge_th") == 0)
     {
         mm_interface_->SetMergeThreshold(req.merge_th);

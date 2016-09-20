@@ -140,6 +140,20 @@ bool GuidesModel::setMode(const QString& mode)
     return true;
 }
 
+bool GuidesModel::getMode(QString& mode)
+{
+    MechanismManagerServices srv;
+    std::string command = "get_mode";
+    srv.request.request_command = command;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    mode.fromStdString(srv.response.selected_mode);
+    return true;
+}
+
 bool GuidesModel::setMergeTh(int merge_th)
 {
     MechanismManagerServices srv;

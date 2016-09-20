@@ -71,11 +71,9 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // SlideBar
     ui->mergeSlider->setMinimum(0);
     ui->mergeSlider->setMaximum(100);
-    int slider_value = 0;
-    guides_model_->getMergeTh(slider_value);
-    ui->mergeSlider->setValue(slider_value);
-    //guides_model_->setMergeTh();
 
+    //Refresh on start
+    on_refreshButton_clicked(); // click a virtual button! :D
 }
 
 void MainWindow::loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg)
@@ -157,6 +155,12 @@ void MainWindow::on_refreshButton_clicked()
     int slider_value = 0;
     guides_model_->getMergeTh(slider_value);
     ui->mergeSlider->setValue(slider_value);
+    QString mode;
+    guides_model_->getMode(mode);
+    if(mode == "SOFT")
+        ui->softRadioButton->setChecked(true);
+    else if(mode == "HARD")
+         ui->hardRadioButton->setChecked(true);
 }
 
 void MainWindow::on_saveButton_clicked()

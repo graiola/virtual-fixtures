@@ -462,6 +462,11 @@ void MechanismManager::SetVmMode(const scale_mode_t mode)
 
     guard.unlock();
 }
+scale_mode_t& MechanismManager::GetVmMode()
+{
+    return scale_mode_;
+}
+
 
 void MechanismManager::SetMergeThreshold(int merge_th)
 {
