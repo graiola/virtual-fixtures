@@ -85,6 +85,7 @@ class MechanismManager
     void GetVmNames(std::vector<std::string>& names);
     void SetVmMode(const scale_mode_t mode);
     void SetMergeThreshold(int merge_th);
+    void GetMergeThreshold(int& merge_th);
 
     /// Real time methods, they can be called in a real time loop
     inline int GetPositionDim() const {return position_dim_;}

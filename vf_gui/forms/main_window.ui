@@ -124,9 +124,9 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>130</x>
       <y>270</y>
-      <width>421</width>
+      <width>431</width>
       <height>51</height>
      </rect>
     </property>
@@ -149,6 +149,13 @@
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Merge All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="sliderValueLabel">
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>

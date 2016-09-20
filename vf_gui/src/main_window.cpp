@@ -48,7 +48,10 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // SlideBar
     ui->mergeSlider->setMinimum(0);
     ui->mergeSlider->setMaximum(100);
-    guides_model_->setMergeTh(ui->mergeSlider->value());
+    int slider_value = 0;
+    guides_model_->getMergeTh(slider_value);
+    ui->mergeSlider->setValue(slider_value);
+    //guides_model_->setMergeTh();
 
     sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
 
@@ -101,15 +104,6 @@ void MainWindow::updateConsole(const QString& data, int level)
             ui->consoleText->setTextColor(Qt::white);
             break;
     }
-
-    /*if(level == 4) // Warning
-       ui->consoleText->setTextColor(Qt::yellow);
-    else if(level == 8) // Error
-
-    else
-       ui->consoleText->setTextColor(Qt::white);*/
-
-
     ui->consoleText->append(data);
 }
 
@@ -160,6 +154,9 @@ void MainWindow::on_insertButton_clicked()
 void MainWindow::on_refreshButton_clicked()
 {
     guides_model_->updateList();
+    int slider_value = 0;
+    guides_model_->getMergeTh(slider_value);
+    ui->mergeSlider->setValue(slider_value);
 }
 
 void MainWindow::on_saveButton_clicked()

@@ -6,3 +6,4 @@ uint32 merge_th
 ---
 string response_command
 string[] list_guides
+uint32 merge_th
