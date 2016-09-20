@@ -45,14 +45,6 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     ui->listView->setEditTriggers(QAbstractItemView::AnyKeyPressed |
                                   QAbstractItemView::DoubleClicked );
 
-    // SlideBar
-    ui->mergeSlider->setMinimum(0);
-    ui->mergeSlider->setMaximum(100);
-    int slider_value = 0;
-    guides_model_->getMergeTh(slider_value);
-    ui->mergeSlider->setValue(slider_value);
-    //guides_model_->setMergeTh();
-
     sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
 
     spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
@@ -75,6 +67,14 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // So we use the ros callback to trigger the qt callback :)
     QObject::connect(this, SIGNAL(requestUpdateConsole(const QString&,int)),
                      this, SLOT(updateConsole(const QString&,int)));
+
+    // SlideBar
+    ui->mergeSlider->setMinimum(0);
+    ui->mergeSlider->setMaximum(100);
+    int slider_value = 0;
+    guides_model_->getMergeTh(slider_value);
+    ui->mergeSlider->setValue(slider_value);
+    //guides_model_->setMergeTh();
 
 }
 
