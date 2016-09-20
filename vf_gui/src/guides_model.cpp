@@ -150,7 +150,7 @@ bool GuidesModel::getMode(QString& mode)
         // TODO Visualize the problem on the gui
         return false;
     }
-    mode.fromStdString(srv.response.selected_mode);
+    mode = QString::fromStdString(srv.response.selected_mode);
     return true;
 }
 
