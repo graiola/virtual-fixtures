@@ -366,10 +366,7 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
     if (const YAML::Node& curr_node = main_node["gmr"])
     {
         curr_node["n_gaussians"] >> n_gaussians_;
-        curr_node["n_points_discretization"] >> n_points_discretization_;
-
         assert(n_gaussians_ > 0);
-        assert(n_points_discretization_ > 1);
         return true;
     }
     else
@@ -610,10 +607,10 @@ void VirtualMechanismGmr<VM_t>::CreateRecordedRefs()
     //VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
     //VM_t::phase_recorded_ = VectorXd::LinSpaced(n_points, 0.0, 1.0);
 
-    VM_t::state_recorded_.resize(n_points_discretization_,VM_t::state_dim_);
-    VM_t::phase_recorded_.resize(n_points_discretization_,1);
-    VM_t::tmp_dists_.resize(n_points_discretization_);
-    VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(n_points_discretization_, 0.0, 1.0);
+    VM_t::state_recorded_.resize(VM_t::n_points_discretization_,VM_t::state_dim_);
+    VM_t::phase_recorded_.resize(VM_t::n_points_discretization_,1);
+    VM_t::tmp_dists_.resize(VM_t::n_points_discretization_);
+    VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(VM_t::n_points_discretization_, 0.0, 1.0);
 
     fa_->predict(VM_t::phase_recorded_,VM_t::state_recorded_);
 }
