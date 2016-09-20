@@ -511,10 +511,10 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     double sum = 0.0;
     for(int i=0; i<rt_buffer.size();i++)
     {
-        // Update the virtual mechanisms states
-        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt);
         // Compute the scale for each mechanism
         rt_buffer[i].scale = rt_buffer[i].guide->getScale(robot_position,escape_factor_);
+        // Update the virtual mechanisms states
+        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt,rt_buffer[i].scale);
         sum += rt_buffer[i].scale;
     }
 
@@ -541,15 +541,26 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     // For each mechanism that is not active (low scale value), remove the force component tangent to
     // the active mechanism jacobian. In this way we avoid to be locked if one or more guide overlap in a certain area.
     // Use a first order filter to gently remove these components.
-    for(int i=0; i<rt_buffer.size();i++)
-        if(rt_buffer[i].scale_hard > 1.0/static_cast<double>(rt_buffer.size()))
-            for(int j=0; j<rt_buffer.size();j++)
-                if(j!=i)
-                    rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateForward();
-                else
-                    rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateBackward();
 
-    // Compute the force for each mechanism, remove the antagonist force components
+    //1) Find the active mechanism (i.e. the one with the max scale)
+    double max_scale = 0.0;
+    int i_active = 0;
+    for(int i=0; i<rt_buffer.size();i++)
+    {
+        if(rt_buffer[i].scale_hard > max_scale)
+        {
+            i_active = i;
+            max_scale = rt_buffer[i].scale_hard;
+        }
+    }
+    //2) Activate the filters
+    for(int j=0; j<rt_buffer.size();j++)
+        if(j==i_active) // active
+            rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateForward(); // -> 1
+        else // not active
+            rt_buffer[j].scale_t = rt_buffer[j].fade->IntegrateBackward(); // -> 0
+
+    //3) Compute the force for each mechanism, remove the antagonist force components
     for(int i=0; i<rt_buffer.size();i++)
     {
         err_pos_ = rt_buffer[i].guide->getState() - robot_position;
@@ -564,7 +575,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
         for(int j=0; j<rt_buffer.size();j++)
         {
             if(j!=i)
-                f_out -= rt_buffer[i].scale * rt_buffer[i].scale_t * rt_buffer[j].guide->getJacobianVersor() * f_vm_.dot(rt_buffer[j].guide->getJacobianVersor());
+                f_out -= rt_buffer[i].scale * rt_buffer[j].scale_t * rt_buffer[j].guide->getJacobianVersor() * f_vm_.dot(rt_buffer[j].guide->getJacobianVersor());
         }
     }
 }

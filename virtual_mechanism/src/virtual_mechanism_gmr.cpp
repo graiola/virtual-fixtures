@@ -356,13 +356,6 @@ VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const fa_t* const fa) : VirtualMe
 template<class VM_t>
 VirtualMechanismInterface* VirtualMechanismGmr<VM_t>::Clone()
 {
-    /*fa_t* fa_clone = fa_->clone();
-    VirtualMechanismGmr<VM_t>* vm_clone = new VirtualMechanismGmr<VM_t>();
-    vm_clone->fa_ = fa_clone; // fa_ is NULL
-
-    if(vm_clone->fa_->isTrained()) // Check if we didn't clone an empty VM
-        vm_clone->Init();*/
-
     return new VirtualMechanismGmr<VM_t>(fa_);
 }
 
@@ -373,7 +366,10 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
     if (const YAML::Node& curr_node = main_node["gmr"])
     {
         curr_node["n_gaussians"] >> n_gaussians_;
+        curr_node["n_points_discretization"] >> n_points_discretization_;
+
         assert(n_gaussians_ > 0);
+        assert(n_points_discretization_ > 1);
         return true;
     }
     else
@@ -383,7 +379,6 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
 template<class VM_t>
 bool VirtualMechanismGmr<VM_t>::CreateModelFromData(const MatrixXd& data)
 {
-
     // If the function approximator already exists, re-train, otherwise create a new function approximator
     if(fa_==NULL)
     {
@@ -415,54 +410,11 @@ bool VirtualMechanismGmr<VM_t>::CreateModelFromFile(const std::string file_path)
         return false;
 }
 
-/*template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const MatrixXd& data): VM_t()
-{
-    int n_gaussians = 10; //FIXME
-    MetaParametersGMR* meta_parameters_gmr = new MetaParametersGMR(1,n_gaussians); // input/phase dimension is 1
-    fa_ = new fa_t(meta_parameters_gmr);
-    TrainModel(data);
-    Init();
-}*/
-
-/*template<class VM_t>
-VirtualMechanismGmr<VM_t>::VirtualMechanismGmr(const string file_path): VM_t()
-{
-    if(LoadModelFromFile(file_path))
-        Init();
-    else
-        PRINT_ERROR("Impossible to load GMM from file.");
-}*/
-
 template <class VM_t>
 VirtualMechanismGmr<VM_t>::~VirtualMechanismGmr()
 {
     delete fa_;
 }
-
-/*template<class VM_t>
-void VirtualMechanismGmr<VM_t>::Init()
-{
-    assert(fa_->isTrained());
-    assert(fa_->getExpectedInputDim() == 1);
-    assert(fa_->getExpectedOutputDim() == VM_t::state_dim_);
-
-    fa_input_.resize(1,1);
-    fa_output_.resize(1,VM_t::state_dim_);
-    fa_output_dot_.resize(1,VM_t::state_dim_);
-    variance_.resize(1,VM_t::state_dim_);
-    covariance_.resize(VM_t::state_dim_,VM_t::state_dim_);
-    covariance_inv_.resize(VM_t::state_dim_,VM_t::state_dim_);
-    err_.resize(VM_t::state_dim_);
-
-    variance_.fill(1.0);
-    covariance_ = variance_.row(0).asDiagonal();
-    covariance_inv_.fill(0.0);
-    err_.fill(0.0);
-
-    // Initialize the state of the virtual mechanism
-    VM_t::Init();
-}*/
 
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::ComputeStateGivenPhase(const double phase_in, VectorXd& state_out) // Not for rt
@@ -654,13 +606,14 @@ double VirtualMechanismGmr<VM_t>::GetResponsability()
 template<class VM_t>
 void VirtualMechanismGmr<VM_t>::CreateRecordedRefs()
 {
-    int n_points = 10;
+    //int n_points = 1000;
     //VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
     //VM_t::phase_recorded_ = VectorXd::LinSpaced(n_points, 0.0, 1.0);
 
-    VM_t::state_recorded_.resize(n_points,VM_t::state_dim_);
-    VM_t::phase_recorded_.resize(n_points,1);
-    VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+    VM_t::state_recorded_.resize(n_points_discretization_,VM_t::state_dim_);
+    VM_t::phase_recorded_.resize(n_points_discretization_,1);
+    VM_t::tmp_dists_.resize(n_points_discretization_);
+    VM_t::phase_recorded_.col(0) = VectorXd::LinSpaced(n_points_discretization_, 0.0, 1.0);
 
     fa_->predict(VM_t::phase_recorded_,VM_t::state_recorded_);
 }
