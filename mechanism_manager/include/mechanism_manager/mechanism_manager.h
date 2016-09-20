@@ -39,7 +39,6 @@
 
 ///////// MECHANISM_MANAGER
 #include "mechanism_manager/mechanism_manager_interface.h"
-#include "mechanism_manager/mechanism_manager_autom.h"
 
 namespace mechanism_manager
 {
