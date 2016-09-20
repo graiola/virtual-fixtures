@@ -1,6 +1,7 @@
 virtual_mechanism_interface:
  K: [2500.0,250.0]
  B: [10.0,10.0]
+ n_points_discretization: 10
 first_order:
  Bd: 1.0
 second_order:

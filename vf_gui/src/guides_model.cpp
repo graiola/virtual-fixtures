@@ -126,6 +126,63 @@ bool GuidesModel::insertRow(int row, const QModelIndex & /*parent*/)
     return true;
 }
 
+bool GuidesModel::setMode(const QString& mode)
+{
+    MechanismManagerServices srv;
+    std::string command = "set_mode";
+    srv.request.request_command = command;
+    srv.request.selected_mode = mode.toStdString();
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    return true;
+}
+
+bool GuidesModel::getMode(QString& mode)
+{
+    MechanismManagerServices srv;
+    std::string command = "get_mode";
+    srv.request.request_command = command;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    mode = QString::fromStdString(srv.response.selected_mode);
+    return true;
+}
+
+bool GuidesModel::setMergeTh(int merge_th)
+{
+    MechanismManagerServices srv;
+    std::string command = "set_merge_th";
+    srv.request.request_command = command;
+    srv.request.merge_th = merge_th;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    return true;
+}
+
+bool GuidesModel::getMergeTh(int& merge_th)
+{
+    MechanismManagerServices srv;
+    std::string command = "get_merge_th";
+    srv.request.request_command = command;
+    if(!sc_.call(srv))
+    {
+        // TODO Visualize the problem on the gui
+        return false;
+    }
+    merge_th = srv.response.merge_th;
+    return true;
+
+}
+
 bool GuidesModel::isServerConnected()
 {
     return sc_.exists();

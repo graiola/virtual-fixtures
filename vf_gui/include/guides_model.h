@@ -43,9 +43,13 @@ public:
     bool insertRow(int row, const QModelIndex &parent = QModelIndex());
     bool saveRow(int row, const QModelIndex &parent = QModelIndex());
     bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
+    bool setMode(const QString& mode);
+    bool getMode(QString& mode);
     Qt::ItemFlags flags(const QModelIndex & index) const ;
     void updateList();
     bool isServerConnected();
+    bool setMergeTh(int merge_th);
+    bool getMergeTh(int& merge_th);
 
 protected:
     QStringList names_list_;
@@ -53,11 +57,8 @@ protected:
     QTimer* refresh_timer_;
     bool new_guide_;
 
-
-
 protected Q_SLOTS:
     void refreshTimerHit();
-
 
 };
 

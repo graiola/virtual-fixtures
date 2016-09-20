@@ -60,6 +60,8 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       try
       {
           ros_node_.Init(ROS_PKG_NAME);
+          if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Count) )
+             ros::console::notifyLoggerLevelsChanged();
           mm_server_ = new MechanismManagerServer(this,ros_node_.GetNode());
       }
       catch(const std::runtime_error& e)
@@ -186,6 +188,45 @@ void MechanismManagerInterface::DeleteVm(const int idx, bool threading)
         mm_->DeleteVm(idx);
 }
 
+void MechanismManagerInterface::SetVmMode(const scale_mode_t mode)
+{
+    mm_->SetMode(mode);
+}
+
+void MechanismManagerInterface::SetVmMode(const std::string mode)
+{
+    scale_mode_t enum_mode = SOFT;
+    if(std::strcmp(mode.c_str(), "SOFT") == 0)
+       enum_mode = SOFT;
+    else if(std::strcmp(mode.c_str(), "HARD") == 0)
+       enum_mode = HARD;
+
+    mm_->SetVmMode(enum_mode);
+}
+
+void MechanismManagerInterface::GetVmMode(std::string& mode)
+{
+    switch(mm_->GetVmMode())
+    {
+        case SOFT:
+            mode = "SOFT";
+            break;
+        case HARD:
+            mode = "HARD";
+            break;
+    }
+}
+
+void MechanismManagerInterface::SetMergeThreshold(int merge_th)
+{
+    mm_->SetMergeThreshold(merge_th);
+}
+
+void MechanismManagerInterface::GetMergeThreshold(int& merge_th)
+{
+    mm_->GetMergeThreshold(merge_th);
+}
+
 void MechanismManagerInterface::GetVmName(const int idx, std::string& name)
 {
     mm_->GetVmName(idx,name);
@@ -201,19 +242,19 @@ void MechanismManagerInterface::SetVmName(const int idx, std::string& name)
     mm_->SetVmName(idx,name);
 }
 
-void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode)
+void MechanismManagerInterface::Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr)
 {
     assert(dt > 0.0);
 
     robot_position_ = VectorXd::Map(robot_position_ptr, position_dim_);
     robot_velocity_ = VectorXd::Map(robot_velocity_ptr, position_dim_);
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
     VectorXd::Map(f_out_ptr, position_dim_) = f_;
 }
 
-void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
+void MechanismManagerInterface::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
     assert(dt > 0.0);
 
@@ -223,7 +264,7 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
     robot_position_ = robot_position;
     robot_velocity_ = robot_velocity;
 
-    mm_->Update(robot_position_,robot_velocity_,dt,f_,scale_mode);
+    mm_->Update(robot_position_,robot_velocity_,dt,f_);
 
     f_out = f_;
 }

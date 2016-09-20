@@ -1,6 +1,10 @@
 string request_command
 uint32 selected_guide_idx
 string selected_guide_name
+string selected_mode
+uint32 merge_th
 ---
 string response_command
 string[] list_guides
+string selected_mode
+uint32 merge_th

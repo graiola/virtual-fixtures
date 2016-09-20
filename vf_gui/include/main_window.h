@@ -26,11 +26,11 @@
 
 /// QT
 #include <QMainWindow>
-//#include <QStringListModel>
+#include <QColorDialog>
 
 /// ROS
 #include <ros/ros.h>
-//#include <mechanism_manager/MechanismManagerServices.h>
+#include <rosgraph_msgs/Log.h>
 
 #include "guides_model.h"
 
@@ -38,6 +38,9 @@ namespace Ui {
 class MainWindow;
 class button;
 class label;
+class radioButton;
+class slider;
+class textEdit;
 }
 
 class MainWindow : public QMainWindow
@@ -47,16 +50,30 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(ros::NodeHandle& nh, QWidget *parent = 0);
     ~MainWindow();
+    void loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg);
+
+signals:
+    void requestUpdateConsole(const QString& data , int level);
 
 private slots:
+
+    void updateConsole(const QString& data , int level);
+
     void on_quitButton_clicked();
     void on_deleteButton_clicked();
     void on_insertButton_clicked();
     void on_refreshButton_clicked();
     void on_saveButton_clicked();
+    void on_softRadioButton_clicked();
+    void on_hardRadioButton_clicked();
+    void on_mergeSlider_sliderMoved(int position);
+    void on_clearButton_clicked();
+
 protected:
     void timerEvent(QTimerEvent *event);
     GuidesModel* guides_model_;
+    ros::Subscriber* sub_;
+    ros::AsyncSpinner* spinner_ptr_; // Used to keep alive the ros callbacks
 
 private:
     Ui::MainWindow *ui;

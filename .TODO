@@ -6,5 +6,5 @@
 - Fix threads pool -> naive fix done
 - Clean old branches -> http://railsware.com/blog/2014/08/11/git-housekeeping-tutorial-clean-up-outdated-branches-in-local-and-remote-repositories/
 - clear the rt_buffer at the end of any async operation
-- Change scale mode with a method -> add it to vf_gui and add checks... (ensure rt(atomic swap))
-- Info on the GUI
+- Visualize the merge value on a label?
+- rqt_plot inside the qt gui (qtpython->c++)

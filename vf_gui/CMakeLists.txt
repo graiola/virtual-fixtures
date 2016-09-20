@@ -7,14 +7,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Boost COMPONENTS system REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS roscpp roslib
-                                        mechanism_manager)
+                                        mechanism_manager
+                                        rosgraph_msgs)
 
 # Find the QtWidgets library
 find_package(Qt5Widgets)
 
 # Catkin specific configuration
 	catkin_package(
-	 #CATKIN_DEPENDS mechanism_manager
+         CATKIN_DEPENDS rosgraph_msgs
 	 #DEPENDS system_lib boost
 	)
 
@@ -51,6 +52,12 @@ if(Qt5Widgets_FOUND)
 	# Mark executables and/or libraries for installation
 	install(TARGETS ${PROJECT_NAME} vf_gui
 	  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+        # Copy launch files
+        install(DIRECTORY launch
+           DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+           FILES_MATCHING PATTERN "*.launch"
+        )
 
 else(Qt5Widgets_FOUND)
 

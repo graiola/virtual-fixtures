@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>715</width>
-    <height>472</height>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,10 @@
    <widget class="QPushButton" name="quitButton">
     <property name="geometry">
      <rect>
-      <x>605</x>
-      <y>380</y>
+      <x>580</x>
+      <y>580</y>
       <width>101</width>
-      <height>23</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -31,7 +31,7 @@
     <property name="geometry">
      <rect>
       <x>230</x>
-      <y>100</y>
+      <y>30</y>
       <width>258</width>
       <height>215</height>
      </rect>
@@ -52,21 +52,21 @@
    <widget class="QPushButton" name="refreshButton">
     <property name="geometry">
      <rect>
-      <x>320</x>
-      <y>330</y>
+      <x>550</x>
+      <y>140</y>
       <width>80</width>
-      <height>23</height>
+      <height>61</height>
      </rect>
     </property>
     <property name="text">
      <string>Refresh</string>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>101</y>
+      <y>31</y>
       <width>121</width>
       <height>211</height>
      </rect>
@@ -94,6 +94,95 @@
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>30</y>
+      <width>121</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QRadioButton" name="softRadioButton">
+       <property name="text">
+        <string>Soft Guides</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="hardRadioButton">
+       <property name="text">
+        <string>Hard Guides</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>270</y>
+      <width>431</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Merge Nothing</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="mergeSlider">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Merge All</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="sliderValueLabel">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QTextEdit" name="consoleText">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>340</y>
+      <width>661</width>
+      <height>211</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="clearButton">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>560</y>
+      <width>80</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Clear</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">

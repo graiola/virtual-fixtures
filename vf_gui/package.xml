@@ -16,9 +16,11 @@
   <build_depend>roscpp</build_depend>
   <build_depend>roslib</build_depend>
   <build_depend>mechanism_manager</build_depend>
+  <build_depend>rosgraph_msgs</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>roslib</run_depend>
   <run_depend>mechanism_manager</run_depend>
+  <run_depend>rosgraph_msgs</run_depend>
 
 </package>

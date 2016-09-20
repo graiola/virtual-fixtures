@@ -54,8 +54,8 @@ class MechanismManagerInterface
     ~MechanismManagerInterface();
 
     /// Real time loop
-    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out, const scale_mode_t scale_mode = SOFT);
-    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr, const scale_mode_t scale_mode = SOFT);
+    void Update(const Eigen::VectorXd& robot_pose, const Eigen::VectorXd& robot_velocity, double dt, Eigen::VectorXd& f_out);
+    void Update(const double* robot_position_ptr, const double* robot_velocity_ptr, double dt, double* f_out_ptr);
 
     /// Non real time async services
     /// threading enables the use of separate threads to ensure the real time
@@ -72,6 +72,7 @@ class MechanismManagerInterface
     void GetVmName(const int idx, std::string& name);
     void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);
+    void SetVmMode(const std::string mode);
 
     /// Stop the mechanisms
     void Stop();
@@ -88,6 +89,12 @@ class MechanismManagerInterface
     void GetVmVelocity(const int idx, double* const velocity_ptr);
     double GetPhase(const int idx);
     double GetScale(const int idx);
+    void GetVmMode(std::string& mode);
+    void GetMergeThreshold(int& merge_th);
+
+    /// Sets
+    void SetVmMode(const scale_mode_t mode);
+    void SetMergeThreshold(int merge_th);
 
     /// Sets
     void SetCollisionDetected(const bool collision);

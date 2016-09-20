@@ -25,7 +25,6 @@
 #include "ui_main_window.h"
 
 using namespace ros;
-//using namespace mechanism_manager;
 
 MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     QMainWindow(parent),
@@ -45,8 +44,66 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     // It may be triggered by hitting any key or double-click etc.
     ui->listView->setEditTriggers(QAbstractItemView::AnyKeyPressed |
                                   QAbstractItemView::DoubleClicked );
+
+    sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
+
+    spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
+    spinner_ptr_->start();
+
+    // TextBox is read only
+    ui->consoleText->setReadOnly(true);
+    ui->consoleText->setTextInteractionFlags(0); //0 == Qt::TextInteractionFlag::NoTextInteraction
+
+    //QColor color = QColorDialog::getColor(Qt::white,this); // in here your color pallete will open..
+
+    QPalette p = ui->consoleText->palette(); // define pallete for textEdit..
+    p.setColor(QPalette::Base, Qt::black); // set color "Red" for textedit base
+    //p.setColor(QPalette::Text, Qt::white); // set text color which is selected from color pallete
+    ui->consoleText->setPalette(p); // change textedit palette
+
+    // Explanation of this hack:
+    // Qt and Ros don't like each other, or better, their respective thread workers don't like each other.
+    // You should not handle qt objects with ROS threads.
+    // So we use the ros callback to trigger the qt callback :)
+    QObject::connect(this, SIGNAL(requestUpdateConsole(const QString&,int)),
+                     this, SLOT(updateConsole(const QString&,int)));
+
+    // SlideBar
+    ui->mergeSlider->setMinimum(0);
+    ui->mergeSlider->setMaximum(100);
+
+    //Refresh on start
+    on_refreshButton_clicked(); // click a virtual button! :D
 }
 
+void MainWindow::loggerCallback(const rosgraph_msgs::Log::ConstPtr& msg)
+{
+    if(std::strcmp(msg->name.c_str(),"/mechanism_manager") == 0)
+    {
+         QString tmp_qstring;
+         tmp_qstring = QString::fromStdString(msg->msg.data());
+         emit requestUpdateConsole(tmp_qstring,msg->level);
+    }
+}
+
+void MainWindow::updateConsole(const QString& data, int level)
+{
+    ui->consoleText->setTextBackgroundColor(Qt::black);
+
+    switch(level)
+    {
+        case 4 :
+            ui->consoleText->setTextColor(Qt::yellow);
+            break;
+        case 8 :
+            ui->consoleText->setTextColor(Qt::red);
+            break;
+        default:
+            ui->consoleText->setTextColor(Qt::white);
+            break;
+    }
+    ui->consoleText->append(data);
+}
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
@@ -62,6 +119,8 @@ else
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete sub_;
+    delete spinner_ptr_;
 }
 
 void MainWindow::on_quitButton_clicked()
@@ -93,9 +152,42 @@ void MainWindow::on_insertButton_clicked()
 void MainWindow::on_refreshButton_clicked()
 {
     guides_model_->updateList();
+    int slider_value = 0;
+    guides_model_->getMergeTh(slider_value);
+    ui->mergeSlider->setValue(slider_value);
+    QString mode;
+    guides_model_->getMode(mode);
+    if(mode == "SOFT")
+        ui->softRadioButton->setChecked(true);
+    else if(mode == "HARD")
+         ui->hardRadioButton->setChecked(true);
+    /*else
+        ui->softRadioButton->setChecked(true);*/
 }
 
 void MainWindow::on_saveButton_clicked()
 {
     guides_model_->saveRow(ui->listView->currentIndex().row());
+}
+
+void MainWindow::on_softRadioButton_clicked()
+{
+    QString mode = "SOFT";
+    guides_model_->setMode(mode);
+}
+
+void MainWindow::on_hardRadioButton_clicked()
+{
+    QString mode = "HARD";
+    guides_model_->setMode(mode);
+}
+
+void MainWindow::on_mergeSlider_sliderMoved(int position)
+{
+    guides_model_->setMergeTh(position);
+}
+
+void MainWindow::on_clearButton_clicked()
+{
+    ui->consoleText->clear();
 }

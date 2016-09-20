@@ -62,6 +62,10 @@ MechanismManager::MechanismManager(int position_dim)
 
       rt_idx_ = 0;
       no_rt_idx_ = 1;
+
+      scale_mode_ = SOFT; // By default use soft guides
+
+      merge_th_ = 0;
 }
 
 MechanismManager::~MechanismManager()
@@ -74,8 +78,14 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
 {
     if(!CheckForNamesCollision(name))
     {
-        boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-        guard.lock(); // Lock
+        boost::recursive_mutex::scoped_lock guard(mtx_);
+        //guard.lock(); // Lock
+
+        if(scale_mode_ == HARD)
+        {
+            PRINT_WARNING("Impossible to insert the guide while in HARD mode.");
+            return;
+        }
 
         std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
         std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
@@ -103,7 +113,7 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         rt_idx_ = (rt_idx_ + 1) % 2;
         no_rt_idx_ = (no_rt_idx_ + 1) % 2;
 
-        guard.unlock(); // Unlock
+        //guard.unlock(); // Unlock
 
         PRINT_INFO("... Done!");
     }
@@ -182,8 +192,14 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
 {
     PRINT_INFO("Update the guide.");
 
-    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-    guard.lock(); // Lock
+    boost::recursive_mutex::scoped_lock guard(mtx_);
+    //guard.lock(); // Lock
+
+    if(scale_mode_ == HARD)
+    {
+        PRINT_WARNING("Impossible to update the guide while in HARD mode.");
+        return;
+    }
 
     std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
@@ -224,7 +240,7 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
     else
         PRINT_WARNING("Impossible to update the guide.");
 
-    guard.unlock(); // Unlock
+    //guard.unlock(); // Unlock
 }
 
 void MechanismManager::ClusterVm(MatrixXd& data)
@@ -238,12 +254,12 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         guard.lock(); // Lock
 
         std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
-        if(rt_buffer.size()>0)
+        if(rt_buffer.size()>0 && merge_th_ > 0)
         {
             ArrayXd resps(rt_buffer.size());
             ArrayXi h(rt_buffer.size());
             ArrayXd::Index max_resp_idx;
-            int dofs = 10; // WTF Export that
+            //int dofs = 10; // WTF Export that
             double old_resp, new_resp;
             for(int i=0;i<rt_buffer.size();i++)
             {
@@ -251,7 +267,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
                 new_resp = rt_buffer[i].guide->ComputeResponsability(data);
                 try
                 {
-                    h(i) = lratiotest(old_resp,new_resp, dofs);
+                    h(i) = lratiotest(old_resp,new_resp, merge_th_);
                 }
                 catch(...)
                 {
@@ -327,9 +343,13 @@ void MechanismManager::DeleteVm(const int idx)
    PRINT_INFO("Deleting guide number#"<<idx);
    bool delete_complete = false;
 
-   boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
-   guard.lock(); // Lock
-
+   boost::recursive_mutex::scoped_lock guard(mtx_);
+   //guard.lock(); // Lock
+   if(scale_mode_ == HARD)
+   {
+       PRINT_WARNING("Impossible to delete the guide while in HARD mode.");
+       return;
+   }
    std::vector<GuideStruct>& no_rt_buffer = vm_buffers_[no_rt_idx_];
    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
    no_rt_buffer.clear();
@@ -374,7 +394,7 @@ void MechanismManager::GetVmName(const int idx, std::string& name)
 
 void MechanismManager::GetVmNames(std::vector<std::string>& names)
 {
-    PRINT_INFO("Get the guides name");
+    //PRINT_INFO("Get the guides name");
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
@@ -409,6 +429,64 @@ void MechanismManager::SetVmName(const int idx, std::string& name)
     guard.unlock();
 }
 
+void MechanismManager::SetVmMode(const scale_mode_t mode)
+{
+    PRINT_INFO("Set mode for the virtual mechanisms");
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+
+    std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+
+    if(rt_buffer.size()>0)
+    {
+        switch(mode)
+        {
+          case HARD:
+            while(!OnVm()) // Pass to Hard when on guide
+              boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            scale_mode_ = HARD;
+            PRINT_INFO("Set mode to HARD");
+            break;
+          case SOFT:
+            scale_mode_ = SOFT;
+            PRINT_INFO("Set mode to SOFT");
+            break;
+          default:
+            scale_mode_ = SOFT;
+            PRINT_INFO("Set mode to SOFT");
+            break;
+        }
+    }
+    else
+        PRINT_WARNING("Can not change guide mode, no guide available.");
+
+    guard.unlock();
+}
+scale_mode_t& MechanismManager::GetVmMode()
+{
+    return scale_mode_;
+}
+
+
+void MechanismManager::SetMergeThreshold(int merge_th)
+{
+    assert(merge_th >= 0 && merge_th <= 100); //0: Don't merge, 100: Merge all
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    merge_th_ = merge_th;
+    guard.unlock();
+    PRINT_INFO("Set Merge threshold: "<< merge_th);
+}
+
+void MechanismManager::GetMergeThreshold(int& merge_th)
+{
+    boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
+    guard.lock();
+    merge_th = merge_th_;
+    guard.unlock();
+    PRINT_INFO("Get Merge threshold: "<< merge_th);
+}
+
 bool MechanismManager::CheckForNamesCollision(const std::string& name)
 {
     bool collision = false;
@@ -426,17 +504,17 @@ bool MechanismManager::CheckForNamesCollision(const std::string& name)
 
 ///// RT METHODS
 
-void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out, const scale_mode_t scale_mode)
+void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& robot_velocity, double dt, VectorXd& f_out)
 {
     std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
 
     double sum = 0.0;
     for(int i=0; i<rt_buffer.size();i++)
     {
-        // Update the virtual mechanisms states
-        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt);
         // Compute the scale for each mechanism
         rt_buffer[i].scale = rt_buffer[i].guide->getScale(robot_position,escape_factor_);
+        // Update the virtual mechanisms states
+        rt_buffer[i].guide->Update(robot_position,robot_velocity,dt,rt_buffer[i].scale);
         sum += rt_buffer[i].scale;
     }
 
@@ -446,7 +524,7 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
     for(int i=0; i<rt_buffer.size();i++)
     {
       rt_buffer[i].scale_hard = rt_buffer[i].scale/sum;
-      switch(scale_mode)
+      switch(scale_mode_)
       {
         case HARD:
             rt_buffer[i].scale =  rt_buffer[i].scale_hard;
@@ -559,6 +637,11 @@ bool MechanismManager::OnVm()
     }
 
     return on_guide;
+}
+
+void MechanismManager::SetMode(const scale_mode_t mode)
+{
+    scale_mode_ = mode;
 }
 
 void MechanismManager::Stop()
