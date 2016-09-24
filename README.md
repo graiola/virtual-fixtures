@@ -15,7 +15,7 @@ These packages allow you to create a library of guides (i.e. multiple guides wor
 ------
 ## Why ?
 
-Virtual guides can be used in a co-manipulation context where humans and robots work togheter to complete different kind of tasks. As well known, industrial robots have a good accuracy and strength but they lack the capacity of abstract thinking and they don't (usually) posses a good perception.
+Virtual guides can be used in a co-manipulation context where humans and robots work together to complete different kind of tasks. As well known, industrial robots have a good accuracy and strength but they lack the capacity of abstract thinking and they don't (usually) posses a good perception.
 By using the virtual guides it is possible to facilitate the joint completion of a task by combining the advantages of an industrial robot with the smartness of a human worker. 
 
 ------
