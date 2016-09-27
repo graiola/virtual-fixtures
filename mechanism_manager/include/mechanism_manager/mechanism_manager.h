@@ -85,8 +85,8 @@ class MechanismManager
     void GetVmNames(std::vector<std::string>& names);
     void SetVmMode(const scale_mode_t mode);
     scale_mode_t& GetVmMode();
-    void SetMergeThreshold(int merge_th);
-    void GetMergeThreshold(int& merge_th);
+    void SetMergeThreshold(double merge_th);
+    void GetMergeThreshold(double& merge_th);
 
 
     /// Real time methods, they can be called in a real time loop
@@ -108,7 +108,7 @@ class MechanismManager
 
     scale_mode_t scale_mode_;
 
-    int merge_th_;
+    double merge_th_;
 
   private:   
     

@@ -103,7 +103,7 @@ bool MechanismManagerServer::CallBack(MechanismManagerServices::Request &req,
 
     if(std::strcmp(req.request_command.c_str(), "get_merge_th") == 0)
     {
-        int merge_th = 0;
+        double merge_th = 0;
         mm_interface_->GetMergeThreshold(merge_th);
         res.merge_th = merge_th;
         res.response_command = req.request_command;

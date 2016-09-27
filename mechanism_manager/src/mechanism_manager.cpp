@@ -65,7 +65,7 @@ MechanismManager::MechanismManager(int position_dim)
 
       scale_mode_ = SOFT; // By default use soft guides
 
-      merge_th_ = 0;
+      merge_th_ = 1.0;
 }
 
 MechanismManager::~MechanismManager()
@@ -253,50 +253,58 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock(); // Lock
 
-        std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
-        if(rt_buffer.size()>0 && merge_th_ > 0)
+        vm_t* vm_tmp_ptr = NULL;
+        try
         {
-            ArrayXd resps(rt_buffer.size());
-            ArrayXi h(rt_buffer.size());
-            ArrayXd::Index max_resp_idx;
-            //int dofs = 10; // WTF Export that
-            double old_resp, new_resp;
+            vm_tmp_ptr = vm_factory_.Build(data);
+        }
+        catch(...)
+        {
+            PRINT_WARNING("Impossible to create the guide from data...");
+            return;
+        }
+        std::string default_name = "guide_"+std::to_string(++guide_unique_id_);
+
+        std::vector<GuideStruct>& rt_buffer = vm_buffers_[rt_idx_];
+        if(rt_buffer.size()>0 && merge_th_ != 1.0)
+        {
+            int max_idx = 0;
+            double max_lik, lik;
+            double max_rel_lik = -std::numeric_limits<double>::min();
+            double rel_lik = 0.0;
+            max_lik = std::exp(vm_tmp_ptr->GetResponsability());
             for(int i=0;i<rt_buffer.size();i++)
             {
-                old_resp = rt_buffer[i].guide->GetResponsability();
-                new_resp = rt_buffer[i].guide->ComputeResponsability(data);
-                try
-                {
-                    h(i) = lratiotest(old_resp,new_resp, merge_th_);
-                }
-                catch(...)
-                {
-                    PRINT_WARNING("Something is wrong with lratiotest, skipping the clustering.");
-                    break;
-                }
+                lik = std::exp(rt_buffer[i].guide->ComputeResponsability(data));
 
-                if(h(i) == 1)
-                    resps(i) = -std::numeric_limits<double>::infinity();
-                else
-                    resps(i) = new_resp;
+                rel_lik = lik/max_lik;
+
+                assert(rel_lik>=0 && rel_lik<=1);
+
+                if(rel_lik>max_rel_lik)
+                {
+                    max_rel_lik = rel_lik;
+                    max_idx = i;
+                }
             }
 
-            if((h == 1).all())
+            if(max_rel_lik<merge_th_)
             {
-                //PRINT_INFO("Creating a new guide.");
-                InsertVm(data);
+                PRINT_INFO("Creating a new guide.");
+                //InsertVm(data);
+                AddNewVm(vm_tmp_ptr,default_name);
             }
             else
             {
-                //PRINT_INFO("Update guide: " << max_resp_idx);
-                resps.maxCoeff(&max_resp_idx); // Break the tie
-                UpdateVm(data,max_resp_idx);
+                PRINT_INFO("Update guide: " << max_idx);
+                //relative_likelihood.maxCoeff(&max_resp_idx);
+                UpdateVm(data,max_idx);
             }
         }
         else
         {
-            //PRINT_INFO("No guide available, creating a new one");
-            InsertVm(data);
+            PRINT_INFO("No guide available, creating a new one");
+            AddNewVm(vm_tmp_ptr,default_name);
         }
         guard.unlock();
     }
@@ -309,14 +317,6 @@ void MechanismManager::ClusterVm(double* const data, const int n_rows)
     MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
     ClusterVm(mat);
 }
-
-/*
-void MechanismManager::UpdateVM_no_rt(double* const data, const int n_rows, const int idx)
-{
-    MatrixXd mat = MatrixXd::Map(data,n_rows,position_dim_);
-    UpdateVM_no_rt(mat,idx);
-}
-*/
 
 void MechanismManager::SaveVm(const int idx)
 {
@@ -468,9 +468,9 @@ scale_mode_t& MechanismManager::GetVmMode()
 }
 
 
-void MechanismManager::SetMergeThreshold(int merge_th)
+void MechanismManager::SetMergeThreshold(double merge_th)
 {
-    assert(merge_th >= 0 && merge_th <= 100); //0: Don't merge, 100: Merge all
+    assert(merge_th >= 0 && merge_th <= 1.0); //0: Merge all , 1.0: Don't merge
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();
     merge_th_ = merge_th;
@@ -478,7 +478,7 @@ void MechanismManager::SetMergeThreshold(int merge_th)
     PRINT_INFO("Set Merge threshold: "<< merge_th);
 }
 
-void MechanismManager::GetMergeThreshold(int& merge_th)
+void MechanismManager::GetMergeThreshold(double& merge_th)
 {
     boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
     guard.lock();

@@ -69,8 +69,9 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
                      this, SLOT(updateConsole(const QString&,int)));
 
     // SlideBar
+    slidebar_res_ = 100;
     ui->mergeSlider->setMinimum(0);
-    ui->mergeSlider->setMaximum(100);
+    ui->mergeSlider->setMaximum(slidebar_res_);
 
     //Refresh on start
     on_refreshButton_clicked(); // click a virtual button! :D
@@ -151,7 +152,7 @@ void MainWindow::on_insertButton_clicked()
 
 void MainWindow::on_refreshButton_clicked()
 {
-    guides_model_->updateList();
+    /*guides_model_->updateList();
     int slider_value = 0;
     guides_model_->getMergeTh(slider_value);
     ui->mergeSlider->setValue(slider_value);
@@ -160,9 +161,7 @@ void MainWindow::on_refreshButton_clicked()
     if(mode == "SOFT")
         ui->softRadioButton->setChecked(true);
     else if(mode == "HARD")
-         ui->hardRadioButton->setChecked(true);
-    /*else
-        ui->softRadioButton->setChecked(true);*/
+         ui->hardRadioButton->setChecked(true);*/
 }
 
 void MainWindow::on_saveButton_clicked()
@@ -184,7 +183,7 @@ void MainWindow::on_hardRadioButton_clicked()
 
 void MainWindow::on_mergeSlider_sliderMoved(int position)
 {
-    guides_model_->setMergeTh(position);
+    guides_model_->setMergeTh(static_cast<double>(position)/static_cast<double>(slidebar_res_));
 }
 
 void MainWindow::on_clearButton_clicked()

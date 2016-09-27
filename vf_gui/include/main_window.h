@@ -77,6 +77,7 @@ protected:
 
 private:
     Ui::MainWindow *ui;
+    int slidebar_res_;
 };
 
 #endif // MAIN_WINDOW_H
