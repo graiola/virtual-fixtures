@@ -152,16 +152,16 @@ void MainWindow::on_insertButton_clicked()
 
 void MainWindow::on_refreshButton_clicked()
 {
-    /*guides_model_->updateList();
-    int slider_value = 0;
-    guides_model_->getMergeTh(slider_value);
-    ui->mergeSlider->setValue(slider_value);
+    guides_model_->updateList();
+    double merge_value = 0.0;
+    guides_model_->getMergeTh(merge_value);
+    ui->mergeSlider->setValue(static_cast<int>(merge_value*slidebar_res_));
     QString mode;
     guides_model_->getMode(mode);
     if(mode == "SOFT")
         ui->softRadioButton->setChecked(true);
     else if(mode == "HARD")
-         ui->hardRadioButton->setChecked(true);*/
+         ui->hardRadioButton->setChecked(true);
 }
 
 void MainWindow::on_saveButton_clicked()
