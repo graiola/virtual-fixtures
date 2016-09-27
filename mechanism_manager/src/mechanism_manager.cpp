@@ -112,10 +112,6 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         // Circular swap
         rt_idx_ = (rt_idx_ + 1) % 2;
         no_rt_idx_ = (no_rt_idx_ + 1) % 2;
-
-        //guard.unlock(); // Unlock
-
-        PRINT_INFO("... Done!");
     }
     else
         PRINT_WARNING("Impossible to insert the guide, guide already existing.");
@@ -162,6 +158,7 @@ void MechanismManager::InsertVm(std::string& model_name)
     }
 
     AddNewVm(vm_tmp_ptr,model_name);
+    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVm(const MatrixXd& data)
@@ -180,6 +177,7 @@ void MechanismManager::InsertVm(const MatrixXd& data)
 
     std::string default_name = "guide_"+std::to_string(++guide_unique_id_);
     AddNewVm(vm_tmp_ptr,default_name);
+    PRINT_INFO("... Done!");
 }
 
 void MechanismManager::InsertVm(double* data, const int n_rows)
@@ -290,20 +288,20 @@ void MechanismManager::ClusterVm(MatrixXd& data)
 
             if(max_rel_lik<merge_th_)
             {
-                PRINT_INFO("Creating a new guide.");
+                //PRINT_INFO("Creating a new guide.");
                 //InsertVm(data);
                 AddNewVm(vm_tmp_ptr,default_name);
             }
             else
             {
-                PRINT_INFO("Update guide: " << max_idx);
+                //PRINT_INFO("Update guide: " << max_idx);
                 //relative_likelihood.maxCoeff(&max_resp_idx);
                 UpdateVm(data,max_idx);
             }
         }
         else
         {
-            PRINT_INFO("No guide available, creating a new one");
+            //PRINT_INFO("No guide available, creating a new one");
             AddNewVm(vm_tmp_ptr,default_name);
         }
         guard.unlock();
