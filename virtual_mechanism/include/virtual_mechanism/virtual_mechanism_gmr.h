@@ -131,15 +131,11 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       std::vector<tk::spline > splines_xyz_;
       bool use_spline_xyz_;
       int n_points_splines_;
-      double exec_time_;
 
       double z_;
       double z_dot_;
-      double z_dot_ref_;
 
       Eigen::MatrixXd Jz_;
-
-      long long loopCnt;
 };
 
 }

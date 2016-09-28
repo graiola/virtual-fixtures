@@ -43,16 +43,18 @@
 
 namespace virtual_mechanism
 {
-    typedef Eigen::Quaternion<double> quaternion_t;
 
 class VirtualMechanismInterface
 {
 	public:
-      VirtualMechanismInterface():update_quaternion_(false),phase_(0.0),
-          phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
-          phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
-          phase_ddot_(0.0),scale_(1.0),
-          fade_(0.0),active_(false),dt_(0.001)
+      VirtualMechanismInterface():
+          phase_(0.0),
+          phase_prev_(0.0),
+          phase_dot_(0.0),
+          phase_dot_prev_(0.0),
+          phase_ddot_(0.0),
+          scale_(1.0),
+          dt_(0.001)
 	  {
 
           if(!ReadConfig())
@@ -76,13 +78,6 @@ class VirtualMechanismInterface
           J_transp_.resize(1,state_dim_);
           BxJ_.resize(state_dim_,1);
           JtxBxJ_.resize(1,1); // NOTE It is used to store the multiplication J * J_transp
-
-          fade_sys_.SetRef(1.0);
-
-          // Default quaternions
-          //q_start_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-          //q_end_.reset(new Eigen::Quaternion(1.0,0.0,0.0,0.0));
-          //quaternion_ << 1.0,0.0,0.0,0.0;
 	  }
 	
       //VirtualMechanismInterface(const VirtualMechanismInterface& to_copy); // copy constructor
@@ -125,24 +120,6 @@ class VirtualMechanismInterface
                 K_ = Eigen::DiagonalMatrix<double,3>(K[0],K[1],K[2]);
                 B_ = Eigen::DiagonalMatrix<double,3>(B[0],B[1],B[2]);
               }
-
-              if (const YAML::Node& active_guide_node = curr_node["active_guide"])
-              {
-                  double fade_sys_gain;
-                  active_guide_node["Kf"] >> Kf_;
-                  active_guide_node["Bf"] >> Bf_;
-                  active_guide_node["fade_sys_gain"] >> fade_sys_gain;
-                  assert(Kf_ >= 0.0);
-                  assert(Bf_ >= 0.0);
-                  fade_sys_.SetGain(fade_sys_gain);
-              }
-              else
-              {
-                  Kf_ = 0.0;
-                  Bf_ = 0.0;
-              }
-              active_ = false; // By default the guide is passive
-
               return true;
           }
           else
@@ -176,17 +153,12 @@ class VirtualMechanismInterface
 	    // Compute the new state dot
 	    UpdateStateDot();
             
-        // Compute the new quaternion reference
-        if (update_quaternion_)
-            UpdateQuaternion();
-
         // Compute the jacobian versor (used to avoid the lock in the manager)
         ComputeJacobianVersor();
 	  }
 
       void UpdateDiscrete(const Eigen::VectorXd& pos)
       {
-
         phase_dot_ = 0.0;
         phase_ddot_ = 0.0;
 
@@ -222,17 +194,7 @@ class VirtualMechanismInterface
                   min = curr_d;
                   min_idx = i_row;
               }
-
-
           }
-
-          /*std::cout << "***" << std::endl;
-
-          std::cout << pos << std::endl;
-
-          std::cout << "***" << std::endl;
-          std::cout << state_recorded_.row(0).transpose() - pos << std::endl;*/
-
           phase_ = phase_recorded_(min_idx,0);
       }
 
@@ -283,16 +245,9 @@ class VirtualMechanismInterface
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0)=0;
 
       inline double getTorque() const {return torque_(0,0);}
-      inline double getFade() const {return fade_;}
       inline double getPhaseDotDot() const {return phase_ddot_;}
       inline double getPhaseDot() const {return phase_dot_;}
       inline double getPhase() const {return phase_;}
-      inline double getPhaseRef() const {return phase_ref_;}
-      inline double getPhaseDotRef() const {return phase_dot_ref_;}
-      inline double getPhaseDotDotRef() const {return phase_ddot_ref_;}
-
-      inline double getKf() const {return Kf_;}
-      inline double getBf() const {return Bf_;}
 
       inline void getJacobianVersor(Eigen::VectorXd& t_versor) const {assert(t_versor.size() == state_dim_); t_versor = t_versor_;}
       inline void getInitialPos(Eigen::VectorXd& state) const {assert(state.size() == state_dim_); state = initial_state_;}
@@ -302,14 +257,6 @@ class VirtualMechanismInterface
       inline void getJacobian(Eigen::MatrixXd& jacobian) const {jacobian = J_;}
       inline void getK(Eigen::MatrixXd& K) const {K = K_;}
       inline void getB(Eigen::MatrixXd& B) const {B = B_;}
-      inline void getQuaternion(Eigen::VectorXd& q) const
-      {
-              assert(q.size() == 4);
-              q(0) = quaternion_->w();
-              q(1) = quaternion_->x();
-              q(2) = quaternion_->y();
-              q(3) = quaternion_->z();
-      }
 
       inline Eigen::VectorXd& getJacobianVersor() {return t_versor_;}
       inline Eigen::VectorXd& getInitialPos() {return initial_state_;}
@@ -319,9 +266,6 @@ class VirtualMechanismInterface
       inline Eigen::MatrixXd& getJacobian() {return J_;}
       inline Eigen::MatrixXd& getK() {return K_;}
       inline Eigen::MatrixXd& getB() {return B_;}
-
-      //inline void setActive(const bool active) {active_ = active;}
-      //inline void setExecutionTime(const double time) {assert(time > 0.0); exec_time_ = time;}
 
       inline void Init()
       {
@@ -333,21 +277,6 @@ class VirtualMechanismInterface
           ComputeFinalState();
           ComputeJacobianVersor();
           CreateRecordedRefs();
-      }
-
-      inline void Init(const std::vector<double>& q_start, const std::vector<double>& q_end)
-      {
-         assert(q_start.size() == 4);
-         assert(q_end.size() == 4);
-
-         q_start_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
-         q_end_.reset(new quaternion_t(q_end[0],q_end[1],q_end[2],q_end[3]));
-
-         quaternion_.reset(new quaternion_t(q_start[0],q_start[1],q_start[2],q_start[3]));
-
-         update_quaternion_ = true;
-
-         Init();
       }
 
       inline void InitRtPublishers(const std::string node_name)
@@ -365,9 +294,8 @@ class VirtualMechanismInterface
               ros_node_.Init(node_name);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase",&phase_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_dot_);
-              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot",&phase_ddot_);
+              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_ddot",&phase_ddot_);
               rt_publishers_.AddPublisher(ros_node_.GetNode(),"scale",&scale_);
-              rt_publishers_.AddPublisher(ros_node_.GetNode(),"phase_dot_ref",&phase_dot_ref_);
         }
         catch(const std::runtime_error& e)
         {
@@ -418,21 +346,14 @@ class VirtualMechanismInterface
           state_dot_.noalias() = J_ * phase_dot_;
 	  }
 	  
-	  inline void UpdateQuaternion()
-      {
-          *quaternion_ = q_start_->slerp(phase_,*q_end_);
-      }
-	  
 	  // States
 	  double phase_;
 	  double phase_prev_;
 	  double phase_dot_;
-      double phase_dot_ref_;
-      double phase_ddot_ref_;
-      double phase_ref_;
       double phase_dot_prev_;
       double phase_ddot_;
       double scale_;
+      double dt_;
       int state_dim_;
       Eigen::VectorXd displacement_;
       Eigen::VectorXd state_;
@@ -458,23 +379,7 @@ class VirtualMechanismInterface
 
 	  // Gains
       Eigen::MatrixXd B_;
-      Eigen::MatrixXd K_;
-
-      // Fade system
-      tool_box::DynSystemFirstOrder fade_sys_;
-	  
-	  // Auto completion
-	  double Kf_;
-      double Bf_;
-	  double fade_;
-	  bool active_;
-      double dt_;
-
-      // Orientation
-      bool update_quaternion_;
-      boost::shared_ptr<quaternion_t > q_start_;
-      boost::shared_ptr<quaternion_t > q_end_;
-      boost::shared_ptr<quaternion_t > quaternion_;
+      Eigen::MatrixXd K_; 
 
       // Ros Stuff
 #ifdef USE_ROS_RT_PUBLISHER
@@ -535,22 +440,9 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
           det_ = JtxBxJ_(0,0) + Bd_;
 
 	      torque_.noalias() = J_transp_ * force;
-	      
-          if(active_)
-              fade_sys_.IntegrateForward(dt);
-             //fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-          else
-             fade_sys_.IntegrateBackward(dt);
-             //fade_ = fade_gain_ * (-fade_) * dt + fade_;
 
-          fade_ = fade_sys_.GetState();
-
-          // Always keep the external torque
-          //phase_dot_ = num_/det_ * torque_(0,0) + fade_ * (Kf_ * (phase_ref_ - phase_) + Bf_ * phase_dot_ref_);
-
-          // Switch between open and closed loop with the external torque
+          // Compute phase dot given the input torque
           phase_dot_ = num_/det_ * torque_(0,0);
-          phase_dot_ = fade_ *  phase_dot_ref_ + (1-fade_) * phase_dot_;
 
 	      // Compute the new phase
           phase_ = phase_dot_ * dt + phase_prev_;
@@ -595,8 +487,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
           k2_.fill(0.0);
 	      k3_.fill(0.0);
 	      k4_.fill(0.0);
-
-          control_ = 0.0;
 	  }
 
       inline bool ReadConfig()
@@ -619,45 +509,34 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  virtual void ComputeInitialState()=0;
 	  virtual void ComputeFinalState()=0;
 
-      void IntegrateStepRungeKutta(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
+      void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
 	  {
 	 
 	    phase_state_integrated = phase_state;
 	    
-        DynSystem(dt,input1,input2,phase_state_integrated);
+        DynSystem(dt,input,phase_state_integrated);
 	    k1_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + 0.5*dt*k1_;
-        DynSystem(dt,input1,input2,phase_state_integrated);
+        DynSystem(dt,input,phase_state_integrated);
 	    k2_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + 0.5*dt*k2_;
-        DynSystem(dt,input1,input2,phase_state_integrated);
+        DynSystem(dt,input,phase_state_integrated);
 	    k3_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + dt*k3_;
-        DynSystem(dt,input1,input2,phase_state_integrated);
+        DynSystem(dt,input,phase_state_integrated);
 	    k4_ = phase_state_dot_;
 	    
 	    phase_state_integrated = phase_state_ + dt*(k1_ + 2.0*(k2_+k3_) + k4_)/6.0;
 	  
 	  }
 	  
-      inline void DynSystem(const double& dt, const double& input1, const double& input2, const Eigen::VectorXd& phase_state)
+      inline void DynSystem(const double& dt, const double& torque, const Eigen::VectorXd& phase_state)
 	  {
-         phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1 + input2); // Old version with damping
+         phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - torque);
          phase_state_dot_(0) = phase_state(1);
-
-         //phase_state_dot_(1) = (1/inertia_)*(- JtxBxJ_(0,0) * phase_state(1) - input1); // Old version with damping
-         //phase_state_dot_(1) = (1/inertia_)*(- (B_ * JxJt_(0,0)  + F ) * phase_state(1) - input); // Version with friction
-         //phase_state_dot_(1) = (1/inertia_)*(-input - 0.1 * phase_state(1)); // double integrator with friction
-         //phase_state_dot_(1) = (1/inertia_)*(-(B_ * JxJt_(0,0) + Bf_) * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0)))); // Joly
-         //phase_state_dot_(1) = (1/inertia_)*(-0.00001 * phase_state(1) - input + fade_ *  (Bf_ * phase_dot_ref_ + Kf_ * (phase_ref_ - phase_state(0))));
-         //phase_state_dot_(1) = (1/inertia_)*(- input + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0)))); // Working no friction, pure double integrator
-         //phase_state_dot_(1) = (1/inertia_)*(- input - B_ * JxJt_(0,0) * phase_state(1) + fade_ *  (Bf_ * (phase_dot_ref_ -  phase_state(1)) + Kf_ * (phase_ref_ - phase_state(0))));
-         //phase_state_dot_(1) = (1/inertia_)*( - input1 - 0.1 * phase_state(1) + input2 ); // FIXME 0.1 is just a little friction to avoid instability
-         //phase_state_dot_(1) = (1/inertia_)*( - input1 - (1.0 - scale_) * 1.0 * phase_state(1) + input2 ); // dynamic brakes!
-         //phase_state_dot_(0) = fade_ *  phase_dot_ref_  + (1-fade_) * phase_state(1);
 	  }
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
@@ -669,21 +548,10 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 
           phase_state_(0) = phase_;
           phase_state_(1) = phase_dot_;
-	        
-          if(active_)
-              fade_sys_.IntegrateForward(dt);
-             //fade_ = fade_gain_ * (1 - fade_) * dt + fade_;
-          else
-             fade_sys_.IntegrateBackward(dt);
-             //fade_ = fade_gain_ * (-fade_) * dt + fade_;
-
-          fade_ = fade_sys_.GetState();
-
-          control_ = fade_ * (Bf_ * (phase_dot_ref_ - phase_dot_) + Kf_ * (phase_ref_ - phase_));
 	      
-          IntegrateStepRungeKutta(dt,torque_(0),control_,phase_state_,phase_state_integrated_);
+          IntegrateStepRungeKutta(dt,torque_(0),phase_state_,phase_state_integrated_);
 
-          DynSystem(dt,torque_(0),control_,phase_state_); // to compute the dots
+          DynSystem(dt,torque_(0),phase_state_); // to compute the dots
 
           phase_ = phase_state_integrated_(0);
 	      phase_dot_ = phase_state_integrated_(1);
@@ -695,7 +563,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	  Eigen::VectorXd phase_state_integrated_;
 	  Eigen::VectorXd k1_, k2_, k3_, k4_;
       double inertia_;
-      double control_;
 };
 
 }

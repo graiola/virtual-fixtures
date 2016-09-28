@@ -80,10 +80,8 @@ VirtualMechanismGmrNormalized<VM_t>::VirtualMechanismGmrNormalized():
     }
 
     Jz_.resize(VM_t::state_dim_,1);
-    loopCnt = 0;
     z_ = 0.0;
     z_dot_ = 0.0;
-    z_dot_ref_ = 0.1;
 }
 
 template <class VM_t>
@@ -172,9 +170,7 @@ bool VirtualMechanismGmrNormalized<VM_t>::ReadConfig()
     {
         curr_node["use_spline_xyz"] >> use_spline_xyz_;
         curr_node["n_points_splines"] >> n_points_splines_;
-        curr_node["execution_time"] >> exec_time_;
         assert(n_points_splines_ > 2);
-        assert(exec_time_ > 0);
         return true;
     }
     else
@@ -198,31 +194,9 @@ void VirtualMechanismGmrNormalized<VM_t>::AlignUpdateModel(const MatrixXd& data)
 template <class VM_t>
 void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 {
+  z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
 
-  z_dot_ref_ = 1.0/exec_time_;
-
-  z_dot_ = VM_t::fade_ *  z_dot_ref_ + (VM_t::fade_sys_.GetRef()-VM_t::fade_) * spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_; // FIXME constant value arbitrary
-
-  if(VM_t::active_)
-  {
-      //z_dot_ = VM_t::fade_ *  z_dot_ref_ + (1-VM_t::fade_) * z_dot_; // FIXME constant value arbitrary
-      z_ = z_dot_ * VM_t::dt_ + z_;
-      // NORMALIZE ONLY IF NOT ACTIVE!!!!!!!!!!!!!!!!!!
-      // NOW IS NORMALIZING ALWAYS
-  }
-  else
-  {
-      //z_dot_ = spline_phase_.compute_derivate(VM_t::phase_) * VM_t::phase_dot_;
-      z_ = spline_phase_(VM_t::phase_); // abscisse (s) -> phase (z)
-  }
-
-  // HACKY THING
-  // Compute the phase_dot_ref starting by the constant reference in z_dot
-  // Ignore all the structure
-  // Just out some stuff
-  VM_t::phase_dot_ref_ = spline_phase_inv_.compute_derivate(z_) * z_dot_ref_;
-  VM_t::phase_ddot_ref_ = spline_phase_inv_.compute_second_derivate(z_) * z_dot_ref_;
-  VM_t::phase_ref_ = spline_phase_inv_(z_);
+  z_ = spline_phase_(VM_t::phase_); // abscisse (s) -> phase (z)
 
   // Saturate z
   if(z_ > 1.0)

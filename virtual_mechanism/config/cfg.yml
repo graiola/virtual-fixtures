@@ -12,6 +12,5 @@ gmr:
 gmr_normalized:
  use_spline_xyz: true
  n_points_splines: 100
- execution_time: 10.0
 
 

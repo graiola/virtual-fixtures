@@ -33,11 +33,6 @@ namespace mechanism_manager
 
 MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NULL)
 {
-      //threads_pool_ = new ThreadsPool(4); // Create 4 workers
-
-      //async_thread_insert_ = new AsyncThread();
-      //async_thread_delete_ = new AsyncThread();
-      //async_thread_save_ = new AsyncThread();
       async_thread_ = new AsyncThread();
 
       if(!ReadConfig())
@@ -56,8 +51,6 @@ MechanismManagerInterface::MechanismManagerInterface(): mm_(NULL), mm_server_(NU
       robot_position_.fill(0.0);
       robot_velocity_.fill(0.0);
       f_.fill(0.0);
-
-      collision_detected_ = true; // Let's start not active
 
       try
       {
@@ -270,20 +263,6 @@ void MechanismManagerInterface::Update(const VectorXd& robot_position, const Vec
 
     f_out = f_;
 }
-
-/*void MechanismManagerInterface::CheckForGuideActivation(const int idx)
-{
-    //const double r = vm_vector_[idx]->getR();
-    const double phase_dot = vm_vector_[idx]->getPhaseDot();
-    const double phase_dot_ref = vm_vector_[idx]->getPhaseDotRef();
-    vm_autom_[idx]->Step(phase_dot,phase_dot_ref,collision_detected_);
-    if(vm_autom_[idx]->GetState())
-        vm_vector_[idx]->setActive(true);
-    else
-        vm_vector_[idx]->setActive(false);
-
-    //r_(idx) = r;
-}*/
 
 void MechanismManagerInterface::Stop()
 {

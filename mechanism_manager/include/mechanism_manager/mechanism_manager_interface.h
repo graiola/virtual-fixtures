@@ -80,9 +80,6 @@ class MechanismManagerInterface
     /// Check if the robot is on a guide
     bool OnVm();
 
-    /// Sets
-    inline bool SetCollision(bool collision_detected) {collision_detected_ = collision_detected;}
-
     /// Gets
     inline int GetPositionDim() const {return position_dim_;}
     int GetNbVms();
