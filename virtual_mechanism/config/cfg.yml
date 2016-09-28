@@ -8,7 +8,6 @@ second_order:
  inertia: 0.1
 gmr:
  n_gaussians: 10
- n_points_discretization: 10
  use_align: true
 gmr_normalized:
  use_spline_xyz: true

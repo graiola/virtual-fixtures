@@ -96,7 +96,6 @@ class VirtualMechanismGmr: public VM_t
 	  Eigen::VectorXd err_;
 
       int n_gaussians_;
-      int n_points_discretization_;
       bool use_align_;
 };
 

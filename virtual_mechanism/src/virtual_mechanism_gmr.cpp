@@ -366,7 +366,6 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
     if (const YAML::Node& curr_node = main_node["gmr"])
     {
         curr_node["n_gaussians"] >> n_gaussians_;
-        curr_node["n_points_discretization"] >> n_points_discretization_;
         curr_node["use_align"] >> use_align_;
         assert(n_gaussians_ > 0);
         return true;
