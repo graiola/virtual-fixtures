@@ -1,13 +1,13 @@
 virtual_mechanism_interface:
  K: [2500.0,250.0]
  B: [10.0,10.0]
+ n_points_discretization: 10
 first_order:
  Bd: 1.0
 second_order:
  inertia: 0.1
 gmr:
  n_gaussians: 10
- n_points_discretization: 10
 gmr_normalized:
  use_spline_xyz: true
  n_points_splines: 100
