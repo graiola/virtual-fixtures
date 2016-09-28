@@ -100,6 +100,9 @@ class VirtualMechanismInterface
               std::vector<double> K,B;
               curr_node["K"] >> K;
               curr_node["B"] >> B;
+              curr_node["n_points_discretization"] >> n_points_discretization_;
+
+              assert(n_points_discretization_ > 1);
 
               state_dim_ = K.size();
               assert(state_dim_ == 2 || state_dim_ == 3);
@@ -442,13 +445,16 @@ class VirtualMechanismInterface
 	  Eigen::VectorXd initial_state_;
 	  Eigen::VectorXd final_state_;
       Eigen::VectorXd t_versor_;
-      Eigen::MatrixXd state_recorded_;
-      Eigen::MatrixXd phase_recorded_;
       Eigen::ArrayXd tmp_dists_;
       Eigen::MatrixXd BxJ_;
       Eigen::MatrixXd JtxBxJ_;
 	  Eigen::MatrixXd J_;
 	  Eigen::MatrixXd J_transp_;
+
+      // Discretization
+      int n_points_discretization_;
+      Eigen::MatrixXd state_recorded_;
+      Eigen::MatrixXd phase_recorded_;
 
 	  // Gains
       Eigen::MatrixXd B_;
