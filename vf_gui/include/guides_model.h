@@ -48,8 +48,8 @@ public:
     Qt::ItemFlags flags(const QModelIndex & index) const ;
     void updateList();
     bool isServerConnected();
-    bool setMergeTh(int merge_th);
-    bool getMergeTh(int& merge_th);
+    bool setMergeTh(double merge_th);
+    bool getMergeTh(double& merge_th);
 
 protected:
     QStringList names_list_;

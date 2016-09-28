@@ -154,7 +154,7 @@ bool GuidesModel::getMode(QString& mode)
     return true;
 }
 
-bool GuidesModel::setMergeTh(int merge_th)
+bool GuidesModel::setMergeTh(double merge_th)
 {
     MechanismManagerServices srv;
     std::string command = "set_merge_th";
@@ -168,7 +168,7 @@ bool GuidesModel::setMergeTh(int merge_th)
     return true;
 }
 
-bool GuidesModel::getMergeTh(int& merge_th)
+bool GuidesModel::getMergeTh(double& merge_th)
 {
     MechanismManagerServices srv;
     std::string command = "get_merge_th";

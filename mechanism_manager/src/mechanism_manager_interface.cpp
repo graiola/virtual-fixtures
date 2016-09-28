@@ -217,12 +217,12 @@ void MechanismManagerInterface::GetVmMode(std::string& mode)
     }
 }
 
-void MechanismManagerInterface::SetMergeThreshold(int merge_th)
+void MechanismManagerInterface::SetMergeThreshold(double merge_th)
 {
     mm_->SetMergeThreshold(merge_th);
 }
 
-void MechanismManagerInterface::GetMergeThreshold(int& merge_th)
+void MechanismManagerInterface::GetMergeThreshold(double& merge_th)
 {
     mm_->GetMergeThreshold(merge_th);
 }

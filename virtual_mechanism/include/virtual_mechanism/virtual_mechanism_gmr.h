@@ -68,7 +68,6 @@ class VirtualMechanismGmr: public VM_t
       virtual bool SaveModelToFile(const std::string file_path);
 
       void ComputeStateGivenPhase(const double abscisse_in, Eigen::VectorXd& state_out);
-      void AlignAndUpateGuide(const Eigen::MatrixXd& data);
       double ComputeResponsability(const Eigen::MatrixXd& pos);
       double GetResponsability();
 	  
@@ -81,6 +80,7 @@ class VirtualMechanismGmr: public VM_t
 	  virtual void ComputeInitialState();
       virtual void ComputeFinalState();
       virtual void CreateRecordedRefs();
+      void AlignUpdateModel(const Eigen::MatrixXd& data);
 
       void UpdateInvCov();
       double ComputeProbability(const Eigen::VectorXd& pos);
@@ -96,6 +96,7 @@ class VirtualMechanismGmr: public VM_t
 	  Eigen::VectorXd err_;
 
       int n_gaussians_;
+      bool use_align_;
 };
 
 template <typename VM_t>
@@ -111,7 +112,6 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       virtual VirtualMechanismInterface* Clone();
 
       void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out, Eigen::VectorXd& state_out_dot, double& phase_out, double& phase_out_dot);
-      void AlignAndUpateGuide(const Eigen::MatrixXd& data);
 
       virtual bool CreateModelFromData(const Eigen::MatrixXd& data);
       virtual bool CreateModelFromFile(const std::string file_path);
@@ -124,6 +124,7 @@ class VirtualMechanismGmrNormalized: public VirtualMechanismGmr<VM_t>
       virtual void UpdateState();
       virtual void UpdateStateDot();
       void Normalize();
+      void AlignUpdateModel(const Eigen::MatrixXd& data);
 
       tk::spline spline_phase_;
       tk::spline spline_phase_inv_;

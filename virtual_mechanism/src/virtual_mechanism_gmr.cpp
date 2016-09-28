@@ -189,9 +189,9 @@ void VirtualMechanismGmrNormalized<VM_t>::TrainModel(const MatrixXd& data)
 }
 
 template<class VM_t>
-void VirtualMechanismGmrNormalized<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
+void VirtualMechanismGmrNormalized<VM_t>::AlignUpdateModel(const MatrixXd& data)
 {
-    VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(data);
+    VirtualMechanismGmr<VM_t>::AlignUpdateModel(data);
     Normalize();
 }
 
@@ -366,6 +366,7 @@ bool VirtualMechanismGmr<VM_t>::ReadConfig()
     if (const YAML::Node& curr_node = main_node["gmr"])
     {
         curr_node["n_gaussians"] >> n_gaussians_;
+        curr_node["use_align"] >> use_align_;
         assert(n_gaussians_ > 0);
         return true;
     }
@@ -383,7 +384,10 @@ bool VirtualMechanismGmr<VM_t>::CreateModelFromData(const MatrixXd& data)
         fa_ = new fa_t(meta_parameters_gmr);
     }
 
-    TrainModel(data);
+    if(use_align_ && fa_->isTrained()) // Update only if the model has been already trained!
+        AlignUpdateModel(data);
+    else
+        TrainModel(data);
 
     assert(fa_->isTrained());
     assert(fa_->getExpectedInputDim() == 1);
@@ -550,15 +554,13 @@ void VirtualMechanismGmr<VM_t>::TrainModel(const MatrixXd& data)
 }
 
 template<class VM_t>
-void VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
+void VirtualMechanismGmr<VM_t>::AlignUpdateModel(const MatrixXd& data)
 {
     int n_points = data.rows();
 
-    Eigen::MatrixXd pos;
-    Eigen::MatrixXd phase;
-
-    Eigen::MatrixXd pos_ref(n_points,VM_t::state_dim_);
-    Eigen::MatrixXd phase_ref(n_points,1);
+    MatrixXd pos, phase;
+    MatrixXd pos_ref(n_points,VM_t::state_dim_);
+    MatrixXd phase_ref(n_points,1);
     phase_ref.col(0) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
 
     this->fa_->predict(phase_ref,pos_ref);
@@ -577,13 +579,13 @@ void VirtualMechanismGmr<VM_t>::AlignAndUpateGuide(const MatrixXd& data)
       ComputeAbscisse(pos,phase); // Abscisse
     }
 
-    std::string file_name = "/home/sybot/gennaro_output/phase_before.txt";
-    WriteTxtFile(file_name.c_str(),phase);
+    //std::string file_name = "/home/sybot/gennaro_output/phase_before.txt";
+    //WriteTxtFile(file_name.c_str(),phase);
 
     align_phase(phase,phase_ref,pos,pos_ref);
 
-    file_name = "/home/sybot/gennaro_output/phase_after.txt";
-    WriteTxtFile(file_name.c_str(),phase);
+    //file_name = "/home/sybot/gennaro_output/phase_after.txt";
+    //WriteTxtFile(file_name.c_str(),phase);
 
     fa_->trainIncremental(phase,pos);
 }
