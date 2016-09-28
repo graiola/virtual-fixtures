@@ -237,8 +237,6 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
     }
     else
         PRINT_WARNING("Impossible to update the guide.");
-
-    //guard.unlock(); // Unlock
 }
 
 void MechanismManager::ClusterVm(MatrixXd& data)
@@ -251,6 +249,7 @@ void MechanismManager::ClusterVm(MatrixXd& data)
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock(); // Lock
 
+        // Create a temporary gmm model
         vm_t* vm_tmp_ptr = NULL;
         try
         {
@@ -274,34 +273,27 @@ void MechanismManager::ClusterVm(MatrixXd& data)
             for(int i=0;i<rt_buffer.size();i++)
             {
                 lik = std::exp(rt_buffer[i].guide->ComputeResponsability(data));
-
                 rel_lik = lik/max_lik;
-
-                assert(rel_lik>=0 && rel_lik<=1);
-
-                if(rel_lik>max_rel_lik)
+                assert(rel_lik>=0 && rel_lik<=1); // This should never happen
+                if(rel_lik>max_rel_lik) // Search the maximum relative likelihood
                 {
                     max_rel_lik = rel_lik;
                     max_idx = i;
                 }
             }
-
             if(max_rel_lik<merge_th_)
             {
-                //PRINT_INFO("Creating a new guide.");
-                //InsertVm(data);
+                PRINT_INFO("Creating a new guide.");
                 AddNewVm(vm_tmp_ptr,default_name);
             }
             else
             {
-                //PRINT_INFO("Update guide: " << max_idx);
-                //relative_likelihood.maxCoeff(&max_resp_idx);
                 UpdateVm(data,max_idx);
             }
         }
         else
         {
-            //PRINT_INFO("No guide available, creating a new one");
+            PRINT_INFO("Creating a new guide.");
             AddNewVm(vm_tmp_ptr,default_name);
         }
         guard.unlock();
