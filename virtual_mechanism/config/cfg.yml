@@ -8,6 +8,7 @@ second_order:
 gmr:
  n_gaussians: 10
  n_points_discretization: 10
+ use_align: true
 gmr_normalized:
  use_spline_xyz: true
  n_points_splines: 100

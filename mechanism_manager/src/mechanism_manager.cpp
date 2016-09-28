@@ -65,7 +65,7 @@ MechanismManager::MechanismManager(int position_dim)
 
       scale_mode_ = SOFT; // By default use soft guides
 
-      merge_th_ = 1.0;
+      merge_th_ = 0.3;
 }
 
 MechanismManager::~MechanismManager()
