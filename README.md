@@ -21,7 +21,17 @@ By using the virtual guides it is possible to facilitate the joint completion of
 ------
 ## Prerequisites:
 The code has been tested with ROS Indigo and Ubuntu 14.04.
+
 ### Necessary:
+
+##### ROS Indigo
+```bash
+sudo apt-get update && apt-get install -y wget git unzip nano
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O - | sudo apt-key add -
+sudo apt-get update && apt-get install --no-install-recommends -y ros-indigo-ros-base python-wstool
+```
+
 ##### Eigen 3.2.2
 ```bash
 wget -P /tmp/ http://ftp.fr.debian.org/debian/pool/main/e/eigen3/libeigen3-dev_3.2.2-3_all.deb && sudo dpkg -i /tmp/libeigen3-dev_3.2.2-3_all.deb
