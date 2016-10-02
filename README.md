@@ -26,10 +26,10 @@ The code has been tested with ROS Indigo and Ubuntu 14.04.
 
 ##### ROS Indigo
 ```bash
-sudo apt-get update && apt-get install -y wget git unzip nano
+sudo apt-get update && sudo apt-get install -y wget git unzip nano
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
-sudo wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O - | sudo apt-key add -
-sudo apt-get update && apt-get install --no-install-recommends -y ros-indigo-ros-base python-wstool
+wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O - | sudo apt-key add -
+sudo apt-get update && sudo apt-get install --no-install-recommends -y ros-indigo-ros-base python-wstool
 ```
 
 ##### Eigen 3.2.2
