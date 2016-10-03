@@ -4,6 +4,3 @@ mechanism_manager:
  vm_order: first
  vm_model_type: gmr
  escape_factor: 150.0
- phase_dot_th: 0.3
- phase_dot_preauto_th: 0.5
-
