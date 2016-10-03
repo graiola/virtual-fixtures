@@ -250,7 +250,7 @@ inline bool CropData(Eigen::MatrixXd& data, const double dt = 0.1, const double 
 
 /// Text file io
 template<typename Scalar, int RowsAtCompileTime, int ColsAtCompileTime>
-inline void ReadTxtFile(std::string filename, Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>& m)
+inline void ReadTxtFile(const std::string filename, Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>& m)
 {
 
   // General structure
@@ -291,10 +291,10 @@ inline void ReadTxtFile(std::string filename, Eigen::Matrix<Scalar,RowsAtCompile
 }
 
 template<typename value_t>
-void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values ) {
+void ReadTxtFile(const std::string filename,std::vector<std::vector<value_t> >& values ) {
     std::string line;
     values.clear();
-    std::ifstream myfile (filename);
+    std::ifstream myfile (filename.c_str());
     std::istringstream iss;
     std::size_t i=0;
     std::size_t nb_vals=0;
@@ -318,8 +318,8 @@ void ReadTxtFile(const char* filename,std::vector<std::vector<value_t> >& values
 }
 
 template<typename value_t>
-void WriteTxtFile(const char* filename, std::vector<value_t>& values) {
-    std::ofstream myfile (filename);
+void WriteTxtFile(const std::string filename, std::vector<value_t>& values) {
+    std::ofstream myfile (filename.c_str());
     std::size_t row = 0;
     std::size_t nb_rows = values.size();
     if (myfile.is_open())
@@ -336,8 +336,8 @@ void WriteTxtFile(const char* filename, std::vector<value_t>& values) {
     myfile.close();
 }
 
-inline void WriteTxtFile(const char* filename, Eigen::VectorXd& values) {
-    std::ofstream myfile (filename);
+inline void WriteTxtFile(const std::string filename, Eigen::VectorXd& values) {
+    std::ofstream myfile (filename.c_str());
     std::size_t row = 0;
     std::size_t nb_rows = values.size();
     if (myfile.is_open())
@@ -355,8 +355,8 @@ inline void WriteTxtFile(const char* filename, Eigen::VectorXd& values) {
 }
 
 template<typename value_t>
-void WriteTxtFile(const char* filename, std::vector<std::vector<value_t> >& values ) {
-    std::ofstream myfile (filename);
+void WriteTxtFile(const std::string filename, std::vector<std::vector<value_t> >& values ) {
+    std::ofstream myfile (filename.c_str());
     std::size_t row = 0;
     std::size_t nb_rows = values.size();
     std::size_t col = 0;
@@ -381,8 +381,8 @@ void WriteTxtFile(const char* filename, std::vector<std::vector<value_t> >& valu
     myfile.close();
 }
 
-inline void WriteTxtFile(const char* filename, Eigen::MatrixXd& values ) {
-    std::ofstream myfile (filename);
+inline void WriteTxtFile(const std::string filename, Eigen::MatrixXd& values ) {
+    std::ofstream myfile (filename.c_str());
     std::size_t row = 0;
     std::size_t nb_rows = values.rows();
     std::size_t col = 0;
