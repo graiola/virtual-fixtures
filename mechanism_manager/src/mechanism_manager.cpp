@@ -111,7 +111,7 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         no_rt_buffer.push_back(new_guide);
 
         // Dump
-        new_guide.guide->SaveModelToFile(pkg_path_+"/dump/new_"+name);
+        new_guide.guide->SaveModelToFile("/tmp/sybot_exp/new_"+name);
 
         // Circular swap
         rt_idx_ = (rt_idx_ + 1) % 2;
@@ -237,7 +237,7 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
         }
 
         // Dump
-        updated_guide.guide->SaveModelToFile(pkg_path_+"/dump/update_"+updated_guide.name+"_"+std::to_string(updated_guide.n_updates));
+        updated_guide.guide->SaveModelToFile("/tmp/sybot_exp/update_"+updated_guide.name+"_"+std::to_string(updated_guide.n_updates));
 
         // Circular swap
         rt_idx_ = (rt_idx_ + 1) % 2;
@@ -253,11 +253,15 @@ void MechanismManager::ClusterVm(MatrixXd& data)
     // otherwise skip
 
     // Dump
-    std::string file_path(pkg_path_+"/dump/raw_data_"+std::to_string(guide_unique_id_+1));
-    WriteTxtFile(file_path.c_str(),data);
+    std::string file_path("/tmp/sybot_exp/raw_pos_"+std::to_string(guide_unique_id_+1));
+    WriteTxtFile(file_path,data);
 
     if(CropData(data))
     {
+        // Dump
+        file_path = "/tmp/sybot_exp/cropped_pos_"+std::to_string(guide_unique_id_+1);
+        WriteTxtFile(file_path,data);
+
         boost::unique_lock<mutex_t> guard(mtx_, boost::defer_lock);
         guard.lock(); // Lock
 

@@ -55,7 +55,7 @@ class VirtualMechanismInterface
           phase_prev_(0.0),phase_dot_(0.0),phase_dot_ref_(0.0),
           phase_ddot_ref_(0.0),phase_ref_(0.0),phase_dot_prev_(0.0),
           phase_ddot_(0.0),scale_(1.0),
-          fade_(0.0),active_(false),check_activation_(false),dt_(0.001)
+          fade_(0.0),active_(false),check_activation_(false),dt_(0.001),node_name_("")
 	  {
 
           if(!ReadConfig())
@@ -362,6 +362,9 @@ class VirtualMechanismInterface
       inline void InitRtPublishers(const std::string node_name)
       {
 
+
+        node_name_ = node_name;
+
 #ifdef USE_ROS_RT_PUBLISHER
 
         // Reset the ros node (usefull if we change node's name)
@@ -501,6 +504,8 @@ class VirtualMechanismInterface
       tool_box::RosNode ros_node_;
       tool_box::RealTimePublishers<tool_box::RealTimePublisherScalar> rt_publishers_;
 #endif
+
+      std::string node_name_;
 
 };
   

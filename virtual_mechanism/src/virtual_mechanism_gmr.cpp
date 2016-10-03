@@ -584,8 +584,15 @@ void VirtualMechanismGmr<VM_t>::AlignUpdateModel(const MatrixXd& data)
 
     align_phase(phase,phase_ref,pos,pos_ref);
 
-    //file_name = "/home/sybot/gennaro_output/phase_after.txt";
-    //WriteTxtFile(file_name.c_str(),phase);
+    // Dump
+    /*std::string file_name = "/tmp/sybot_exp/aligned_pos_"+VM_t::node_name_;
+    WriteTxtFile(file_name,pos);
+    file_name = "/tmp/sybot_exp/aligned_pos_ref_"+VM_t::node_name_;
+    WriteTxtFile(file_name,pos_ref);
+    file_name = "/tmp/sybot_exp/aligned_phase_"+VM_t::node_name_;
+    WriteTxtFile(file_name,phase);
+    file_name = "/tmp/sybot_exp/aligned_phase_ref_"+VM_t::node_name_;
+    WriteTxtFile(file_name,phase_ref);*/
 
     fa_->trainIncremental(phase,pos);
 }
