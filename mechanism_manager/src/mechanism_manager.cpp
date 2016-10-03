@@ -101,6 +101,7 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
         new_guide.scale_t = 0.0;
         new_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
         new_guide.fade = boost::shared_ptr<DynSystemFirstOrder>(new DynSystemFirstOrder(10.0)); // FIXME since it's a dynamic system, it should be a pointer or in the vm
+        new_guide.n_updates = 0;
 
         // Define a new ros node with the same name as the guide
 #ifdef USE_ROS_RT_PUBLISHER
@@ -108,6 +109,9 @@ void MechanismManager::AddNewVm(vm_t* const vm_tmp_ptr, std::string& name)
 #endif
         // Add the new guide to the buffer
         no_rt_buffer.push_back(new_guide);
+
+        // Dump
+        new_guide.guide->SaveModelToFile(pkg_path_+"/dump/new_"+name);
 
         // Circular swap
         rt_idx_ = (rt_idx_ + 1) % 2;
@@ -222,6 +226,7 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
         updated_guide.scale_t = rt_buffer[idx].scale_t;
         updated_guide.guide = boost::shared_ptr<vm_t>(vm_tmp_ptr);
         updated_guide.fade = rt_buffer[idx].fade; // Copy the shared pointer
+        updated_guide.n_updates = rt_buffer[idx].n_updates + 1;
 
         for (size_t i = 0; i < rt_buffer.size(); i++)
         {
@@ -230,6 +235,9 @@ void MechanismManager::UpdateVm(MatrixXd& data, const int idx)
             else
                  no_rt_buffer.push_back(updated_guide);
         }
+
+        // Dump
+        updated_guide.guide->SaveModelToFile(pkg_path_+"/dump/update_"+updated_guide.name+"_"+std::to_string(updated_guide.n_updates));
 
         // Circular swap
         rt_idx_ = (rt_idx_ + 1) % 2;
@@ -243,6 +251,10 @@ void MechanismManager::ClusterVm(MatrixXd& data)
 {
     // TODO Check if the guide is a probabilistic one
     // otherwise skip
+
+    // Dump
+    std::string file_path(pkg_path_+"/dump/raw_data_"+std::to_string(guide_unique_id_+1));
+    WriteTxtFile(file_path.c_str(),data);
 
     if(CropData(data))
     {

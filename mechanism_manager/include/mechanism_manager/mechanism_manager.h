@@ -54,6 +54,7 @@ struct GuideStruct
   double scale_t;
   boost::shared_ptr<vm_t> guide;
   boost::shared_ptr<tool_box::DynSystemFirstOrder> fade;
+  unsigned int n_updates;
 };
 
 class MechanismManager
