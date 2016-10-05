@@ -6,3 +6,4 @@
 - Clean old branches -> http://railsware.com/blog/2014/08/11/git-housekeeping-tutorial-clean-up-outdated-branches-in-local-and-remote-repositories/
 - clear the rt_buffer at the end of any async operation
 - rqt_plot inside the qt gui (qtpython->c++)
+- recorder!
