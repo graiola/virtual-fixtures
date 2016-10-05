@@ -130,11 +130,6 @@ install(DIRECTORY models/
   #FILES_MATCHING PATTERN "*.txt"
 )
 
-install(DIRECTORY dump/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/dump
-  #FILES_MATCHING PATTERN "*.txt"
-)
-
 ## Visualize the folders src and include in QtCreator
 FILE(GLOB_RECURSE include_files "include/*.h")
 add_custom_target(headers SOURCES ${include_files})
