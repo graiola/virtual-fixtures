@@ -178,7 +178,9 @@ void VirtualMechanismGmrNormalized<VM_t>::Normalize()
 
     ComputeAbscisse(xyz,abscisse);
 
-    spline_phase_.set_points(abscisse.data(),phase.data(),abscisse.rows()); // set_points(x,y) ----> z = f(s)
+    //mat.data(), mat.data() + mat.rows() * mat.cols()
+
+    spline_phase_.set_points(abscisse.data(),phase.data(),n_points_splines_); // set_points(x,y) ----> z = f(s)
 }
 
 template<class VM_t>
@@ -225,11 +227,11 @@ void VirtualMechanismGmrNormalized<VM_t>::UpdateJacobian()
 
   this->fa_input_(0,0) = z_;
 
-  if(!use_spline_xyz_) // Compute xyz and J(z) using GMR
-  {
+  //if(!use_spline_xyz_) // Compute xyz and J(z) using GMR
+  //{
       Jz_ = this->fa_output_dot_.transpose(); // J(z)
       VM_t::J_transp_ =  this->fa_output_dot_ * spline_phase_.compute_derivate(VM_t::phase_); // J(z) * d(z)/d(s) = J(s)
-  }
+  //}
   /*else // Compute xyz and J(z) using the spline
   {
       for(int i=0;i<VM_t::state_dim_;i++)

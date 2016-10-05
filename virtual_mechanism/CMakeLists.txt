@@ -10,7 +10,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
 find_package(YamlCpp REQUIRED)
 #find_package(Eigen3 REQUIRED) # To find unsupported
-#set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
