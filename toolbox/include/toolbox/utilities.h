@@ -282,10 +282,11 @@ inline void ReadTxtFile(const std::string filename, Eigen::Matrix<Scalar,RowsAtC
   input.close();
 
   int n_cols = v.size()/n_rows;
-  m = Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>(n_rows,n_cols);
+
+  m = Eigen::Matrix<Scalar,RowsAtCompileTime,ColsAtCompileTime>(n_rows,n_cols-1);
 
   for (int i=0; i<n_rows; i++)
-    for (int j=0; j<n_cols; j++)
+    for (int j=0; j<n_cols-1; j++)
       m(i,j) = v[i*n_cols + j];
 
 }
