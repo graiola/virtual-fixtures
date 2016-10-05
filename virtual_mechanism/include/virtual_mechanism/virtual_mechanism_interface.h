@@ -273,8 +273,6 @@ class VirtualMechanismInterface
           UpdateJacobian();
           UpdateState();
           UpdateStateDot();
-          ComputeInitialState();
-          ComputeFinalState();
           ComputeJacobianVersor();
           CreateRecordedRefs();
       }
@@ -312,8 +310,6 @@ class VirtualMechanismInterface
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)=0;
-	  virtual void ComputeInitialState()=0;
-	  virtual void ComputeFinalState()=0;
       virtual void CreateRecordedRefs()=0;
 
       inline void ComputeJacobianVersor()
@@ -424,8 +420,6 @@ class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
-	  virtual void ComputeInitialState()=0;
-	  virtual void ComputeFinalState()=0;
 	  
 	  virtual void UpdatePhase(const Eigen::VectorXd& force, const double dt)
 	  {
@@ -506,8 +500,6 @@ class VirtualMechanismInterfaceSecondOrder : public VirtualMechanismInterface
 	    
 	  virtual void UpdateJacobian()=0;
 	  virtual void UpdateState()=0;
-	  virtual void ComputeInitialState()=0;
-	  virtual void ComputeFinalState()=0;
 
       void IntegrateStepRungeKutta(const double& dt, const double& input, const Eigen::VectorXd& phase_state, Eigen::VectorXd& phase_state_integrated)
 	  {

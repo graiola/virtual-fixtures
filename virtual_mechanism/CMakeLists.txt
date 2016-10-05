@@ -9,6 +9,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake-modules
 
 find_package(Boost COMPONENTS filesystem system REQUIRED) 
 find_package(YamlCpp REQUIRED)
+#find_package(Eigen3 REQUIRED) # To find unsupported
 #set(DMP_LIBRARIES dmp dynamicalsystems functionapproximators)
 
 ## Find catkin macros and libraries
@@ -82,7 +83,7 @@ endif()
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${INCLUDE_PATHS}
+  include ${INCLUDE_PATHS} ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
