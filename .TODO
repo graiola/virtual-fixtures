@@ -1,6 +1,5 @@
-- Smart factory where I choose to build active/incremental models
 - VF_CONTROLLER/VF_FAKE_HW
-- Spline uses eigen
+- Spline uses eigen -> Work in progress
 - GmrNormalized and Spline should be called Active
 - ROS state machine -> check orocos rtt state machine
 - Fix threads pool -> naive fix done
@@ -8,3 +7,4 @@
 - clear the rt_buffer at the end of any async operation
 - Visualize the merge value on a label?
 - rqt_plot inside the qt gui (qtpython->c++)
+- Add ProbabilisticGuides...
