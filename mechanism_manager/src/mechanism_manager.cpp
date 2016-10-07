@@ -66,7 +66,7 @@ MechanismManager::MechanismManager(int position_dim)
       rt_idx_ = 0;
       no_rt_idx_ = 1;
 
-      scale_mode_ = SOFT; // By default use soft guides
+      scale_mode_ = FREE; // By default use free mode
 
       merge_th_ = 0.3;
 }
