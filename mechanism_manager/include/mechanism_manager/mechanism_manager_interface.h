@@ -41,7 +41,7 @@
 namespace mechanism_manager
 {
 
-enum scale_mode_t {HARD,SOFT};
+enum scale_mode_t {HARD,SOFT,FREE};
 class MechanismManagerServer;
 class MechanismManager;
 static bool default_threading_on = false;

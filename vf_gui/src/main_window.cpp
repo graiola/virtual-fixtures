@@ -169,6 +169,12 @@ void MainWindow::on_saveButton_clicked()
     guides_model_->saveRow(ui->listView->currentIndex().row());
 }
 
+void MainWindow::on_freeRadioButton_clicked()
+{
+    QString mode = "FREE";
+    guides_model_->setMode(mode);
+}
+
 void MainWindow::on_softRadioButton_clicked()
 {
     QString mode = "SOFT";
@@ -190,3 +196,5 @@ void MainWindow::on_clearButton_clicked()
 {
     ui->consoleText->clear();
 }
+
+

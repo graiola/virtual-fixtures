@@ -64,10 +64,13 @@ private slots:
     void on_insertButton_clicked();
     void on_refreshButton_clicked();
     void on_saveButton_clicked();
+    void on_freeRadioButton_clicked();
     void on_softRadioButton_clicked();
     void on_hardRadioButton_clicked();
     void on_mergeSlider_sliderMoved(int position);
     void on_clearButton_clicked();
+
+
 
 protected:
     void timerEvent(QTimerEvent *event);

@@ -463,9 +463,13 @@ void MechanismManager::SetVmMode(const scale_mode_t mode)
             scale_mode_ = SOFT;
             PRINT_INFO("Set mode to SOFT");
             break;
+          case FREE:
+            scale_mode_ = FREE;
+            PRINT_INFO("Set mode to FREE");
+            break;
           default:
-            scale_mode_ = SOFT;
-            PRINT_INFO("Set mode to SOFT");
+            scale_mode_ = FREE;
+            PRINT_INFO("Set mode to FREE");
             break;
         }
     }
@@ -544,8 +548,11 @@ void MechanismManager::Update(const VectorXd& robot_position, const VectorXd& ro
         case SOFT:
             rt_buffer[i].scale =  rt_buffer[i].scale * rt_buffer[i].scale_hard;
             break;
+        case FREE:
+            rt_buffer[i].scale =  0.0;
+            break;
         default:
-          rt_buffer[i].scale =  rt_buffer[i].scale * rt_buffer[i].scale_hard; // Soft
+          rt_buffer[i].scale =  0.0; // Free
           break;
       }
     }
@@ -651,10 +658,10 @@ bool MechanismManager::OnVm()
     return on_guide;
 }
 
-void MechanismManager::SetMode(const scale_mode_t mode)
+/*void MechanismManager::SetMode(const scale_mode_t mode)
 {
     scale_mode_ = mode;
-}
+}*/
 
 void MechanismManager::Stop()
 {

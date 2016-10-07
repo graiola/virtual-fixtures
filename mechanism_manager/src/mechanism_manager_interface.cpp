@@ -190,13 +190,15 @@ void MechanismManagerInterface::DeleteVm(const int idx, bool threading)
 
 void MechanismManagerInterface::SetVmMode(const scale_mode_t mode)
 {
-    mm_->SetMode(mode);
+    mm_->SetVmMode(mode);
 }
 
 void MechanismManagerInterface::SetVmMode(const std::string mode)
 {
-    scale_mode_t enum_mode = SOFT;
-    if(std::strcmp(mode.c_str(), "SOFT") == 0)
+    scale_mode_t enum_mode = FREE;
+    if(std::strcmp(mode.c_str(), "FREE") == 0)
+       enum_mode = FREE;
+    else if(std::strcmp(mode.c_str(), "SOFT") == 0)
        enum_mode = SOFT;
     else if(std::strcmp(mode.c_str(), "HARD") == 0)
        enum_mode = HARD;

@@ -97,7 +97,7 @@ class MechanismManager
     void GetVmVelocity(const int idx, Eigen::VectorXd& velocity);
     double GetPhase(const int idx);
     double GetScale(const int idx);
-    void SetMode(const scale_mode_t mode);
+    //void SetMode(const scale_mode_t mode);
     void Stop();
     bool OnVm();
     void SetCollisionDetected(const bool collision);

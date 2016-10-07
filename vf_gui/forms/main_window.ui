@@ -53,7 +53,7 @@
     <property name="geometry">
      <rect>
       <x>550</x>
-      <y>140</y>
+      <y>180</y>
       <width>80</width>
       <height>61</height>
      </rect>
@@ -101,10 +101,17 @@
       <x>530</x>
       <y>30</y>
       <width>121</width>
-      <height>80</height>
+      <height>91</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QRadioButton" name="freeRadioButton">
+       <property name="text">
+        <string>Free Mode</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QRadioButton" name="softRadioButton">
        <property name="text">
