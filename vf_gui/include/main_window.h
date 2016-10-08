@@ -70,13 +70,12 @@ private slots:
     void on_mergeSlider_sliderMoved(int position);
     void on_clearButton_clicked();
 
-
-
 protected:
     void timerEvent(QTimerEvent *event);
     GuidesModel* guides_model_;
     ros::Subscriber* sub_;
     ros::AsyncSpinner* spinner_ptr_; // Used to keep alive the ros callbacks
+    ros::NodeHandle* nh_;
 
 private:
     Ui::MainWindow *ui;

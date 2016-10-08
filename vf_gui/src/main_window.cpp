@@ -45,7 +45,10 @@ MainWindow::MainWindow(NodeHandle& nh, QWidget *parent) :
     ui->listView->setEditTriggers(QAbstractItemView::AnyKeyPressed |
                                   QAbstractItemView::DoubleClicked );
 
-    sub_ = new Subscriber(nh.subscribe("rosout", 1000, &MainWindow::loggerCallback, this));
+    //sub_ = new Subscriber(nh.subscribe("/rosout", 1000, &MainWindow::loggerCallback, this));
+
+    sub_ = NULL;
+    nh_ = &nh;
 
     spinner_ptr_ = new AsyncSpinner(1); // Use one thread to keep the ros magic alive
     spinner_ptr_->start();
@@ -162,6 +165,9 @@ void MainWindow::on_refreshButton_clicked()
         ui->softRadioButton->setChecked(true);
     else if(mode == "HARD")
          ui->hardRadioButton->setChecked(true);
+    if(sub_!=NULL)
+        delete sub_;
+    sub_ = new Subscriber(nh_->subscribe("/rosout", 1000, &MainWindow::loggerCallback, this));
 }
 
 void MainWindow::on_saveButton_clicked()
