@@ -68,7 +68,7 @@ MechanismManager::MechanismManager(int position_dim)
 
       scale_mode_ = FREE; // By default use free mode
 
-      merge_th_ = 0.3;
+      merge_th_ = 1.0; // By default always create a new guide
 }
 
 MechanismManager::~MechanismManager()
