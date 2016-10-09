@@ -53,12 +53,12 @@ class Timer
     typedef std::chrono::steady_clock Clock;
 
 public:
-    inline void start_timer()
+    inline void start()
     {
         start_ = Clock::now();
     }
 
-    inline double stop_timer()
+    inline double stop()
     {
         end_ = Clock::now();
         std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
