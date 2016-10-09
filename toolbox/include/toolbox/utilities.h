@@ -319,6 +319,21 @@ void ReadTxtFile(const std::string filename,std::vector<std::vector<value_t> >& 
 }
 
 template<typename value_t>
+void WriteTxtFile(const std::string filename, value_t values) {
+    std::ofstream myfile;
+    myfile.open(filename.c_str(),std::ofstream::out | std::ofstream::app);
+    if (myfile.is_open())
+    {
+       myfile << values << "\n";
+    }
+    else
+    {
+       std::cerr << "Unable to open file : ["<<filename<<"]"<<std::endl;
+    }
+    myfile.close();
+}
+
+template<typename value_t>
 void WriteTxtFile(const std::string filename, std::vector<value_t>& values) {
     std::ofstream myfile (filename.c_str());
     std::size_t row = 0;
