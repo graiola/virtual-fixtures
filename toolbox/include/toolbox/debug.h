@@ -30,6 +30,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <chrono>
 
 ////////// ROS
 #include <ros/ros.h>
@@ -44,6 +45,28 @@ struct stringwrapper
         return *this;
    }
    operator std::string() { return ss.str(); }
+};
+
+
+class Timer
+{
+    typedef std::chrono::steady_clock Clock;
+
+public:
+    inline void start_timer()
+    {
+        start_ = Clock::now();
+    }
+
+    inline double stop_timer()
+    {
+        end_ = Clock::now();
+        std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+        return diff.count();
+    }
+private:
+    std::chrono::time_point<Clock> start_;
+    std::chrono::time_point<Clock> end_;
 };
 
 #ifdef EIGEN_MALLOC_CHECKS
