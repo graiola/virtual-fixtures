@@ -127,10 +127,6 @@ class MechanismManagerInterface
     tool_box::RosNode ros_node_;
     MechanismManagerServer* mm_server_;
 
-
-    /// Timer
-    Timer timer_;
-
 };
 
 }

@@ -88,7 +88,8 @@ class MechanismManager
     scale_mode_t& GetVmMode();
     void SetMergeThreshold(double merge_th);
     void GetMergeThreshold(double& merge_th);
-
+    void StartTimer();
+    void StopTimer();
 
     /// Real time methods, they can be called in a real time loop
     inline int GetPositionDim() const {return position_dim_;}
@@ -140,6 +141,10 @@ class MechanismManager
     std::atomic<int> rt_idx_; // atom
     std::atomic<int> no_rt_idx_; // atom
     mutex_t mtx_;
+
+    /// Timer
+    Timer timer_;
+
 };
 
 }

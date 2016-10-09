@@ -334,12 +334,12 @@ bool MechanismManagerInterface::OnVm()
 
 void MechanismManagerInterface::StartTimer()
 {
-    timer_.start();
+    mm_->StartTimer();
 }
 
 void MechanismManagerInterface::StopTimer()
 {
-    WriteTxtFile("/tmp/time.txt",timer_.stop());
+    mm_->StopTimer();
 }
 
 } // namespace

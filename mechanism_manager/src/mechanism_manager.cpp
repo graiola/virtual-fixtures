@@ -677,4 +677,16 @@ void MechanismManager::SetCollisionDetected(const bool collision)
         rt_buffer[i].guide->setCollisionDetected(collision);
 }
 
+void MechanismManager::StartTimer()
+{
+    timer_.start();
+}
+
+void MechanismManager::StopTimer()
+{
+    // Dump
+    std::string file_path(dump_path+"time");
+    WriteTxtFile(file_path,timer_.stop());
+}
+
 } // namespace
