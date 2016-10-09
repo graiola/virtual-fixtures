@@ -62,7 +62,7 @@ public:
     {
         end_ = Clock::now();
         std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-        return diff.count();
+        return diff.count()/1000.0;
     }
 private:
     std::chrono::time_point<Clock> start_;
