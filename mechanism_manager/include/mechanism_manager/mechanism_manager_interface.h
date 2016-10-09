@@ -73,6 +73,8 @@ class MechanismManagerInterface
     void SetVmName(const int idx, std::string& name);
     void GetVmNames(std::vector<std::string>& names);
     void SetVmMode(const std::string mode);
+    void StartTimer();
+    void StopTimer();
 
     /// Stop the mechanisms
     void Stop();
@@ -124,6 +126,11 @@ class MechanismManagerInterface
     /// Ros stuff
     tool_box::RosNode ros_node_;
     MechanismManagerServer* mm_server_;
+
+
+    /// Timer
+    Timer timer_;
+
 };
 
 }
