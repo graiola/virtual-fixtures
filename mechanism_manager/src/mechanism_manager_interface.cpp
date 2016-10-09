@@ -219,6 +219,11 @@ void MechanismManagerInterface::GetVmMode(std::string& mode)
     }
 }
 
+scale_mode_t MechanismManagerInterface::GetVmMode()
+{
+    return mm_->GetVmMode();
+}
+
 void MechanismManagerInterface::SetMergeThreshold(double merge_th)
 {
     mm_->SetMergeThreshold(merge_th);

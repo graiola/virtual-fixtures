@@ -90,6 +90,7 @@ class MechanismManagerInterface
     double GetPhase(const int idx);
     double GetScale(const int idx);
     void GetVmMode(std::string& mode);
+    scale_mode_t GetVmMode();
     void GetMergeThreshold(double& merge_th);
 
     /// Sets
