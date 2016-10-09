@@ -210,6 +210,9 @@ void MechanismManagerInterface::GetVmMode(std::string& mode)
 {
     switch(mm_->GetVmMode())
     {
+        case FREE:
+            mode = "FREE";
+            break;
         case SOFT:
             mode = "SOFT";
             break;
