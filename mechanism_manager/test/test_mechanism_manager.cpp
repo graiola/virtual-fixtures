@@ -280,7 +280,9 @@ TEST(MechanismManagerTest, LoopUpdate)
 
   long long loopCnt = 0;
 
-  int n_steps = 1500; // Give enough time to test stuff
+  mm.StartTimer();
+
+  int n_steps = 150; // Give enough time to test stuff
   for (int i=0;i<n_steps;i++)
   {
 
@@ -316,11 +318,15 @@ TEST(MechanismManagerTest, LoopUpdate)
           EXPECT_NO_THROW(mm.InsertVm(model_name_wrong));
       }
 
+
+
       //std::cout << "Loop cycle: " << i << " of " <<  n_steps << std::endl;
   }
 
-  //std::cout << "Press to continue..." << std::endl;
-  //getchar();
+  mm.StopTimer();
+
+  //std::cout << timer.stop_timer()/1000.0 << "s" << std::endl;
+
 }
 
 int main(int argc, char** argv)
