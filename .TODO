@@ -8,3 +8,4 @@
 - rqt_plot inside the qt gui (qtpython->c++)
 - use kdl_kinematics and ros_control
 - create an async recorder from ros topics
+- fix singularities in the Gaussian PDF
