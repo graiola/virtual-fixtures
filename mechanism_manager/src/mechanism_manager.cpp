@@ -276,7 +276,8 @@ void MechanismManager::ClusterVm(MatrixXd& data)
                 //lik = std::exp(rt_buffer[i].guide->ComputeResponsability(data));
                 lik = rt_buffer[i].guide->ComputeResponsability(data);
                 rel_lik = lik/max_lik;
-                assert(rel_lik>=0 && rel_lik<=1); // This should never happen
+                //assert(rel_lik>=0 && rel_lik<=1); // This should never happen
+                assert(rel_lik<=1); // This should never happen
                 if(rel_lik>max_rel_lik) // Search the maximum relative likelihood
                 {
                     max_rel_lik = rel_lik;
