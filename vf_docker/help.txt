@@ -1,0 +1,4 @@
+sudo docker run -t -i docker-virtual-fixtures /bin/bash
+
+sudo docker build -t docker-virtual-fixtures .
+
