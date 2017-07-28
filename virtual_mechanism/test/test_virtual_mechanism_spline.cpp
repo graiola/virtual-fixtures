@@ -1,7 +1,3 @@
-#include <toolbox/debug.h>
-#include <toolbox/toolbox.h>
-#include <toolbox/dtw/dtw.h>
-
 #include <gtest/gtest.h>
 #include "virtual_mechanism/virtual_mechanism_spline.h"
 
@@ -15,48 +11,46 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 
-using namespace virtual_mechanism_interface;
-using namespace virtual_mechanism_spline;
+using namespace virtual_mechanism;
 using namespace Eigen;
 using namespace boost;
 
 typedef VirtualMechanismInterfaceFirstOrder VMP_1ord_t;
 typedef VirtualMechanismInterfaceSecondOrder VMP_2ord_t;
 
-std::string pkg_path = ros::package::getPath("virtual_mechanism");
-std::string file_path(pkg_path+"/test/test_spline.txt");
+int n_points = 30;
+int state_dim = 3;
+double dt = 0.001;
 
-TEST(VirtualMechanismSplineTest, InitializesCorrectlySpline)
+MatrixXd createData(int n_points, int state_dim)
 {
-
-  //::testing::FLAGS_gtest_death_test_style = "threadsafe"; // NOTE https://code.google.com/p/googletest/wiki/AdvancedGuide#Death_Test_Styles
-
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t> vm1(file_path));
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t> vm2(file_path));
+  MatrixXd data(n_points,state_dim);
+  for (int i=0; i<data.cols(); i++)
+    data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
+  return data;
 }
 
-/*TEST(VirtualMechanismSplineTest, InitializesCorrectlyFromData)
+TEST(VirtualMechanismSpline, initializesCorrectly)
 {
-  int n_points = 50;
-  MatrixXd data(n_points,test_dim); // No phase
+  MatrixXd data = createData(n_points,state_dim);
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t> vm1(data));
+  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t> vm2(data));
+}
 
-  for (int i=0; i<data.cols(); i++)
-      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
-
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(data));
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(data));
-
-  data.resize(n_points,test_dim+1); // With phase
-
-  for (int i=0; i<data.cols(); i++)
-      data.col(i) = VectorXd::LinSpaced(n_points, 0.0, 1.0);
-
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_1ord_t>(data));
-  EXPECT_NO_THROW(VirtualMechanismSpline<VMP_2ord_t>(data));
-}*/
+TEST(VirtualMechanismSpline, update)
+{
+  MatrixXd data = createData(n_points,state_dim);
+  VirtualMechanismSpline<VMP_1ord_t> vm1(data);
+  VirtualMechanismSpline<VMP_2ord_t> vm2(data);
+  VectorXd robot_pos(state_dim);
+  VectorXd robot_vel(state_dim);
+  EXPECT_NO_THROW(vm1.Update(robot_pos,robot_vel,dt));
+  EXPECT_NO_THROW(vm2.Update(robot_pos,robot_vel,dt));
+}
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  return ret;
 }

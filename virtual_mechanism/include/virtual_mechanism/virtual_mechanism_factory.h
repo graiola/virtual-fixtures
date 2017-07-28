@@ -30,7 +30,7 @@ namespace virtual_mechanism
 {
 
 enum order_t {FIRST,SECOND};
-enum model_type_t {GMR,GMR_NORMALIZED}; // SPLINE
+enum model_type_t {SPLINE,SURFACE,POLYGON}; // SPLINE
 
 /*class VirtualMechanismAbstractFactory
 {
@@ -44,16 +44,10 @@ class VirtualMechanismFactory// : public VirtualMechanismAbstractFactory
 public:
     VirtualMechanismFactory();
     VirtualMechanismInterface* Build(const Eigen::MatrixXd& data, const order_t order, const model_type_t model_type);
-    VirtualMechanismInterface* Build(const std::string model_name, const order_t order, const model_type_t model_type);
-    VirtualMechanismInterface* Build(const Eigen::MatrixXd& data); // With default order and model_type
-    VirtualMechanismInterface* Build(const std::string model_name); // With default order and model_type
-    void SetDefaultPreferences(const order_t order, const model_type_t model_type);
-    void SetDefaultPreferences(const std::string order, const std::string model_type);
+    VirtualMechanismInterface* Build(const std::string data_file, const order_t order, const model_type_t model_type);
 protected:
-    VirtualMechanismInterface* CreateEmptyMechanism(const order_t order, const model_type_t model_type);
-    template<typename ORDER>  VirtualMechanismInterface* SelectModel(const model_type_t model_type);
-    order_t default_order_;
-    model_type_t default_model_type_;
+    VirtualMechanismInterface* CreateMechanism(const Eigen::MatrixXd& data, const order_t order, const model_type_t model_type);
+    template<typename ORDER>  VirtualMechanismInterface* SelectModel(const Eigen::MatrixXd& data, const model_type_t model_type);
 };
 
 } // namespace

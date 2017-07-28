@@ -28,7 +28,7 @@
 #include <virtual_mechanism/virtual_mechanism_interface.h>
 
 ////////// Toolbox
-#include "toolbox/spline/spline.h"
+#include "vf_toolbox/spline/spline.h"
 
 namespace virtual_mechanism
 { 
@@ -38,34 +38,19 @@ class VirtualMechanismSpline: public VM_t
 {
 	public:
 
-      VirtualMechanismSpline();
-      VirtualMechanismSpline(const std::string file_path);
       VirtualMechanismSpline(const Eigen::MatrixXd& data);
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
       virtual bool SaveModelToFile(const std::string file_path);
-      void ComputeStateGivenPhase(const double phase_in, Eigen::VectorXd& state_out);
 	  
 	protected:
-
-      bool LoadModelFromFile(const std::string file_path);
 	  
       virtual void UpdateJacobian();
       virtual void UpdateState();
       virtual void UpdateStateDot();
-      virtual void ComputeInitialState();
-      virtual void ComputeFinalState();
 
       std::vector<tk::spline > splines_xyz_;
-      tk::spline spline_phase_;
-      tk::spline spline_phase_inv_;
-
-      double z_;
-      double z_dot_;
-      double z_dot_ref_;
-
-      Eigen::MatrixXd Jz_;
       Eigen::VectorXd err_;
 };
 
