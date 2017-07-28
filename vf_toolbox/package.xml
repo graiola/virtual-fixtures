@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>vf_toolbox</name>
+  <version>0.0.0</version>
+  <description>The toolbox package</description>
+
+  <maintainer email="gennaro.raiola@gmail.com">Gennaro Raiola</maintainer>
+
+  <license>GPLv2</license>
+
+  <url type="website">https://github.com/graiola/virtual-fixtures</url>
+
+  <author email="gennaro.raiola@gmail.com">Gennaro Raiola</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>roslib</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>realtime_tools</build_export_depend>
+  
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+	<cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>
