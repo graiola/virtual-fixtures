@@ -1,6 +1,0 @@
-[submodule "toolbox/include/toolbox/spline"]
-	path = toolbox/include/toolbox/spline
-	url = https://github.com/graiola/spline.git
-[submodule "vf_gmr"]
-	path = vf_gmr
-	url = https://github.com/graiola/dmpbbo.git
