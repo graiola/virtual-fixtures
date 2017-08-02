@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>vf_controller</name>
+  <version>0.0.0</version>
+  <description>The virtual fixture controller package</description>
+
+  <maintainer email="gennaro.raiola@gmail.com">Gennaro Raiola</maintainer>
+
+  <license>GPLv2</license>
+
+  <url type="website">https://github.com/graiola/virtual-fixtures</url>
+
+  <author email="gennaro.raiola@gmail.com">Gennaro Raiola</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>control_toolbox</depend>
+  <depend>controller_interface</depend>
+  <depend>controller_manager</depend>
+  <depend>forward_command_controller</depend>
+  <depend>hardware_interface</depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>kdl_parser</depend>
+  <depend>mechanism_manager</depend>
+  <depend>message_runtime</depend>
+  <build_depend>vf_toolbox</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <test_depend>rostest</test_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/vf_controller_plugins.xml"/>
+  </export>
+</package>

@@ -42,7 +42,8 @@ class VirtualMechanismSpline: public VM_t
 	  
       virtual double getDistance(const Eigen::VectorXd& pos);
       virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0);
-      virtual bool SaveModelToFile(const std::string file_path);
+      virtual bool SaveModelToFile(const std::string model_path);
+      virtual void Visualize(const std::string frame, const std::string node_name);
 	  
 	protected:
 	  
@@ -52,6 +53,8 @@ class VirtualMechanismSpline: public VM_t
 
       std::vector<tk::spline > splines_xyz_;
       Eigen::VectorXd err_;
+
+      Eigen::MatrixXd data_; // data defining the model
 };
 
 }

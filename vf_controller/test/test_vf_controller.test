@@ -1,0 +1,24 @@
+<launch>
+
+<!-- in case you have different robot configurations -->
+<arg name="robot_name" default="single_lwr_robot"/>
+
+<!-- Load robot model -->
+<param name="robot_description" command="$(find xacro)/xacro --inorder $(find single_lwr_robot)/robot/$(arg robot_name).urdf.xacro"/>
+
+<!-- Load controller config -->
+<rosparam command="load" file="$(find vf_controller)/config/vf_controller.yaml" />
+
+<!-- Spawn controller -->
+<node name="controller_spawner"
+      pkg="controller_manager" type="spawner" output="screen"
+      args="vf_controller" />
+
+<!-- Controller test -->
+<test test-name="test_vf_controller"
+      pkg="vf_controller"
+      type="test_vf_controller"
+      time-limit="10.0">
+</test>
+
+</launch>

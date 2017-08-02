@@ -26,6 +26,8 @@
 
 ////////// ROS
 #include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
+#include <realtime_tools/realtime_publisher.h>
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
@@ -51,6 +53,11 @@ public:
     scale_(1.0),
     dt_(0.001)
   {
+
+    //FIXME
+    ros_node_.Init("test");
+    ros::NodeHandle nh = ros_node_.GetNode();
+    visualization_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(nh, "shape", 10));
 
   }
 
@@ -109,6 +116,16 @@ public:
 
   virtual ~VirtualMechanismInterface()
   {
+  }
+
+  void PublishMarker()
+  {
+    if (visualization_pub_->trylock()) {
+        visualization_pub_->msg_.header.stamp = ros::Time::now();
+        visualization_pub_->msg_ = marker_;
+        visualization_pub_->unlockAndPublish();
+    }
+
   }
 
   /* inline bool GetParameters()
@@ -265,11 +282,13 @@ public:
       //UpdateDiscrete(pos);
     }
 
+    PublishMarker();
   }
-
 
   virtual double getDistance(const Eigen::VectorXd& pos)=0;
   virtual double getScale(const Eigen::VectorXd& pos, const double convergence_factor = 1.0)=0;
+  virtual bool SaveModelToFile(const std::string model_path)=0;
+  virtual void Visualize(const std::string frame, const std::string node_name)=0;
 
   inline void getTorque(Eigen::VectorXd& torque) const {assert(torque.size() == phase_dim_); torque = torque_;}
   inline void getPhaseDotDot(Eigen::VectorXd& phase_ddot) const {assert(phase_ddot.size() == phase_dim_); phase_ddot = phase_ddot_;}
@@ -383,6 +402,12 @@ protected:
   Eigen::MatrixXd B_;
   Eigen::MatrixXd K_;
 
+  // Ros
+  tool_box::RosNode ros_node_;
+  boost::shared_ptr< realtime_tools::RealtimePublisher< visualization_msgs::Marker > > visualization_pub_;
+  visualization_msgs::Marker marker_;
+
+
 };
 
 class VirtualMechanismInterfaceFirstOrder : public VirtualMechanismInterface
@@ -416,12 +441,15 @@ protected:
 
     //JtxBxJ_ = JtxBxJ_ + Bd_;
 
-    //JtxBxJ_inv_ = JtxBxJ_.inverse();
+    if(JtxBxJ_.rows() > 1)
+      JtxBxJ_inv_ = JtxBxJ_.inverse();
+    else
+      JtxBxJ_inv_(0,0) = 1.0/JtxBxJ_(0,0);
 
     torque_.noalias() = J_transp_ * force;
 
     // Compute phase dot given the input torque
-    phase_dot_ = JtxBxJ_.inverse() * torque_;
+    phase_dot_.noalias() = JtxBxJ_inv_ * torque_;
 
     // Compute the new phase
     phase_ = phase_dot_ * dt + phase_prev_;

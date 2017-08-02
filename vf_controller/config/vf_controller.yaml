@@ -1,0 +1,4 @@
+vf_controller:
+  type: "vf_controller/VFController"
+  root_name: root
+  tip_name: tip

@@ -25,7 +25,7 @@
 #define FILTERS_H
 
 ////////// Toolbox
-#include "toolbox/toolbox.h"
+#include "vf_toolbox/vf_toolbox.h"
 
 #include <math.h>
 

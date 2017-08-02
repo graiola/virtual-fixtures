@@ -65,6 +65,20 @@ inline YAML::Node CreateYamlNodeFromPkgName(std::string pkg_name)
     return node;
 }
 
+inline bool waitForSubscribers(ros::Publisher & pub, ros::Duration timeout)
+{
+    if(pub.getNumSubscribers() > 0)
+        return true;
+    ros::Time start = ros::Time::now();
+    ros::Rate waitTime(0.5);
+    while(ros::Time::now() - start < timeout) {
+        waitTime.sleep();
+        if(pub.getNumSubscribers() > 0)
+            break;
+    }
+    return pub.getNumSubscribers() > 0;
+}
+
 class RosNode
 {
     public:

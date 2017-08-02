@@ -1,10 +1,12 @@
-- VF_CONTROLLER/VF_FAKE_HW
+- VF_CONTROLLER/DUMMY_HW_INTEFACE for testing (use rostest)
 - Spline uses eigen -> Work in progress
-- GmrNormalized and Spline should be called Active
 - ROS state machine -> check orocos rtt state machine
 - Fix threads pool -> naive fix done
 - Clean old branches -> http://railsware.com/blog/2014/08/11/git-housekeeping-tutorial-clean-up-outdated-branches-in-local-and-remote-repositories/
 - clear the rt_buffer at the end of any async operation
-- Visualize the merge value on a label?
 - rqt_plot inside the qt gui (qtpython->c++)
-- Add ProbabilisticGuides...
+
+- check the TODO and FIXME
+- add orientation
+- add more types of fixtures
+- add more tests
